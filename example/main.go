@@ -10,6 +10,11 @@ import (
 )
 
 
+type Suggestion struct {
+	Id int64
+	Title sql.NullString
+}
+
 
 
 func main() {
@@ -19,7 +24,7 @@ func main() {
 	stream.AddLogfileWriterSink(os.Stdout)
 	
 	
-    db, err := sql.Open("mysql", "root:unprotected@unix(/tmp/mysql.sock)/uservoice_dev?charset=utf8&parseTime=true")
+    db, err := sql.Open("mysql", "root:unprotected@unix(/tmp/mysql.sock)/uservoice_development?charset=utf8&parseTime=true")
     if err != nil {
       fmt.Println("Mysql error ", err)
       panic(err)
@@ -30,6 +35,10 @@ func main() {
 	// We're entering a web request yay
 	sess := cxn.NewSession(stream.Job("api/v2/tickets/create"))
 	
-	fmt.Println(sess)
+	var sugg Suggestion
+	
+	err = sess.FirstBySql(&sugg, "SELECT * FROM suggestions where id = 5559454")
+	fmt.Println("error = ", err)
+	fmt.Println("sugg = ", sugg)
 	
 }
