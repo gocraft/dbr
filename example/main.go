@@ -34,10 +34,11 @@ func main() {
 	
 	// We're entering a web request yay
 	sess := cxn.NewSession(stream.Job("api/v2/tickets/create"))
+	//sess := cxn.NewSession(nil)
 	
 	var suggs []*Suggestion
 	
-	count, err := sess.AllBySql(&suggs, "SELECT * FROM suggestions where id = 5559454")
+	count, err := sess.SelectAll(&suggs, "SELECT * FROM suggestions where id = ?", 5559454)
 	fmt.Println("error = ", err, "count = ", count)
 	fmt.Println("suggs = ", suggs[0])
 	

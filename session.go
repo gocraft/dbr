@@ -4,19 +4,22 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"time"
 )
 
 type Session struct {
 	cxn *Connection
-	log EventReceiver
+	EventReceiver
 }
 
 func (cxn *Connection) NewSession(log EventReceiver) *Session {
 	if log == nil {
-		log = cxn.log
+		log = cxn.EventReceiver // Use parent instrumentation
 	}
-	return &Session{cxn: cxn, log: log}
+	return &Session{cxn: cxn, EventReceiver: log}
 }
+
+
 
 // Given a query and given a structure (field list), there's 2 sets of fields.
 // Take the intersection. We can fill those in. great.
@@ -32,7 +35,7 @@ func (cxn *Connection) NewSession(log EventReceiver) *Session {
 // If it's a slice or map, the slice/map won't be emptied first. New records will be allocated for each found record.
 // If its a map, there is the potential to overwrite values (keys are 'id')
 // Returns the number of items found (which is not necessarily the # of items set)
-func (sess *Session) AllBySql(dest interface{}, sql string, params ...interface{}) (int, error) {
+func (sess *Session) SelectAll(dest interface{}, sql string, params ...interface{}) (int, error) {
 
 	//
 	// Validate the dest, and extract the reflection values we need.
@@ -63,9 +66,21 @@ func (sess *Session) AllBySql(dest interface{}, sql string, params ...interface{
 		panic("Elements need to be pointers to structures")
 	}
 
-	fullSql := sql
+	//
+	// Get full SQL
+	//
+	fullSql, err := Interpolate(sql, params)
+	if err != nil {
+		return 0, err
+	}
 
 	numberOfRowsReturned := 0
+	
+	// Start the timer:
+	startTime := time.Now()
+	defer func() {
+		sess.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), map[string]string{"sql": sql})
+	}()
 
 	// Run the query:
 	rows, err := sess.cxn.Db.Query(fullSql)
