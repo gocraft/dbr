@@ -14,7 +14,7 @@ type EventReceiver interface {
 type kvs map[string]string
 
 type Connection struct {
-	Db *sql.DB
+	Db  *sql.DB
 	log EventReceiver
 }
 

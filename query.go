@@ -1,5 +1,6 @@
 package dbr
-// 
+
+//
 // type Query struct {
 //     SelectSql     string
 //     TableNameSql  string
@@ -11,4 +12,4 @@ package dbr
 //     OffsetCount   uint64
 //     OffsetValid   bool
 // }
-// 
+//

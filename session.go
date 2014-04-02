@@ -1,9 +1,9 @@
 package dbr
 
 import (
+	"database/sql"
 	"fmt"
 	"reflect"
-	"database/sql"
 )
 
 type Session struct {
@@ -93,7 +93,7 @@ func (sess *Session) AllBySql(dest interface{}, sql string, params ...interface{
 			if err != nil {
 				return numberOfRowsReturned, err
 			}
-			
+
 			fmt.Println(newRecord.Interface())
 
 			// Append our new record to the slice:
@@ -118,16 +118,15 @@ var destDummy interface{}
 
 func (sess *Session) holderFor(recordType reflect.Type, record reflect.Value, rows *sql.Rows) ([]interface{}, error) {
 
-	// Parts of this could be cached by: {recordType, rows.Columns()}. Or, {recordType, sqlTempalte} 
+	// Parts of this could be cached by: {recordType, rows.Columns()}. Or, {recordType, sqlTempalte}
 	// (i think. if sqlTemplate has mixed in values it might not be as efficient as it could be. It's almost like we want to parse the SQL query a bit to get Select and From and Join. Everything before Where.).
-	
+
 	// Given a query and given a structure (field list), there's 2 sets of fields.
 	// Take the intersection. We can fill those in. great.
 	// For fields in the structure that aren't in the query, we'll let that slide if db:"-"
 	// For fields in the structure that aren't in the query but without db:"-", return error
 	// For fields in the query that aren't in the structure, we'll ignore them.
-	
-	
+
 	// Get the columns:
 	columns, err := rows.Columns()
 	if err != nil {
@@ -135,12 +134,12 @@ func (sess *Session) holderFor(recordType reflect.Type, record reflect.Value, ro
 		return nil, err
 	}
 	lenColumns := len(columns)
-	
+
 	// compute fieldMap:
 	// each value is either the field index in the record, or -1 if we don't want to map it to the structure.
 	fieldMap := make([]int, lenColumns)
 	fmt.Println(columns)
-	
+
 	for i, col := range columns {
 		fieldMap[i] = -1
 		lenFields := recordType.NumField()
@@ -157,7 +156,7 @@ func (sess *Session) holderFor(recordType reflect.Type, record reflect.Value, ro
 			}
 		}
 	}
-	
+
 	holder := make([]interface{}, lenColumns) // In the future, this should be passed into this function.
 	for i, fieldIndex := range fieldMap {
 		if fieldIndex == -1 {
@@ -166,8 +165,8 @@ func (sess *Session) holderFor(recordType reflect.Type, record reflect.Value, ro
 			field := record.Field(fieldIndex)
 			holder[i] = field.Addr().Interface()
 		}
-		
+
 	}
-	
+
 	return holder, nil
 }
