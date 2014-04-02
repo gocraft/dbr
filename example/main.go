@@ -35,10 +35,10 @@ func main() {
 	// We're entering a web request yay
 	sess := cxn.NewSession(stream.Job("api/v2/tickets/create"))
 	
-	var sugg Suggestion
+	var suggs []*Suggestion
 	
-	err = sess.FirstBySql(&sugg, "SELECT * FROM suggestions where id = 5559454")
-	fmt.Println("error = ", err)
-	fmt.Println("sugg = ", sugg)
+	count, err := sess.AllBySql(&suggs, "SELECT * FROM suggestions where id = 5559454")
+	fmt.Println("error = ", err, "count = ", count)
+	fmt.Println("suggs = ", suggs[0])
 	
 }
