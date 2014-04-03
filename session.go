@@ -78,7 +78,7 @@ func (sess *Session) SelectAll(dest interface{}, sql string, params ...interface
 	
 	// Start the timer:
 	startTime := time.Now()
-	defer sess.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), map[string]string{"sql": sql})
+	defer func() { sess.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), map[string]string{"sql": sql}) }()
 
 	// Run the query:
 	rows, err := sess.cxn.Db.Query(fullSql)
@@ -123,7 +123,7 @@ func (sess *Session) SelectAll(dest interface{}, sql string, params ...interface
 	if err = rows.Err(); err != nil {
 		return numberOfRowsReturned, err
 	}
-
+	
 	return numberOfRowsReturned, nil
 }
 
