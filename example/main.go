@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"health"
 	"os"
+	"time"
 )
 
 
@@ -15,7 +16,9 @@ type Suggestion struct {
 	Title sql.NullString
 }
 
-
+func timing(log dbr.EventReceiver, start time.Time, name string) {
+	log.Timing(name, time.Since(start).Nanoseconds())
+}
 
 func main() {
 	fmt.Println("hi")
@@ -38,7 +41,7 @@ func main() {
 	
 	var suggs []*Suggestion
 	
-	count, err := sess.SelectAll(&suggs, "SELECT * FROM suggestions where id = ?", 5559454)
+	count, err := sess.SelectAll(&suggs, "SELECT id, title FROM suggestions order by id asc limit 100")
 	fmt.Println("error = ", err, "count = ", count)
 	fmt.Println("suggs = ", suggs[0])
 	
