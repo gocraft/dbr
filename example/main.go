@@ -33,10 +33,10 @@ func main() {
       panic(err)
     }
 	
-	cxn := dbr.NewConnection(db, stream.Job("_"))
+	cxn := dbr.NewConnection(db, stream)
 	
 	// We're entering a web request yay
-	sess := cxn.NewSession(stream.Job("api/v2/tickets/create"))
+	sess := cxn.NewSession(stream.NewJob("api/v2/tickets/create"))
 	//sess := cxn.NewSession(nil)
 	
 	var suggs []*Suggestion
