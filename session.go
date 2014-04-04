@@ -107,8 +107,6 @@ func (sess *Session) SelectAll(dest interface{}, sql string, params ...interface
 				return numberOfRowsReturned, err
 			}
 
-			fmt.Println(newRecord.Interface())
-
 			// Append our new record to the slice:
 			sliceValue = reflect.Append(sliceValue, pointerToNewRecord)
 
@@ -151,7 +149,6 @@ func (sess *Session) holderFor(recordType reflect.Type, record reflect.Value, ro
 	// compute fieldMap:
 	// each value is either the field index in the record, or -1 if we don't want to map it to the structure.
 	fieldMap := make([]int, lenColumns)
-	fmt.Println(columns)
 
 	for i, col := range columns {
 		fieldMap[i] = -1
