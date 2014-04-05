@@ -45,4 +45,8 @@ func main() {
 	fmt.Println("error = ", err, "count = ", count)
 	fmt.Println("suggs = ", suggs[0])
 	
+	var oneSugg Suggestion
+	found, err := sess.SelectOne(&oneSugg, "SELECT id, title FROM suggestions order by id desc limit 1")
+	fmt.Println("error = ", err, "found = ", found)
+	fmt.Println("sugg = ", oneSugg)
 }

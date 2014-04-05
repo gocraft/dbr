@@ -125,6 +125,58 @@ func (sess *Session) SelectAll(dest interface{}, sql string, params ...interface
 	return numberOfRowsReturned, nil
 }
 
+func (sess *Session) SelectOne(dest interface{}, sql string, params ...interface{}) (bool, error) {
+	//
+	// Validate the dest, and extract the reflection values we need.
+	//
+	valueOfDest := reflect.ValueOf(dest)
+	indirectOfDest := reflect.Indirect(valueOfDest)
+	kindOfDest := valueOfDest.Kind()
+	
+	if kindOfDest != reflect.Ptr || indirectOfDest.Kind() != reflect.Struct {
+		panic("you need to pass in the address of a struct")
+	}
+	
+	recordType := indirectOfDest.Type()
+	
+	//
+	// Get full SQL
+	//
+	fullSql, err := Interpolate(sql, params)
+	if err != nil {
+		return false, err
+	}
+	
+	// Start the timer:
+	startTime := time.Now()
+	defer func() { sess.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), kvs{"sql": sql}) }()
+
+	// Run the query:
+	rows, err := sess.cxn.Db.Query(fullSql)
+	if err != nil {
+		sess.EventErrKv("dbr.select_one.query.error", err, kvs{"sql": fullSql})
+		return false, err
+	}
+	
+	if rows.Next() {
+		// Build a 'holder', which is an []interface{}. Each value will be the address of the field corresponding to our newly made record:
+		holder, err := sess.holderFor(recordType, indirectOfDest, rows)
+		if err != nil {
+			return false, err
+		}
+
+		// Load up our new structure with the row's values
+		err = rows.Scan(holder...)
+		if err != nil {
+			return false, err
+		}
+
+		return true, nil
+	}
+	
+	return false, nil
+}
+
 var destDummy interface{}
 
 func (sess *Session) holderFor(recordType reflect.Type, record reflect.Value, rows *sql.Rows) ([]interface{}, error) {
