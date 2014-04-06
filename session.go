@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"reflect"
 	"time"
-	"errors"
 )
 
 type Session struct {
@@ -126,8 +125,6 @@ func (sess *Session) SelectAll(dest interface{}, sql string, params ...interface
 	return numberOfRowsReturned, nil
 }
 
-var errorNotFound = errors.New("not found")
-
 func (sess *Session) SelectOne(dest interface{}, sql string, params ...interface{}) (bool, error) {
 	//
 	// Validate the dest, and extract the reflection values we need.
@@ -181,7 +178,7 @@ func (sess *Session) SelectOne(dest interface{}, sql string, params ...interface
 		return false, err
 	}
 	
-	return false, errorNotFound
+	return false, nil
 }
 
 var destDummy interface{}
