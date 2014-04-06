@@ -2,7 +2,6 @@ package dbr
 
 import (
 	"database/sql"
-	"errors"
 )
 
 type EventReceiver interface {
@@ -15,8 +14,6 @@ type EventReceiver interface {
 }
 
 type kvs map[string]string
-
-var NotFound = errors.New("not found")
 
 type Connection struct {
 	Db  *sql.DB
