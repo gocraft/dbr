@@ -183,6 +183,11 @@ func (sess *Session) SelectOne(dest interface{}, sql string, params ...interface
 
 var destDummy interface{}
 
+type holderQueueElement struct {
+	Type reflect.Type
+	Idxs []int
+}
+
 func (sess *Session) holderFor(recordType reflect.Type, record reflect.Value, rows *sql.Rows) ([]interface{}, error) {
 
 	// Parts of this could be cached by: {recordType, rows.Columns()}. Or, {recordType, sqlTempalte}
@@ -203,21 +208,47 @@ func (sess *Session) holderFor(recordType reflect.Type, record reflect.Value, ro
 	lenColumns := len(columns)
 
 	// compute fieldMap:
-	// each value is either the field index in the record, or -1 if we don't want to map it to the structure.
-	fieldMap := make([]int, lenColumns)
+	// each value is either the slice to get to the field via FieldByIndex(index []int) in the record, or nil if we don't want to map it to the structure.
+	fieldMap := make([][]int, lenColumns)
 
 	for i, col := range columns {
-		fieldMap[i] = -1
-		lenFields := recordType.NumField()
-		for j := 0; j < lenFields; j += 1 {
-			fieldStruct := recordType.Field(j)
-			name := fieldStruct.Tag.Get("db")
-			if name != "-" {
-				if name == "" {
-					name = NameMapping(fieldStruct.Name)
+		fieldMap[i] = nil
+		
+		queue := []holderQueueElement{holderQueueElement{Type: recordType, Idxs: nil}}
+		
+QueueLoop:		
+		for len(queue) > 0 {
+			curEntry := queue[0]
+			queue = queue[1:]
+			
+			curType := curEntry.Type
+			curIdxs := curEntry.Idxs
+			lenFields := curType.NumField()
+			
+			for j := 0; j < lenFields; j += 1 {
+				fieldStruct := curType.Field(j)
+				
+				// Skip unexported field
+				if len(fieldStruct.PkgPath) != 0 {
+					continue
 				}
-				if name == col {
-					fieldMap[i] = j
+				
+				name := fieldStruct.Tag.Get("db")
+				if name != "-" {
+					if name == "" {
+						name = NameMapping(fieldStruct.Name)
+					}
+					if name == col {
+						fieldMap[i] = append(curIdxs, j)
+						break QueueLoop
+					}
+				}
+				
+				if fieldStruct.Type.Kind() == reflect.Struct {
+					var idxs2 []int
+					copy(idxs2, curIdxs)
+					idxs2 = append(idxs2, j)
+					queue = append(queue, holderQueueElement{Type: fieldStruct.Type, Idxs: idxs2})
 				}
 			}
 		}
@@ -225,13 +256,12 @@ func (sess *Session) holderFor(recordType reflect.Type, record reflect.Value, ro
 
 	holder := make([]interface{}, lenColumns) // In the future, this should be passed into this function.
 	for i, fieldIndex := range fieldMap {
-		if fieldIndex == -1 {
+		if fieldIndex == nil {
 			holder[i] = &destDummy
 		} else {
-			field := record.Field(fieldIndex)
+			field := record.FieldByIndex(fieldIndex)
 			holder[i] = field.Addr().Interface()
 		}
-
 	}
 
 	return holder, nil

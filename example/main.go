@@ -8,12 +8,18 @@ import (
 	"health"
 	"os"
 	"time"
+	"reflect"
 )
 
 
 type Suggestion struct {
 	Id int64
 	Title sql.NullString
+	
+	Links struct {
+		CreatedBy dbr.NullInt64 `db:"user_id"`
+		ForumId dbr.NullInt64
+	}
 }
 
 func timing(log dbr.EventReceiver, start time.Time, name string) {
@@ -22,6 +28,19 @@ func timing(log dbr.EventReceiver, start time.Time, name string) {
 
 func main() {
 	fmt.Println("hi")
+	
+	var poop Suggestion
+	
+	r := reflect.Indirect(reflect.ValueOf(&poop))
+	
+	f := r.FieldByIndex([]int{2, 1, 0, 0})
+	fmt.Println(f)
+	f.Set(reflect.ValueOf(int64(9)))
+	
+	
+	fmt.Println("poop:")
+	fmt.Println(poop)
+	
 	
 	stream := health.NewStream()
 	stream.AddLogfileWriterSink(os.Stdout)
@@ -41,12 +60,7 @@ func main() {
 	
 	var suggs []*Suggestion
 	
-	count, err := sess.SelectAll(&suggs, "SELECT id, title FROM suggestions order by id asc limit 100")
+	count, err := sess.SelectAll(&suggs, "SELECT id, title, user_id FROM suggestions order by id desc limit 5")
 	fmt.Println("error = ", err, "count = ", count)
 	fmt.Println("suggs = ", suggs[0])
-	
-	var oneSugg Suggestion
-	found, err := sess.SelectOne(&oneSugg, "SELECT id, title FROM suggestions where id = ?", 0)
-	fmt.Println("error = ", err, "found = ", found)
-	fmt.Println("sugg = ", oneSugg)
 }
