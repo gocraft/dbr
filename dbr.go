@@ -16,7 +16,7 @@ type EventReceiver interface {
 type kvs map[string]string
 
 type Connection struct {
-	Db  *sql.DB
+	Db *sql.DB
 	EventReceiver
 }
 
@@ -24,14 +24,13 @@ func NewConnection(db *sql.DB, log EventReceiver) *Connection {
 	if log == nil {
 		log = nullReceiver
 	}
-	
+
 	return &Connection{Db: db, EventReceiver: log}
 }
 
-
 //
 // Implement a sentinel event receiver. If a caller doesn't want to supply an event receiver, then we'll use an instance of this:
-// 
+//
 type NullEventReceiver struct{}
 
 var nullReceiver = &NullEventReceiver{}

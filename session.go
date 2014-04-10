@@ -19,7 +19,9 @@ func (cxn *Connection) NewSession(log EventReceiver) *Session {
 	return &Session{cxn: cxn, EventReceiver: log}
 }
 
-
+func (sess *Session) QuerySelect(selectSql string) *Query {
+	return &Query{Session: sess, SelectSql: selectSql}
+}
 
 // Given a query and given a structure (field list), there's 2 sets of fields.
 // Take the intersection. We can fill those in. great.
@@ -75,10 +77,12 @@ func (sess *Session) SelectAll(dest interface{}, sql string, params ...interface
 	}
 
 	numberOfRowsReturned := 0
-	
+
 	// Start the timer:
 	startTime := time.Now()
-	defer func() { sess.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), map[string]string{"sql": fullSql}) }()
+	defer func() {
+		sess.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), map[string]string{"sql": fullSql})
+	}()
 
 	// Run the query:
 	rows, err := sess.cxn.Db.Query(fullSql)
@@ -121,7 +125,7 @@ func (sess *Session) SelectAll(dest interface{}, sql string, params ...interface
 	if err = rows.Err(); err != nil {
 		return numberOfRowsReturned, err
 	}
-	
+
 	return numberOfRowsReturned, nil
 }
 
@@ -132,13 +136,13 @@ func (sess *Session) SelectOne(dest interface{}, sql string, params ...interface
 	valueOfDest := reflect.ValueOf(dest)
 	indirectOfDest := reflect.Indirect(valueOfDest)
 	kindOfDest := valueOfDest.Kind()
-	
+
 	if kindOfDest != reflect.Ptr || indirectOfDest.Kind() != reflect.Struct {
 		panic("you need to pass in the address of a struct")
 	}
-	
+
 	recordType := indirectOfDest.Type()
-	
+
 	//
 	// Get full SQL
 	//
@@ -146,7 +150,7 @@ func (sess *Session) SelectOne(dest interface{}, sql string, params ...interface
 	if err != nil {
 		return false, err
 	}
-	
+
 	// Start the timer:
 	startTime := time.Now()
 	defer func() { sess.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), kvs{"sql": sql}) }()
@@ -157,7 +161,7 @@ func (sess *Session) SelectOne(dest interface{}, sql string, params ...interface
 		sess.EventErrKv("dbr.select_one.query.error", err, kvs{"sql": fullSql})
 		return false, err
 	}
-	
+
 	if rows.Next() {
 		// Build a 'holder', which is an []interface{}. Each value will be the address of the field corresponding to our newly made record:
 		holder, err := sess.holderFor(recordType, indirectOfDest, rows)
@@ -173,11 +177,11 @@ func (sess *Session) SelectOne(dest interface{}, sql string, params ...interface
 
 		return true, nil
 	}
-	
+
 	if err := rows.Err(); err != nil {
 		return false, err
 	}
-	
+
 	return false, nil
 }
 
@@ -213,26 +217,26 @@ func (sess *Session) holderFor(recordType reflect.Type, record reflect.Value, ro
 
 	for i, col := range columns {
 		fieldMap[i] = nil
-		
+
 		queue := []holderQueueElement{holderQueueElement{Type: recordType, Idxs: nil}}
-		
-QueueLoop:		
+
+	QueueLoop:
 		for len(queue) > 0 {
 			curEntry := queue[0]
 			queue = queue[1:]
-			
+
 			curType := curEntry.Type
 			curIdxs := curEntry.Idxs
 			lenFields := curType.NumField()
-			
+
 			for j := 0; j < lenFields; j += 1 {
 				fieldStruct := curType.Field(j)
-				
+
 				// Skip unexported field
 				if len(fieldStruct.PkgPath) != 0 {
 					continue
 				}
-				
+
 				name := fieldStruct.Tag.Get("db")
 				if name != "-" {
 					if name == "" {
@@ -243,7 +247,7 @@ QueueLoop:
 						break QueueLoop
 					}
 				}
-				
+
 				if fieldStruct.Type.Kind() == reflect.Struct {
 					var idxs2 []int
 					copy(idxs2, curIdxs)
