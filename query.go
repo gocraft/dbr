@@ -67,26 +67,24 @@ func (q *Query) OrderDir(ord string, isAsc bool) *Query {
 
 func (q *Query) ToSql() (string, []interface{}) {
 	var whereStr string
-    if len(q.WhereFragments) >= 0 {
-      whereStr = " WHERE (" + strings.Join(q.WhereFragments, ") AND (") + ") "
-    }
-  
-    var limitStr string
-    if q.LimitValid {
-      limitStr = fmt.Sprintf(" LIMIT %d", q.LimitCount)
-    }
-  
-    var offsetStr string
-    if q.OffsetValid {
-      offsetStr = fmt.Sprintf(" OFFSET %d", q.OffsetCount)
-    }
-  
-    var orderStr string
-    if q.OrderSql != "" {
-      orderStr = " ORDER BY " + q.OrderSql
-    }
-  
-    return fmt.Sprintf("SELECT * FROM %s%s%s%s%s", q.FromSql, whereStr, orderStr, limitStr, offsetStr), q.Params
+	if len(q.WhereFragments) >= 0 {
+		whereStr = " WHERE (" + strings.Join(q.WhereFragments, ") AND (") + ") "
+	}
+
+	var limitStr string
+	if q.LimitValid {
+		limitStr = fmt.Sprintf(" LIMIT %d", q.LimitCount)
+	}
+
+	var offsetStr string
+	if q.OffsetValid {
+		offsetStr = fmt.Sprintf(" OFFSET %d", q.OffsetCount)
+	}
+
+	var orderStr string
+	if q.OrderSql != "" {
+		orderStr = " ORDER BY " + q.OrderSql
+	}
+
+	return fmt.Sprintf("SELECT * FROM %s%s%s%s%s", q.FromSql, whereStr, orderStr, limitStr, offsetStr), q.Params
 }
-
-
