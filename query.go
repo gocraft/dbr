@@ -88,3 +88,13 @@ func (q *Query) ToSql() (string, []interface{}) {
 
 	return fmt.Sprintf("SELECT * FROM %s%s%s%s%s", q.FromSql, whereStr, orderStr, limitStr, offsetStr), q.Params
 }
+
+func (q *Query) SelectAll(dest interface{}) (int, error) {
+	sql, params := q.ToSql()
+	return q.Session.SelectAll(dest, sql, params...)
+}
+
+func (q *Query) SelectOne(dest interface{}) (bool, error) {
+	sql, params := q.ToSql()
+	return q.Session.SelectOne(dest, sql, params...)
+}
