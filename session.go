@@ -2,9 +2,9 @@ package dbr
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"reflect"
-	"errors"
 )
 
 type Session struct {
@@ -77,12 +77,12 @@ func (sess *Session) calculateFieldMap(recordType reflect.Type, columns []string
 				}
 			}
 		}
-		
+
 		if requireAllColumns && fieldMap[i] == nil {
 			return nil, errors.New(fmt.Sprint("couldn't find match for column ", col))
 		}
 	}
-	
+
 	return fieldMap, nil
 }
 
@@ -103,7 +103,7 @@ func (sess *Session) holderFor(recordType reflect.Type, record reflect.Value, ro
 		return nil, err
 	}
 	lenColumns := len(columns)
-	
+
 	fieldMap, err := sess.calculateFieldMap(recordType, columns, false)
 	if err != nil {
 		return nil, err

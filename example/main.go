@@ -64,6 +64,6 @@ func main() {
 	fmt.Println("error = ", err, "count = ", count)
 	fmt.Println("suggs = ", suggs[0])
 	
-	sess.InsertInto("suggestions", []string{"title", "user_id"}, &poop)
+	sess.InsertInto("suggestions", []string{"title", "user_id"}, suggs[0])
 	
 }

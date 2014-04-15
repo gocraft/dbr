@@ -3,12 +3,12 @@ package dbr
 import (
 	// "fmt"
 	"bytes"
+	"database/sql/driver"
 	"errors"
 	"reflect"
 	"strconv"
 	"strings"
 	"unicode/utf8"
-	"database/sql/driver"
 )
 
 // Need to turn \x00, \n, \r, \, ', " and \x1a
@@ -88,7 +88,7 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 		} else if r == '?' && curVal < maxVals {
 			v := vals[curVal]
 
-			valuer, ok := v.(driver.Valuer);
+			valuer, ok := v.(driver.Valuer)
 			if ok {
 				val, err := valuer.Value()
 				if err != nil {
@@ -97,10 +97,10 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 					v = val
 				}
 			}
-			
+
 			valueOfV := reflect.ValueOf(v)
 			kindOfV := valueOfV.Kind()
-			
+
 			if v == nil {
 				buf.WriteString("NULL")
 			} else if isInt(kindOfV) {
