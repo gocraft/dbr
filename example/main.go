@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "github.com/go-sql-driver/mysql"
+	"database/sql/driver"
 	"fmt"
 	"dbr"
 	"database/sql"
@@ -63,4 +64,14 @@ func main() {
 	count, err := sess.SelectAll(&suggs, "SELECT id, title, user_id FROM suggestions order by id desc limit 5")
 	fmt.Println("error = ", err, "count = ", count)
 	fmt.Println("suggs = ", suggs[0])
+	
+	sess.InsertInto("suggestions", []string{"title", "user_id"}, suggs[0])
+	
+	suggs[0].Title.Valid = false
+	var xxx interface{} = suggs[0].Title
+	terd, ok := xxx.(driver.Valuer)
+	if ok {
+		zz, err := terd.Value()
+		fmt.Println("its a valuer ", zz, err)
+	}
 }

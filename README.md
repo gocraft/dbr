@@ -25,3 +25,7 @@ sess.Select("*").From("suggestions").WhereEq(dbr.Eq{"deleted_at": nil})
 // tight integreation with Health
 // or...
 // option to log all sql queries by table name
+
+txn := sess.MustBegin()
+err := txn.Insert(&sugg)
+txn.Commit()

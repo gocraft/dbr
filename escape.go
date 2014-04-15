@@ -89,6 +89,12 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 
 			valueOfV := reflect.ValueOf(v)
 			kindOfV := valueOfV.Kind()
+			
+			// LINE OF THOUGHT: 
+			// if valueOfV is a struct, or ptr to struct, then ask that struct to serialize itself somehow to NULL or its value
+			// CAN WE USE VALUER INTERFACE??
+			
+			
 			if isInt(kindOfV) {
 				var ival int64 = valueOfV.Int()
 
