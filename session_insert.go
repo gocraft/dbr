@@ -51,13 +51,15 @@ func (sess *Session) InsertInto(table string, columns []string, record interface
 		return err
 	}
 
-	lastId, err := result.LastInsertId()
-	if err != nil {
-		fmt.Println("got error on exec: ", err)
-		return err
-	} else {
-		fmt.Println("win: ", lastId)
-
+	// If the structure has an "Id" field which is an int64, set it from the LastInsertId(). Otherwise, don't bother.
+	idField := indirectOfRecord.FieldByName("Id")
+	if idField.IsValid() && idField.Kind() == reflect.Int64 {
+		lastId, err := result.LastInsertId()
+		if err != nil {
+			fmt.Println("got error on last insert id: ", err)
+			return err
+		}
+		idField.Set(reflect.ValueOf(lastId))
 	}
 
 	return nil

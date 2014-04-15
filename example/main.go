@@ -64,6 +64,15 @@ func main() {
 	fmt.Println("error = ", err, "count = ", count)
 	fmt.Println("suggs = ", suggs[0])
 	
-	sess.InsertInto("suggestions", []string{"title", "user_id"}, suggs[0])
+	var newSuggy Suggestion
+	newSuggy.Title.Valid = true
+	newSuggy.Title.String = "sup yo"
 	
+	newSuggy.Links.CreatedBy.Valid = true
+	newSuggy.Links.CreatedBy.Int64 = 47948403
+	
+	
+	sess.InsertInto("suggestions", []string{"title", "user_id"}, &newSuggy)
+	
+	fmt.Println(newSuggy)
 }
