@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"unicode/utf8"
+	"database/sql/driver"
 )
 
 // Need to turn \x00, \n, \r, \, ', " and \x1a
@@ -87,15 +88,22 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 		} else if r == '?' && curVal < maxVals {
 			v := vals[curVal]
 
+			valuer, ok := v.(driver.Valuer);
+			if ok {
+				val, err := valuer.Value()
+				if err != nil {
+					return "", err
+				} else {
+					v = val
+				}
+			}
+			
 			valueOfV := reflect.ValueOf(v)
 			kindOfV := valueOfV.Kind()
 			
-			// LINE OF THOUGHT: 
-			// if valueOfV is a struct, or ptr to struct, then ask that struct to serialize itself somehow to NULL or its value
-			// CAN WE USE VALUER INTERFACE??
-			
-			
-			if isInt(kindOfV) {
+			if v == nil {
+				buf.WriteString("NULL")
+			} else if isInt(kindOfV) {
 				var ival int64 = valueOfV.Int()
 
 				buf.WriteString(strconv.FormatInt(ival, 10))
