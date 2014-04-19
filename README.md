@@ -27,5 +27,6 @@ sess.Select("*").From("suggestions").WhereEq(dbr.Eq{"deleted_at": nil})
 // option to log all sql queries by table name
 
 txn := sess.MustBegin()
-err := txn.Insert(&sugg)
+err := txn.InsertInto("suggestions", []string{"title", "user_id"}, &sugg)
+rowsUpdated, err := txn.Update("suggestions", []string{"title", "user_id"}, &sugg)
 txn.Commit()
