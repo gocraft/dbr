@@ -23,10 +23,9 @@ func (sess *Session) QuerySelect(selectSql string) *Query {
 	return &Query{Session: sess, SelectSql: selectSql}
 }
 
-
 func (sess *Session) SelectValue(dest interface{}, sql string, params ...interface{}) (bool, error) {
 	// TODO: make sure dest is a ptr to something
-	
+
 	//
 	// Get full SQL
 	//
@@ -34,7 +33,7 @@ func (sess *Session) SelectValue(dest interface{}, sql string, params ...interfa
 	if err != nil {
 		return false, err
 	}
-	
+
 	// Start the timer:
 	startTime := time.Now()
 	defer func() {
@@ -47,7 +46,7 @@ func (sess *Session) SelectValue(dest interface{}, sql string, params ...interfa
 		fmt.Println("dbr.error.query") // Kvs{"error": err.String(), "sql": fullSql}
 		return false, err
 	}
-	
+
 	if rows.Next() {
 		err = rows.Scan(dest)
 		if err != nil {
