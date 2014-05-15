@@ -67,7 +67,7 @@ func (q *Query) OrderDir(ord string, isAsc bool) *Query {
 
 func (q *Query) ToSql() (string, []interface{}) {
 	var whereStr string
-	if len(q.WhereFragments) >= 0 {
+	if len(q.WhereFragments) > 0 {
 		whereStr = " WHERE (" + strings.Join(q.WhereFragments, ") AND (") + ") "
 	}
 
