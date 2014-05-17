@@ -251,10 +251,3 @@ func equalityMapToSql(eq map[string]interface{}) (string, []interface{}) {
 		return "(" + strings.Join(conditions, ") AND (") + ")", args
 	}
 }
-
-// Load(&tickets)
-// LoadOne(&ticket)
-// LoadValue(&myString)
-// ReturnInt64(), ReturnUint64(), ...
-// Query() *sql.Rows, err		// We might want to provide native sql.Rows support? Q: how does that impact metrics
-// Count() -- ignores Columns, Limit, Offset, Order and calculates COUNT(*) -- but: having could reference cols?

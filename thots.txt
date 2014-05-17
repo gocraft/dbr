@@ -2,10 +2,8 @@
 TODO:
  - Write some tests that hit the actual database.
  - Write tests for insert that hit db
- - wire up insert to instrument
- - make a test for that
- - query tests, impl
- 
- 
- - ctx.Dbr.Select("*").From("y").Load(&tickets)
- - ctx.Dbr.SelectBySql("SELECT * FROM users WHERE x = ?", 1).Load(&tickets)
+ - wire up insert to instrument, make a test for that
+
+ - Ideas:
+   - selectBuilder.Query() *sql.Rows, err		// We might want to provide native sql.Rows support? Q: how does that impact metrics
+   - selectBuilder.Count() -- ignores Columns, Limit, Offset, Order and calculates COUNT(*) -- but: having could reference cols?
