@@ -228,12 +228,24 @@ func TestSelectLoadValue(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, name, "Jonathan")
-	
+
 	var id int64
 	err = s.Select("id").From("dbr_people").Limit(1).LoadValue(&id)
 
 	assert.NoError(t, err)
 	assert.True(t, id > 0)
+}
+
+func TestSelectReturn(t *testing.T) {
+	s := createRealSessionWithFixtures()
+
+	name, err := s.Select("name").From("dbr_people").Where("email = 'jonathan@uservoice.com'").ReturnString()
+	assert.NoError(t, err)
+	assert.Equal(t, name, "Jonathan")
+
+	count, err := s.Select("COUNT(*)").From("dbr_people").ReturnInt64()
+	assert.NoError(t, err)
+	assert.Equal(t, count, 2)
 }
 
 // Series of tests that test mapping struct fields to columns
