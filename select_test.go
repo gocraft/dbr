@@ -228,6 +228,12 @@ func TestSelectLoadValue(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, name, "Jonathan")
+	
+	var id int64
+	err = s.Select("id").From("dbr_people").Limit(1).LoadValue(&id)
+
+	assert.NoError(t, err)
+	assert.True(t, id > 0)
 }
 
 // Series of tests that test mapping struct fields to columns
