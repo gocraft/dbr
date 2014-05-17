@@ -23,7 +23,6 @@ func (cxn *Connection) NewSession(log EventReceiver) *Session {
 	return &Session{cxn: cxn, EventReceiver: log}
 }
 
-
 func NewConnection(db *sql.DB, log EventReceiver) *Connection {
 	if log == nil {
 		log = nullReceiver

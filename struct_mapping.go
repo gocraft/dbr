@@ -1,10 +1,10 @@
 package dbr
 
 import (
-	"fmt"
-	"reflect"
 	"database/sql"
 	"errors"
+	"fmt"
+	"reflect"
 )
 
 var destDummy interface{}
@@ -105,7 +105,6 @@ func (sess *Session) holderFor(recordType reflect.Type, record reflect.Value, ro
 
 	return holder, nil
 }
-
 
 func (sess *Session) valuesFor(recordType reflect.Type, record reflect.Value, columns []string) ([]interface{}, error) {
 	fieldMap, err := sess.calculateFieldMap(recordType, columns, true)
