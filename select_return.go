@@ -29,24 +29,6 @@ func (b *SelectBuilder) ReturnInt64() (int64, error) {
 	return v, err
 }
 
-func (b *SelectBuilder) ReturnInt() (int, error) {
-	var v int
-	err := b.LoadValue(&v)
-	return v, err
-}
-
-func (b *SelectBuilder) ReturnUint64() (uint64, error) {
-	var v uint64
-	err := b.LoadValue(&v)
-	return v, err
-}
-
-func (b *SelectBuilder) ReturnUint() (uint, error) {
-	var v uint
-	err := b.LoadValue(&v)
-	return v, err
-}
-
 func (b *SelectBuilder) ReturnString() (string, error) {
 	var v string
 	err := b.LoadValue(&v)
