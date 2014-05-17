@@ -91,7 +91,8 @@ func (b *InsertBuilder) ToSql() (string, []interface{}) {
 		}
 		sql.WriteString(placeholderStr)
 
-		vals, err := b.valuesFor(reflect.TypeOf(rec), reflect.ValueOf(rec), b.Cols)
+		ind := reflect.Indirect(reflect.ValueOf(rec))
+		vals, err := b.valuesFor(ind.Type(), ind, b.Cols)
 		if err != nil {
 			panic(err.Error())
 		}

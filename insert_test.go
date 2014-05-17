@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"database/sql"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -61,15 +62,41 @@ func TestInsertRecordsToSql(t *testing.T) {
 }
 
 func TestInsertReal(t *testing.T) {
+	// Insert by specifying values
 	s := createRealSessionWithFixtures()
-	_, e := s.Insert("dbr_people").Columns("name", "email").Values("Barack", "obama@whitehouse.com").Exec()
+	res, err := s.Insert("dbr_people").Columns("name", "email").Values("Barack", "obama@whitehouse.gov").Exec()
+	validateInsertingBarack(t, s, res, err)
 
-	assert.NoError(t, e)
-	// id, err := r.LastInsertId()
-	// 	rowsAff, err := r.RowsAffected()
-	// 	println(id, err, rowsAff)
+	// Insert by specifying a record (ptr to struct)
+	s = createRealSessionWithFixtures()
+	person := dbrPerson{Name: "Barack"}
+	person.Email.Valid = true
+	person.Email.String = "obama@whitehouse.gov"
+	res, err = s.Insert("dbr_people").Columns("name", "email").Record(&person).Exec()
+	validateInsertingBarack(t, s, res, err)
 
-	// TODO: do a Query to get the result back
+	// Insert by specifying a record (struct)
+	s = createRealSessionWithFixtures()
+	res, err = s.Insert("dbr_people").Columns("name", "email").Record(person).Exec()
+	validateInsertingBarack(t, s, res, err)
 }
 
-// TODO: test that we can use a record and it sets the ID
+func validateInsertingBarack(t *testing.T, s *Session, res sql.Result, err error) {
+	assert.NoError(t, err)
+	id, err := res.LastInsertId()
+	assert.NoError(t, err)
+	rowsAff, err := res.RowsAffected()
+	assert.NoError(t, err)
+
+	assert.True(t, id > 0)
+	assert.Equal(t, rowsAff, 1)
+
+	var person dbrPerson
+	err = s.Select("*").From("dbr_people").Where("id = ?", id).LoadOne(&person)
+	assert.NoError(t, err)
+
+	assert.Equal(t, person.Id, id)
+	assert.Equal(t, person.Name, "Barack")
+	assert.Equal(t, person.Email.Valid, true)
+	assert.Equal(t, person.Email.String, "obama@whitehouse.gov")
+}
