@@ -220,4 +220,14 @@ func TestSelectBySqlLoadAll(t *testing.T) {
 	}
 }
 
+func TestSelectLoadValue(t *testing.T) {
+	s := createRealSessionWithFixtures()
+
+	var name string
+	err := s.Select("name").From("dbr_people").Where("email = 'jonathan@uservoice.com'").LoadValue(&name)
+
+	assert.NoError(t, err)
+	assert.Equal(t, name, "Jonathan")
+}
+
 // Series of tests that test mapping struct fields to columns

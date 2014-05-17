@@ -6,6 +6,21 @@ import (
 	"time"
 )
 
+// Unvetted thots:
+// Given a query and given a structure (field list), there's 2 sets of fields.
+// Take the intersection. We can fill those in. great.
+// For fields in the structure that aren't in the query, we'll let that slide if db:"-"
+// For fields in the structure that aren't in the query but without db:"-", return error
+// For fields in the query that aren't in the structure, we'll ignore them.
+
+// dest can be:
+// - addr of a structure
+// - addr of slice of pointers to structures
+// - map of pointers to structures (addr of map also ok)
+// If it's a single structure, only the first record returned will be set.
+// If it's a slice or map, the slice/map won't be emptied first. New records will be allocated for each found record.
+// If its a map, there is the potential to overwrite values (keys are 'id')
+// Returns the number of items found (which is not necessarily the # of items set)
 func (b *SelectBuilder) LoadAll(dest interface{}) (int, error) {
 	//
 	// Validate the dest, and extract the reflection values we need.
@@ -152,5 +167,36 @@ func (b *SelectBuilder) LoadOne(dest interface{}) error {
 
 // Returns ErrNotFound if no value was found, and it was therefore not set.
 func (b *SelectBuilder) LoadValue(dest interface{}) error {
-	return nil
+	// TODO: make sure dest is a ptr to something
+
+	//
+	// Get full SQL
+	//
+	fullSql, err := Interpolate(b.ToSql())
+	if err != nil {
+		return err
+	}
+
+	// Start the timer:
+	startTime := time.Now()
+	defer func() {
+		b.TimingKv("dbr.select_value", time.Since(startTime).Nanoseconds(), map[string]string{"sql": fullSql})
+	}()
+
+	// Run the query:
+	rows, err := b.cxn.Db.Query(fullSql)
+	if err != nil {
+		return err
+	}
+
+	if rows.Next() {
+		err = rows.Scan(dest)
+		return err
+	}
+
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	return ErrNotFound
 }

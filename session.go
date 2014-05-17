@@ -19,10 +19,6 @@ func (cxn *Connection) NewSession(log EventReceiver) *Session {
 	return &Session{cxn: cxn, EventReceiver: log}
 }
 
-func (sess *Session) QuerySelect(selectSql string) *Query {
-	return &Query{Session: sess, SelectSql: selectSql}
-}
-
 var destDummy interface{}
 
 type fieldMapQueueElement struct {
