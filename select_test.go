@@ -134,6 +134,31 @@ func TestSelectWhereEqSql(t *testing.T) {
 	assert.Equal(t, args, []interface{}{1, []int64{1, 2, 3}})
 }
 
+func TestSelectBySql(t *testing.T) {
+	s := createFakeSession()
+
+	sql, args := s.SelectBySql("SELECT * FROM users WHERE x = 1").ToSql()
+	assert.Equal(t, sql, "SELECT * FROM users WHERE x = 1")
+	assert.Equal(t, args, []interface{}(nil))
+
+	sql, args = s.SelectBySql("SELECT * FROM users WHERE x = ? AND y IN ?", 9, []int{5, 6, 7}).ToSql()
+	assert.Equal(t, sql, "SELECT * FROM users WHERE x = ? AND y IN ?")
+	assert.Equal(t, args, []interface{}{9, []int{5, 6, 7}})
+
+	// Doesn't fix shit if it's broken:
+	sql, args = s.SelectBySql("wat", 9, []int{5, 6, 7}).ToSql()
+	assert.Equal(t, sql, "wat")
+	assert.Equal(t, args, []interface{}{9, []int{5, 6, 7}})
+}
+
+func TestSelectVarieties(t *testing.T) {
+	s := createFakeSession()
+
+	sql, _ := s.Select("id, name, email").From("users").ToSql()
+	sql2, _ := s.Select("id", "name", "email").From("users").ToSql()
+	assert.Equal(t, sql, sql2)
+}
+
 func TestSelectLoadAll(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
@@ -179,4 +204,20 @@ func TestSelectLoadOne(t *testing.T) {
 	assert.Equal(t, err, ErrNotFound)
 }
 
-// Test where we do s.Select("*"), s.Select("id, name, email"), and s.Select("id", "name", "email")
+func TestSelectBySqlLoadAll(t *testing.T) {
+	s := createRealSessionWithFixtures()
+
+	var people []*dbrPerson
+	count, err := s.SelectBySql("SELECT name FROM dbr_people WHERE email IN ?", []string{"jonathan@uservoice.com"}).LoadAll(&people)
+
+	assert.NoError(t, err)
+	assert.Equal(t, count, 1)
+	if len(people) == 1 {
+		assert.Equal(t, people[0].Name, "Jonathan")
+		assert.Equal(t, people[0].Id, 0)              // not set
+		assert.Equal(t, people[0].Email.Valid, false) // not set
+		assert.Equal(t, people[0].Email.String, "")   // not set
+	}
+}
+
+// Series of tests that test mapping struct fields to columns

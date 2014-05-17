@@ -10,7 +10,9 @@ import (
 type SelectBuilder struct {
 	*Session
 
-	// TODO: RawFullSql
+	RawFullSql   string
+	RawArguments []interface{}
+
 	IsDistinct      bool
 	Columns         []string
 	FromTable       string
@@ -34,6 +36,14 @@ func (sess *Session) Select(cols ...string) *SelectBuilder {
 	return &SelectBuilder{
 		Session: sess,
 		Columns: cols,
+	}
+}
+
+func (sess *Session) SelectBySql(sql string, args ...interface{}) *SelectBuilder {
+	return &SelectBuilder{
+		Session:      sess,
+		RawFullSql:   sql,
+		RawArguments: args,
 	}
 }
 
@@ -96,6 +106,10 @@ func (b *SelectBuilder) Paginate(page, perPage uint64) *SelectBuilder {
 }
 
 func (b *SelectBuilder) ToSql() (string, []interface{}) {
+	if b.RawFullSql != "" {
+		return b.RawFullSql, b.RawArguments
+	}
+
 	if len(b.Columns) == 0 {
 		panic("no columns specified")
 	}
