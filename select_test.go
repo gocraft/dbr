@@ -161,4 +161,22 @@ func TestSelectLoadAll(t *testing.T) {
 	// TODO: test map
 }
 
+func TestSelectLoadOne(t *testing.T) {
+	s := createRealSessionWithFixtures()
+
+	// Found:
+	var person dbrPerson
+	err := s.Select("id", "name", "email").From("dbr_people").Where("email = ?", "jonathan@uservoice.com").LoadOne(&person)
+	assert.NoError(t, err)
+	assert.True(t, person.Id > 0)
+	assert.Equal(t, person.Name, "Jonathan")
+	assert.True(t, person.Email.Valid)
+	assert.Equal(t, person.Email.String, "jonathan@uservoice.com")
+
+	// Not found:
+	var person2 dbrPerson
+	err = s.Select("id", "name", "email").From("dbr_people").Where("email = ?", "dontexist@uservoice.com").LoadOne(&person2)
+	assert.Equal(t, err, ErrNotFound)
+}
+
 // Test where we do s.Select("*"), s.Select("id, name, email"), and s.Select("id", "name", "email")

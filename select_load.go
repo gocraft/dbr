@@ -99,7 +99,55 @@ func (b *SelectBuilder) LoadAll(dest interface{}) (int, error) {
 
 // Returns ErrNotFound if nothing was found
 func (b *SelectBuilder) LoadOne(dest interface{}) error {
-	return nil
+	//
+	// Validate the dest, and extract the reflection values we need.
+	//
+	valueOfDest := reflect.ValueOf(dest)
+	indirectOfDest := reflect.Indirect(valueOfDest)
+	kindOfDest := valueOfDest.Kind()
+
+	if kindOfDest != reflect.Ptr || indirectOfDest.Kind() != reflect.Struct {
+		panic("you need to pass in the address of a struct")
+	}
+
+	recordType := indirectOfDest.Type()
+
+	//
+	// Get full SQL
+	//
+	fullSql, err := Interpolate(b.ToSql())
+	if err != nil {
+		return err
+	}
+
+	// Start the timer:
+	startTime := time.Now()
+	defer func() { b.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
+
+	// Run the query:
+	rows, err := b.cxn.Db.Query(fullSql)
+	if err != nil {
+		b.EventErrKv("dbr.select_one.query.error", err, kvs{"sql": fullSql})
+		return err
+	}
+
+	if rows.Next() {
+		// Build a 'holder', which is an []interface{}. Each value will be the address of the field corresponding to our newly made record:
+		holder, err := b.holderFor(recordType, indirectOfDest, rows)
+		if err != nil {
+			return err
+		}
+
+		// Load up our new structure with the row's values
+		err = rows.Scan(holder...)
+		return err
+	}
+
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	return ErrNotFound
 }
 
 // Returns ErrNotFound if no value was found, and it was therefore not set.
