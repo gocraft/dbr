@@ -3,8 +3,8 @@ package dbr
 import (
 	"bytes"
 	"fmt"
-	"strings"
 	"reflect"
+	"strings"
 )
 
 type SelectBuilder struct {
@@ -25,9 +25,9 @@ type SelectBuilder struct {
 }
 
 type whereFragment struct {
-	Condition    string
-	Values       []interface{}
-	EqualityMap  map[string]interface{}
+	Condition   string
+	Values      []interface{}
+	EqualityMap map[string]interface{}
 }
 
 func (sess *Session) Select(cols ...string) *SelectBuilder {
@@ -157,6 +157,10 @@ func (b *SelectBuilder) ToSql() (string, []interface{}) {
 	return sql.String(), args
 }
 
+//
+// Where helpers:
+//
+
 func newWhereFragment(whereSqlOrMap interface{}, args []interface{}) whereFragment {
 	switch pred := whereSqlOrMap.(type) {
 	case string:
@@ -168,10 +172,9 @@ func newWhereFragment(whereSqlOrMap interface{}, args []interface{}) whereFragme
 	default:
 		panic("Invalid argument passed to Where. Pass a string or an Eq map.")
 	}
-	
+
 	return whereFragment{}
 }
-
 
 // Invariant: only aclled when len(fragments) > 0
 func whereFragmentsToSql(fragments []whereFragment) (string, []interface{}) {
@@ -222,10 +225,10 @@ func equalityMapToSql(eq map[string]interface{}) (string, []interface{}) {
 			} else {
 				conditions = append(conditions, fmt.Sprintf("%s = ?", k))
 				args = append(args, v)
-			}	
+			}
 		}
 	}
-	
+
 	if len(conditions) == 0 {
 		return "", nil
 	} else if len(conditions) == 1 {

@@ -46,6 +46,12 @@ func realDb() *sql.DB {
 	return db
 }
 
+type dbrPerson struct {
+	Id    int64
+	Name  string
+	Email NullString
+}
+
 func installFixtures(db *sql.DB) {
 	createTablePeople := `
 		CREATE TABLE dbr_people (
@@ -59,6 +65,7 @@ func installFixtures(db *sql.DB) {
 		"DROP TABLE IF EXISTS dbr_people",
 		createTablePeople,
 		"INSERT INTO dbr_people (name,email) VALUES ('Jonathan', 'jonathan@uservoice.com')",
+		"INSERT INTO dbr_people (name,email) VALUES ('Dmitri', 'zavorotni@jadius.com')",
 	}
 
 	for _, v := range sqlToRun {

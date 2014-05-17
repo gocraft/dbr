@@ -46,7 +46,7 @@ func TestSelectPaginateOrderDirToSql(t *testing.T) {
 
 	assert.Equal(t, sql, "SELECT a, b FROM c WHERE (d = ?) ORDER BY id DESC LIMIT 20 OFFSET 0")
 	assert.Equal(t, args, []interface{}{1})
-	
+
 	sql, args = s.Select("a", "b").
 		From("c").
 		Where("d = ?", 1).
@@ -73,7 +73,7 @@ func TestSelectMultiHavingSql(t *testing.T) {
 	sql, args := s.Select("a", "b").From("c").Where("p = ?", 1).GroupBy("z").Having("z = ?", 2).Having("y = ?", 3).ToSql()
 
 	assert.Equal(t, sql, "SELECT a, b FROM c WHERE (p = ?) GROUP BY z HAVING (z = ?) AND (y = ?)")
-	assert.Equal(t, args, []interface{}{1,2,3})
+	assert.Equal(t, args, []interface{}{1, 2, 3})
 }
 
 func TestSelectMultiOrderSql(t *testing.T) {
@@ -91,47 +91,74 @@ func TestSelectWhereMapSql(t *testing.T) {
 	sql, args := s.Select("a").From("b").Where(map[string]interface{}{"a": 1}).ToSql()
 	assert.Equal(t, sql, "SELECT a FROM b WHERE (a = ?)")
 	assert.Equal(t, args, []interface{}{1})
-	
+
 	sql, args = s.Select("a").From("b").Where(map[string]interface{}{"a": 1, "b": true}).ToSql()
 	assert.Equal(t, sql, "SELECT a FROM b WHERE ((a = ?) AND (b = ?))")
 	assert.Equal(t, args, []interface{}{1, true})
-	
+
 	sql, args = s.Select("a").From("b").Where(map[string]interface{}{"a": nil}).ToSql()
 	assert.Equal(t, sql, "SELECT a FROM b WHERE (a IS NULL)")
 	assert.Equal(t, args, []interface{}(nil))
-	
-	sql, args = s.Select("a").From("b").Where(map[string]interface{}{"a": []int{1,2,3}}).ToSql()
+
+	sql, args = s.Select("a").From("b").Where(map[string]interface{}{"a": []int{1, 2, 3}}).ToSql()
 	assert.Equal(t, sql, "SELECT a FROM b WHERE (a IN ?)")
-	assert.Equal(t, args, []interface{}{[]int{1,2,3}})
-	
+	assert.Equal(t, args, []interface{}{[]int{1, 2, 3}})
+
 	sql, args = s.Select("a").From("b").Where(map[string]interface{}{"a": []int{1}}).ToSql()
 	assert.Equal(t, sql, "SELECT a FROM b WHERE (a = ?)")
 	assert.Equal(t, args, []interface{}{1})
-	
+
 	// NOTE: a has no valid values, we want a query that returns nothing
 	sql, args = s.Select("a").From("b").Where(map[string]interface{}{"a": []int{}}).ToSql()
-	assert.Equal(t, sql, "SELECT a FROM b WHERE (1=0)")	 
+	assert.Equal(t, sql, "SELECT a FROM b WHERE (1=0)")
 	assert.Equal(t, args, []interface{}(nil))
-	
+
 	var aval []int
 	sql, args = s.Select("a").From("b").Where(map[string]interface{}{"a": aval}).ToSql()
-	assert.Equal(t, sql, "SELECT a FROM b WHERE (a IS NULL)")	 
+	assert.Equal(t, sql, "SELECT a FROM b WHERE (a IS NULL)")
 	assert.Equal(t, args, []interface{}(nil))
-	
+
 	sql, args = s.Select("a").From("b").
 		Where(map[string]interface{}{"a": []int(nil)}).
 		Where(map[string]interface{}{"b": false}).
 		ToSql()
-	assert.Equal(t, sql, "SELECT a FROM b WHERE (a IS NULL) AND (b = ?)")	 
+	assert.Equal(t, sql, "SELECT a FROM b WHERE (a IS NULL) AND (b = ?)")
 	assert.Equal(t, args, []interface{}{false})
 }
 
 func TestSelectWhereEqSql(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args := s.Select("a").From("b").Where(Eq{"a": 1, "b": []int64{1,2,3}}).ToSql()
+	sql, args := s.Select("a").From("b").Where(Eq{"a": 1, "b": []int64{1, 2, 3}}).ToSql()
 	assert.Equal(t, sql, "SELECT a FROM b WHERE ((a = ?) AND (b IN ?))")
-	assert.Equal(t, args, []interface{}{1, []int64{1,2,3}})
+	assert.Equal(t, args, []interface{}{1, []int64{1, 2, 3}})
 }
 
-// TODO: Do real query.
+func TestSelectLoadAll(t *testing.T) {
+	s := createRealSessionWithFixtures()
+
+	var people []*dbrPerson
+	count, err := s.Select("id", "name", "email").From("dbr_people").OrderBy("id ASC").LoadAll(&people)
+
+	assert.NoError(t, err)
+	assert.Equal(t, count, 2)
+
+	assert.Equal(t, len(people), 2)
+	if len(people) == 2 {
+		// Make sure that the Ids are set. It's possible (maybe?) that different DBs set ids differently so
+		// don't assume they're 1 and 2.
+		assert.True(t, people[0].Id > 0)
+		assert.True(t, people[1].Id > people[0].Id)
+
+		assert.Equal(t, people[0].Name, "Jonathan")
+		assert.True(t, people[0].Email.Valid)
+		assert.Equal(t, people[0].Email.String, "jonathan@uservoice.com")
+		assert.Equal(t, people[1].Name, "Dmitri")
+		assert.True(t, people[1].Email.Valid)
+		assert.Equal(t, people[1].Email.String, "zavorotni@jadius.com")
+	}
+
+	// TODO: test map
+}
+
+// Test where we do s.Select("*"), s.Select("id, name, email"), and s.Select("id", "name", "email")
