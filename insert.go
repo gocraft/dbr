@@ -16,7 +16,7 @@ type InsertBuilder struct {
 	Recs []interface{}
 }
 
-func (sess *Session) Insert(into string) *InsertBuilder {
+func (sess *Session) InsertInto(into string) *InsertBuilder {
 	return &InsertBuilder{
 		Session: sess,
 		Into:    into,
