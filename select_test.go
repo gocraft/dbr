@@ -5,6 +5,56 @@ import (
 	"testing"
 )
 
+func BenchmarkSelectBasicSql(b *testing.B) {
+	s := createFakeSession()
+
+	// Do some allocations outside the loop so they don't affect the results
+	arg_eq := Eq{"a": []int{1, 2, 3}}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.Select("something_id", "user_id", "other").
+			From("some_table").
+			Where("d = ? OR e = ?", 1, "wat").
+			Where(arg_eq).
+			OrderDir("id", false).
+			Paginate(1, 20).
+			ToSql()
+	}
+}
+
+func BenchmarkSelectFullSql(b *testing.B) {
+	s := createFakeSession()
+
+	// Do some allocations outside the loop so they don't affect the results
+	arg_eq1 := Eq{"f": 2, "x": "hi"}
+	arg_eq2 := map[string]interface{}{"g": 3}
+	arg_eq3 := Eq{"h": []int{1, 2, 3}}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.Select("a", "b", "z", "y", "x").
+			Distinct().
+			From("c").
+			Where("d = ? OR e = ?", 1, "wat").
+			Where(arg_eq1).
+			Where(arg_eq2).
+			Where(arg_eq3).
+			GroupBy("i").
+			GroupBy("ii").
+			GroupBy("iii").
+			Having("j = k").
+			Having("jj = ?", 1).
+			Having("jjj = ?", 2).
+			OrderBy("l").
+			OrderBy("l").
+			OrderBy("l").
+			Limit(7).
+			Offset(8).
+			ToSql()
+	}
+}
+
 func TestSelectBasicToSql(t *testing.T) {
 	s := createFakeSession()
 
@@ -21,17 +71,18 @@ func TestSelectFullToSql(t *testing.T) {
 		Distinct().
 		From("c").
 		Where("d = ? OR e = ?", 1, "wat").
-		// Where(Eq{"f": 2}).
-		// Where(map[string]interface{}{"g": 3}).
-		// Where(Eq{"h": []int{4, 5, 6}}).
-		GroupBy("e").
-		Having("f = g").
-		OrderBy("h").
+		Where(Eq{"f": 2}).
+		Where(map[string]interface{}{"g": 3}).
+		Where(Eq{"h": []int{4, 5, 6}}).
+		GroupBy("i").
+		Having("j = k").
+		OrderBy("l").
 		Limit(7).
-		Offset(8).ToSql()
+		Offset(8).
+		ToSql()
 
-	assert.Equal(t, sql, "SELECT DISTINCT a, b FROM c WHERE (d = ? OR e = ?) GROUP BY e HAVING (f = g) ORDER BY h LIMIT 7 OFFSET 8")
-	assert.Equal(t, args, []interface{}{1, "wat"})
+	assert.Equal(t, sql, "SELECT DISTINCT a, b FROM c WHERE (d = ? OR e = ?) AND (f = ?) AND (g = ?) AND (h IN ?) GROUP BY i HAVING (j = k) ORDER BY l LIMIT 7 OFFSET 8")
+	assert.Equal(t, args, []interface{}{1, "wat", 2, 3, []int{4, 5, 6}})
 }
 
 func TestSelectPaginateOrderDirToSql(t *testing.T) {
@@ -93,7 +144,7 @@ func TestSelectWhereMapSql(t *testing.T) {
 	assert.Equal(t, args, []interface{}{1})
 
 	sql, args = s.Select("a").From("b").Where(map[string]interface{}{"a": 1, "b": true}).ToSql()
-	assert.Equal(t, sql, "SELECT a FROM b WHERE ((a = ?) AND (b = ?))")
+	assert.Equal(t, sql, "SELECT a FROM b WHERE (a = ?) AND (b = ?)")
 	assert.Equal(t, args, []interface{}{1, true})
 
 	sql, args = s.Select("a").From("b").Where(map[string]interface{}{"a": nil}).ToSql()
@@ -130,7 +181,7 @@ func TestSelectWhereEqSql(t *testing.T) {
 	s := createFakeSession()
 
 	sql, args := s.Select("a").From("b").Where(Eq{"a": 1, "b": []int64{1, 2, 3}}).ToSql()
-	assert.Equal(t, sql, "SELECT a FROM b WHERE ((a = ?) AND (b IN ?))")
+	assert.Equal(t, sql, "SELECT a FROM b WHERE (a = ?) AND (b IN ?)")
 	assert.Equal(t, args, []interface{}{1, []int64{1, 2, 3}})
 }
 

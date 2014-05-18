@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"reflect"
-	"strings"
 )
 
 type SelectBuilder struct {
@@ -126,37 +125,44 @@ func (b *SelectBuilder) ToSql() (string, []interface{}) {
 		sql.WriteString("DISTINCT ")
 	}
 
-	sql.WriteString(strings.Join(b.Columns, ", "))
+	for i, s := range b.Columns {
+		if i > 0 {
+			sql.WriteString(", ")
+		}
+		sql.WriteString(s)
+	}
 
 	sql.WriteString(" FROM ")
 	sql.WriteString(b.FromTable)
 
 	if len(b.WhereFragments) > 0 {
 		sql.WriteString(" WHERE ")
-		var whereSql string
-		var whereArgs []interface{}
-		whereSql, whereArgs = whereFragmentsToSql(b.WhereFragments)
-		sql.WriteString(whereSql)
-		args = append(args, whereArgs...)
+		writeWhereFragmentsToSql(b.WhereFragments, &sql, &args)
 	}
 
 	if len(b.GroupBys) > 0 {
 		sql.WriteString(" GROUP BY ")
-		sql.WriteString(strings.Join(b.GroupBys, ", "))
+		for i, s := range b.GroupBys {
+			if i > 0 {
+				sql.WriteString(", ")
+			}
+			sql.WriteString(s)
+		}
 	}
 
 	if len(b.HavingFragments) > 0 {
 		sql.WriteString(" HAVING ")
-		var havingSql string
-		var havingArgs []interface{}
-		havingSql, havingArgs = whereFragmentsToSql(b.HavingFragments)
-		sql.WriteString(havingSql)
-		args = append(args, havingArgs...)
+		writeWhereFragmentsToSql(b.HavingFragments, &sql, &args)
 	}
 
 	if len(b.OrderBys) > 0 {
 		sql.WriteString(" ORDER BY ")
-		sql.WriteString(strings.Join(b.OrderBys, ", "))
+		for i, s := range b.OrderBys {
+			if i > 0 {
+				sql.WriteString(", ")
+			}
+			sql.WriteString(s)
+		}
 	}
 
 	if b.LimitValid {
@@ -191,63 +197,74 @@ func newWhereFragment(whereSqlOrMap interface{}, args []interface{}) whereFragme
 }
 
 // Invariant: only aclled when len(fragments) > 0
-func whereFragmentsToSql(fragments []whereFragment) (string, []interface{}) {
-	var conditions []string
-	var args []interface{}
+func writeWhereFragmentsToSql(fragments []whereFragment, sql *bytes.Buffer, args *[]interface{}) {
+	anyConditions := false
 	for _, f := range fragments {
 		if f.Condition != "" {
-			conditions = append(conditions, f.Condition)
+			if anyConditions {
+				sql.WriteString(" AND (")
+			} else {
+				sql.WriteRune('(')
+				anyConditions = true
+			}
+			sql.WriteString(f.Condition)
+			sql.WriteRune(')')
 			if len(f.Values) > 0 {
-				args = append(args, f.Values...)
+				*args = append(*args, f.Values...)
 			}
 		} else if f.EqualityMap != nil {
-			eqSql, eqArgs := equalityMapToSql(f.EqualityMap)
-			if eqSql != "" {
-				conditions = append(conditions, eqSql)
-				args = append(args, eqArgs...)
-			}
+			anyConditions = writeEqualityMapToSql(f.EqualityMap, sql, args, anyConditions)
 		} else {
 			panic("invalid equality map")
 		}
 	}
-	return "(" + strings.Join(conditions, ") AND (") + ")", args
 }
 
-func equalityMapToSql(eq map[string]interface{}) (string, []interface{}) {
-	var conditions []string
-	var args []interface{}
+func writeEqualityMapToSql(eq map[string]interface{}, sql *bytes.Buffer, args *[]interface{}, anyConditions bool) bool {
 	for k, v := range eq {
 		if v == nil {
-			conditions = append(conditions, fmt.Sprintf("%s IS NULL", k))
+			anyConditions = writeWhereCondition(sql, k, " IS NULL", anyConditions)
 		} else {
 			vVal := reflect.ValueOf(v)
 			if vVal.Kind() == reflect.Array || vVal.Kind() == reflect.Slice {
 				vValLen := vVal.Len()
 				if vValLen == 0 {
 					if vVal.IsNil() {
-						conditions = append(conditions, fmt.Sprintf("%s IS NULL", k))
+						anyConditions = writeWhereCondition(sql, k, " IS NULL", anyConditions)
 					} else {
-						conditions = append(conditions, "1=0")
+						if anyConditions {
+							sql.WriteString(" AND (1=0)")
+						} else {
+							sql.WriteString("(1=0)")
+						}
 					}
 				} else if vValLen == 1 {
-					conditions = append(conditions, fmt.Sprintf("%s = ?", k))
-					args = append(args, vVal.Index(0).Interface())
+					anyConditions = writeWhereCondition(sql, k, " = ?", anyConditions)
+					*args = append(*args, vVal.Index(0).Interface())
 				} else {
-					conditions = append(conditions, fmt.Sprintf("%s IN ?", k))
-					args = append(args, v)
+					anyConditions = writeWhereCondition(sql, k, " IN ?", anyConditions)
+					*args = append(*args, v)
 				}
 			} else {
-				conditions = append(conditions, fmt.Sprintf("%s = ?", k))
-				args = append(args, v)
+				anyConditions = writeWhereCondition(sql, k, " = ?", anyConditions)
+				*args = append(*args, v)
 			}
 		}
 	}
 
-	if len(conditions) == 0 {
-		return "", nil
-	} else if len(conditions) == 1 {
-		return conditions[0], args
+	return anyConditions
+}
+
+func writeWhereCondition(sql *bytes.Buffer, k string, pred string, anyConditions bool) bool {
+	if anyConditions {
+		sql.WriteString(" AND (")
 	} else {
-		return "(" + strings.Join(conditions, ") AND (") + ")", args
+		sql.WriteRune('(')
+		anyConditions = true
 	}
+	sql.WriteString(k)
+	sql.WriteString(pred)
+	sql.WriteRune(')')
+
+	return anyConditions
 }
