@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"reflect"
+	"time"
 )
 
 type InsertBuilder struct {
@@ -50,7 +51,7 @@ func (b *InsertBuilder) ToSql() (string, []interface{}) {
 	}
 
 	var sql bytes.Buffer
-	var placeholder bytes.Buffer // Build the placeholder like (?,?,?)
+	var placeholder bytes.Buffer // Build the placeholder like "(?,?,?)"
 	var args []interface{}
 
 	sql.WriteString("INSERT INTO ")
@@ -110,12 +111,16 @@ func (b *InsertBuilder) Exec() (sql.Result, error) {
 
 	fullSql, err := Interpolate(sql, args)
 	if err != nil {
-		panic(err.Error())
+		return nil, b.EventErrKv("dbr.insert.exec.interpolate", err, kvs{"sql": fullSql})
 	}
+
+	// Start the timer:
+	startTime := time.Now()
+	defer func() { b.TimingKv("dbr.insert", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
 
 	result, err := b.cxn.Db.Exec(fullSql)
 	if err != nil {
-		return result, err
+		return result, b.EventErrKv("dbr.insert.exec.exec", err, kvs{"sql": fullSql})
 	}
 
 	// If the structure has an "Id" field which is an int64, set it from the LastInsertId(). Otherwise, don't bother.
@@ -123,13 +128,11 @@ func (b *InsertBuilder) Exec() (sql.Result, error) {
 		rec := b.Recs[0]
 		val := reflect.Indirect(reflect.ValueOf(rec))
 		if val.Kind() == reflect.Struct && val.CanSet() {
-			idField := val.FieldByName("Id")
-			if idField.IsValid() && idField.Kind() == reflect.Int64 {
-				lastId, err := result.LastInsertId()
-				if err == nil {
+			if idField := val.FieldByName("Id"); idField.IsValid() && idField.Kind() == reflect.Int64 {
+				if lastId, err := result.LastInsertId(); err == nil {
 					idField.Set(reflect.ValueOf(lastId))
 				} else {
-					// TODO: log
+					b.EventErrKv("dbr.insert.exec.last_inserted_id", err, kvs{"sql": fullSql})
 				}
 			}
 		}

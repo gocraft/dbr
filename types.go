@@ -6,6 +6,11 @@ import (
 	"github.com/go-sql-driver/mysql"
 )
 
+//
+// Your app can use these Null types intead of the defaults. The sole benefit you get is a MarshalJSON method
+// that is not retarded.
+//
+
 type NullString struct {
 	sql.NullString
 }

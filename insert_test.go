@@ -100,3 +100,5 @@ func validateInsertingBarack(t *testing.T, s *Session, res sql.Result, err error
 	assert.Equal(t, person.Email.Valid, true)
 	assert.Equal(t, person.Email.String, "obama@whitehouse.gov")
 }
+
+// TODO: do a real test inserting multiple records
