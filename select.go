@@ -15,9 +15,9 @@ type SelectBuilder struct {
 	IsDistinct      bool
 	Columns         []string
 	FromTable       string
-	WhereFragments  []whereFragment
+	WhereFragments  []*whereFragment
 	GroupBys        []string
-	HavingFragments []whereFragment
+	HavingFragments []*whereFragment
 	OrderBys        []string
 	LimitCount      uint64
 	LimitValid      bool
@@ -174,6 +174,7 @@ func (b *SelectBuilder) ToSql() (string, []interface{}) {
 		sql.WriteString(" OFFSET ")
 		fmt.Fprint(&sql, b.OffsetCount)
 	}
+
 	return sql.String(), args
 }
 
@@ -181,23 +182,23 @@ func (b *SelectBuilder) ToSql() (string, []interface{}) {
 // Where helpers:
 //
 
-func newWhereFragment(whereSqlOrMap interface{}, args []interface{}) whereFragment {
+func newWhereFragment(whereSqlOrMap interface{}, args []interface{}) *whereFragment {
 	switch pred := whereSqlOrMap.(type) {
 	case string:
-		return whereFragment{Condition: pred, Values: args}
+		return &whereFragment{Condition: pred, Values: args}
 	case map[string]interface{}:
-		return whereFragment{EqualityMap: pred}
+		return &whereFragment{EqualityMap: pred}
 	case Eq:
-		return whereFragment{EqualityMap: map[string]interface{}(pred)}
+		return &whereFragment{EqualityMap: map[string]interface{}(pred)}
 	default:
 		panic("Invalid argument passed to Where. Pass a string or an Eq map.")
 	}
 
-	return whereFragment{}
+	return nil
 }
 
 // Invariant: only aclled when len(fragments) > 0
-func writeWhereFragmentsToSql(fragments []whereFragment, sql *bytes.Buffer, args *[]interface{}) {
+func writeWhereFragmentsToSql(fragments []*whereFragment, sql *bytes.Buffer, args *[]interface{}) {
 	anyConditions := false
 	for _, f := range fragments {
 		if f.Condition != "" {
