@@ -25,6 +25,14 @@ func (sess *Session) InsertInto(into string) *InsertBuilder {
 	}
 }
 
+func (tx *Tx) InsertInto(into string) *InsertBuilder {
+	return &InsertBuilder{
+		Session: tx.Session,
+		runner:  tx.Tx,
+		Into:    into,
+	}
+}
+
 func (b *InsertBuilder) Columns(columns ...string) *InsertBuilder {
 	b.Cols = columns
 	return b

@@ -59,8 +59,8 @@ func (tx *Tx) Select(cols ...string) *SelectBuilder {
 
 func (tx *Tx) SelectBySql(sql string, args ...interface{}) *SelectBuilder {
 	return &SelectBuilder{
-		Session: tx.Session,
-		runner:  tx.Tx,
+		Session:      tx.Session,
+		runner:       tx.Tx,
 		RawFullSql:   sql,
 		RawArguments: args,
 	}

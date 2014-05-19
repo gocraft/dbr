@@ -21,6 +21,18 @@ func (sess *Session) Begin() (*Tx, error) {
 	}, nil
 }
 
-func (tx *Tx) Commit() {
+func (tx *Tx) Commit() error {
+	err := tx.Tx.Commit()
+	if err != nil {
+		return tx.EventErr("dbr.commit", err)
+	}
+	return nil
+}
 
+func (tx *Tx) Rollback() error {
+	err := tx.Tx.Rollback()
+	if err != nil {
+		return tx.EventErr("dbr.rollback", err)
+	}
+	return nil
 }
