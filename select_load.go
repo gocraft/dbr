@@ -69,6 +69,7 @@ func (b *SelectBuilder) LoadAll(dest interface{}) (int, error) {
 	if err != nil {
 		return 0, b.EventErrKv("dbr.select.load_all.query", err, kvs{"sql": fullSql})
 	}
+	defer rows.Close()
 
 	// Iterate over rows
 	if kindOfDest == reflect.Slice {
@@ -136,10 +137,11 @@ func (b *SelectBuilder) LoadOne(dest interface{}) error {
 	defer func() { b.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
 
 	// Run the query:
-	rows, err := b.cxn.Db.Query(fullSql)
+	rows, err := b.runner.Query(fullSql)
 	if err != nil {
 		return b.EventErrKv("dbr.select.load_one.query", err, kvs{"sql": fullSql})
 	}
+	defer rows.Close()
 
 	if rows.Next() {
 		// Build a 'holder', which is an []interface{}. Each value will be the address of the field corresponding to our newly made record:
@@ -180,10 +182,11 @@ func (b *SelectBuilder) LoadValue(dest interface{}) error {
 	defer func() { b.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
 
 	// Run the query:
-	rows, err := b.cxn.Db.Query(fullSql)
+	rows, err := b.runner.Query(fullSql)
 	if err != nil {
 		return b.EventErrKv("dbr.select.load_value.query", err, kvs{"sql": fullSql})
 	}
+	defer rows.Close()
 
 	if rows.Next() {
 		err = rows.Scan(dest)

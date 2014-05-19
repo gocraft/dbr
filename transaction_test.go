@@ -23,9 +23,6 @@ func TestTransactionReal(t *testing.T) {
 	assert.True(t, id > 0)
 	assert.Equal(t, rowsAff, 1)
 
-	err = tx.Commit()
-	assert.NoError(t, err)
-
 	var person dbrPerson
 	err = tx.Select("*").From("dbr_people").Where("id = ?", id).LoadOne(&person)
 	assert.NoError(t, err)
@@ -34,6 +31,9 @@ func TestTransactionReal(t *testing.T) {
 	assert.Equal(t, person.Name, "Barack")
 	assert.Equal(t, person.Email.Valid, true)
 	assert.Equal(t, person.Email.String, "obama@whitehouse.gov")
+	
+	err = tx.Commit()
+	assert.NoError(t, err)
 }
 
 func TestTransactionRollbackReal(t *testing.T) {
