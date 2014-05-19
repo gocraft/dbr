@@ -8,6 +8,7 @@ import (
 
 type SelectBuilder struct {
 	*Session
+	runner
 
 	RawFullSql   string
 	RawArguments []interface{}
@@ -34,6 +35,7 @@ type whereFragment struct {
 func (sess *Session) Select(cols ...string) *SelectBuilder {
 	return &SelectBuilder{
 		Session: sess,
+		runner:  sess.cxn.Db,
 		Columns: cols,
 	}
 }
@@ -41,6 +43,24 @@ func (sess *Session) Select(cols ...string) *SelectBuilder {
 func (sess *Session) SelectBySql(sql string, args ...interface{}) *SelectBuilder {
 	return &SelectBuilder{
 		Session:      sess,
+		runner:       sess.cxn.Db,
+		RawFullSql:   sql,
+		RawArguments: args,
+	}
+}
+
+func (tx *Tx) Select(cols ...string) *SelectBuilder {
+	return &SelectBuilder{
+		Session: tx.Session,
+		runner:  tx.Tx,
+		Columns: cols,
+	}
+}
+
+func (tx *Tx) SelectBySql(sql string, args ...interface{}) *SelectBuilder {
+	return &SelectBuilder{
+		Session: tx.Session,
+		runner:  tx.Tx,
 		RawFullSql:   sql,
 		RawArguments: args,
 	}

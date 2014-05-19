@@ -65,7 +65,7 @@ func (b *SelectBuilder) LoadAll(dest interface{}) (int, error) {
 	defer func() { b.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
 
 	// Run the query:
-	rows, err := b.cxn.Db.Query(fullSql)
+	rows, err := b.runner.Query(fullSql)
 	if err != nil {
 		return 0, b.EventErrKv("dbr.select.load_all.query", err, kvs{"sql": fullSql})
 	}

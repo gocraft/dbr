@@ -16,6 +16,11 @@ type Session struct {
 	EventReceiver
 }
 
+type runner interface {
+	Exec(query string, args ...interface{}) (sql.Result, error)
+	Query(query string, args ...interface{}) (*sql.Rows, error)
+}
+
 func NewConnection(db *sql.DB, log EventReceiver) *Connection {
 	if log == nil {
 		log = nullReceiver

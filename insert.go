@@ -9,6 +9,7 @@ import (
 
 type InsertBuilder struct {
 	*Session
+	runner
 
 	Into string
 	Cols []string
@@ -19,6 +20,7 @@ type InsertBuilder struct {
 func (sess *Session) InsertInto(into string) *InsertBuilder {
 	return &InsertBuilder{
 		Session: sess,
+		runner:  sess.cxn.Db,
 		Into:    into,
 	}
 }
@@ -118,7 +120,7 @@ func (b *InsertBuilder) Exec() (sql.Result, error) {
 	startTime := time.Now()
 	defer func() { b.TimingKv("dbr.insert", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
 
-	result, err := b.cxn.Db.Exec(fullSql)
+	result, err := b.runner.Exec(fullSql)
 	if err != nil {
 		return result, b.EventErrKv("dbr.insert.exec.exec", err, kvs{"sql": fullSql})
 	}
