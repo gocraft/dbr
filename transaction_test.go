@@ -31,7 +31,7 @@ func TestTransactionReal(t *testing.T) {
 	assert.Equal(t, person.Name, "Barack")
 	assert.Equal(t, person.Email.Valid, true)
 	assert.Equal(t, person.Email.String, "obama@whitehouse.gov")
-	
+
 	err = tx.Commit()
 	assert.NoError(t, err)
 }
