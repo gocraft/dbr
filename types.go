@@ -7,8 +7,7 @@ import (
 )
 
 //
-// Your app can use these Null types intead of the defaults. The sole benefit you get is a MarshalJSON method
-// that is not retarded.
+// Your app can use these Null types instead of the defaults. The sole benefit you get is a MarshalJSON method that is not retarded.
 //
 
 type NullString struct {
