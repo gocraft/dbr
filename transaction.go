@@ -36,3 +36,15 @@ func (tx *Tx) Rollback() error {
 	}
 	return nil
 }
+
+// Rollsback the transaction unless it has already been committed or rolled back.
+// Useful to defer tx.RollbackUnlessCommitted() -- so you don't have to handle N failure cases
+// Keep in mind the only way to detect an error on the rollback is via the event log.
+func (tx *Tx) RollbackUnlessCommitted() {
+	err := tx.Tx.Rollback()
+	if err == sql.ErrTxDone {
+		// ok
+	} else if err != nil {
+		tx.EventErr("dbr.rollback_unless_committed", err)
+	}
+}
