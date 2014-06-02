@@ -72,7 +72,7 @@ func isFloat(k reflect.Kind) bool {
 //   - booleans
 //   - dates (TODO)
 func Interpolate(sql string, vals []interface{}) (string, error) {
-	if sql == ""  && len(vals) == 0 {
+	if sql == "" && len(vals) == 0 {
 		return "", nil
 	}
 
@@ -173,7 +173,7 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 			return "", ErrArgumentMismatch
 		}
 	}
-	
+
 	if curVal != maxVals {
 		return "", ErrArgumentMismatch
 	}
