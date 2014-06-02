@@ -114,7 +114,7 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 				var str string = valueOfV.String()
 
 				if !utf8.ValidString(str) {
-					return "", ErrNotUtf8
+					return "", ErrNotUTF8
 				}
 
 				buf.WriteString(escapeAndQuoteString(str))
@@ -154,7 +154,7 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 					for i := 0; i < sliceLen; i += 1 {
 						var str string = valueOfV.Index(i).String()
 						if !utf8.ValidString(str) {
-							return "", ErrNotUtf8
+							return "", ErrNotUTF8
 						}
 						stringSlice = append(stringSlice, escapeAndQuoteString(str))
 					}

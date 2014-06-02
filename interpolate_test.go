@@ -92,9 +92,12 @@ func TestInterpolateErrors(t *testing.T) {
 	_, err = Interpolate("SELECT * FROM x WHERE", []interface{}{1})
 	assert.Equal(t, err, ErrArgumentMismatch)
 	
-	// TODO: utf8
+	_, err = Interpolate("SELECT * FROM x WHERE a = ?", []interface{}{string([]byte{0x34, 0xFF, 0xFE})})
+	assert.Equal(t, err, ErrNotUTF8)
 	
-	// TODO: invalid type
+	_, err = Interpolate("SELECT * FROM x WHERE a = ?", []interface{}{struct{}{}})
+	assert.Equal(t, err, ErrInvalidValue)
 	
-	// TODO: invalid slice type
+	_, err = Interpolate("SELECT * FROM x WHERE a = ?", []interface{}{ []struct{}{struct{}{}, struct{}{}} })
+	assert.Equal(t, err, ErrInvalidSliceValue)
 }
