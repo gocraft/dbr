@@ -4,7 +4,6 @@ import (
 	// "fmt"
 	"bytes"
 	"database/sql/driver"
-	"errors"
 	"reflect"
 	"strconv"
 	"strings"
@@ -22,7 +21,7 @@ func escapeAndQuoteString(val string) string {
 		if char == '\'' { // single quote: ' -> \'
 			buf.WriteString("\\'")
 		} else if char == '"' { // double quote: " -> \"
-			buf.WriteString("\"")
+			buf.WriteString("\\\"")
 		} else if char == '\\' { // slash: \ -> "\\"
 			buf.WriteString("\\\\")
 		} else if char == '\n' { // control: newline: \n -> "\n"
@@ -31,7 +30,7 @@ func escapeAndQuoteString(val string) string {
 			buf.WriteString("\\r")
 		} else if char == 0 { // control: NUL: 0 -> "\x00"
 			buf.WriteString("\\x00")
-		} else if char == 0x1a { // control: \x1a: 0 -> "\x1a"
+		} else if char == 0x1a { // control: \x1a -> "\x1a"
 			buf.WriteString("\\x1a")
 		} else {
 			buf.WriteRune(char)
@@ -73,7 +72,7 @@ func isFloat(k reflect.Kind) bool {
 //   - booleans
 //   - dates (TODO)
 func Interpolate(sql string, vals []interface{}) (string, error) {
-	if sql == "" {
+	if sql == ""  && len(vals) == 0 {
 		return "", nil
 	}
 
@@ -115,7 +114,7 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 				var str string = valueOfV.String()
 
 				if !utf8.ValidString(str) {
-					return "", errors.New("Invalid UTF-8")
+					return "", ErrNotUtf8
 				}
 
 				buf.WriteString(escapeAndQuoteString(str))
@@ -140,7 +139,7 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 				stringSlice := make([]string, 0, sliceLen)
 
 				if sliceLen == 0 {
-					return "", errors.New("Length of slice is 0. cannot do an IN query.")
+					return "", ErrInvalidSliceLength
 				} else if isInt(kindOfSubtype) {
 					for i := 0; i < sliceLen; i += 1 {
 						var ival int64 = valueOfV.Index(i).Int()
@@ -155,24 +154,28 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 					for i := 0; i < sliceLen; i += 1 {
 						var str string = valueOfV.Index(i).String()
 						if !utf8.ValidString(str) {
-							return "", errors.New("Invalid UTF-8")
+							return "", ErrNotUtf8
 						}
 						stringSlice = append(stringSlice, escapeAndQuoteString(str))
 					}
 				} else {
-					return "", errors.New("Can only do slices of ints or uints or strings")
+					return "", ErrInvalidSliceValue
 				}
 				buf.WriteRune('(')
 				buf.WriteString(strings.Join(stringSlice, ","))
 				buf.WriteRune(')')
 			} else {
-				return "", errors.New("Trying to interpolate invalid value into query")
+				return "", ErrInvalidValue
 			}
 
 			curVal += 1
 		} else {
-			return "", errors.New("No value for ?")
+			return "", ErrArgumentMismatch
 		}
+	}
+	
+	if curVal != maxVals {
+		return "", ErrArgumentMismatch
 	}
 
 	return buf.String(), nil
