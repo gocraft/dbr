@@ -16,6 +16,15 @@ type Session struct {
 	EventReceiver
 }
 
+type SessionRunner interface {
+	Select(cols ...string) *SelectBuilder
+	SelectBySql(sql string, args ...interface{}) *SelectBuilder
+	
+	InsertInto(into string) *InsertBuilder
+	Update(table string) *UpdateBuilder
+	DeleteFrom(from string) *DeleteBuilder
+}
+
 type runner interface {
 	Exec(query string, args ...interface{}) (sql.Result, error)
 	Query(query string, args ...interface{}) (*sql.Rows, error)
