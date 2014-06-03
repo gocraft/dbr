@@ -75,7 +75,7 @@ func (b *InsertBuilder) ToSql() (string, []interface{}) {
 			sql.WriteRune(',')
 			placeholder.WriteRune(',')
 		}
-		sql.WriteString(c)
+		sql.WriteString(Quoter.QuoteColumn(c))
 		placeholder.WriteRune('?')
 	}
 	sql.WriteString(") VALUES ")

@@ -55,7 +55,9 @@ func writeEqualityMapToSql(eq map[string]interface{}, sql *bytes.Buffer, args *[
 		if v == nil {
 			anyConditions = writeWhereCondition(sql, k, " IS NULL", anyConditions)
 		} else {
+			k = Quoter.QuoteColumn(k)
 			vVal := reflect.ValueOf(v)
+
 			if vVal.Kind() == reflect.Array || vVal.Kind() == reflect.Slice {
 				vValLen := vVal.Len()
 				if vValLen == 0 {

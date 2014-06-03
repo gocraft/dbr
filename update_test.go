@@ -30,7 +30,7 @@ func TestUpdateAllToSql(t *testing.T) {
 
 	sql, args := s.Update("a").Set("b", 1).Set("c", 2).ToSql()
 
-	assert.Equal(t, sql, "UPDATE a SET b = ?, c = ?")
+	assert.Equal(t, sql, "UPDATE a SET `b` = ?, `c` = ?")
 	assert.Equal(t, args, []interface{}{1, 2})
 }
 
@@ -39,7 +39,7 @@ func TestUpdateSingleToSql(t *testing.T) {
 
 	sql, args := s.Update("a").Set("b", 1).Set("c", 2).Where("id = ?", 1).ToSql()
 
-	assert.Equal(t, sql, "UPDATE a SET b = ?, c = ? WHERE (id = ?)")
+	assert.Equal(t, sql, "UPDATE a SET `b` = ?, `c` = ? WHERE (id = ?)")
 	assert.Equal(t, args, []interface{}{1, 2, 1})
 }
 
@@ -48,7 +48,7 @@ func TestUpdateSetMapToSql(t *testing.T) {
 
 	sql, args := s.Update("a").SetMap(map[string]interface{}{"b": 1, "c": 2}).Where("id = ?", 1).ToSql()
 
-	assert.Equal(t, sql, "UPDATE a SET b = ?, c = ? WHERE (id = ?)")
+	assert.Equal(t, sql, "UPDATE a SET `b` = ?, `c` = ? WHERE (id = ?)")
 	assert.Equal(t, args, []interface{}{1, 2, 1})
 }
 
@@ -57,8 +57,32 @@ func TestUpdateTenStaringFromTwentyToSql(t *testing.T) {
 
 	sql, args := s.Update("a").Set("b", 1).Limit(10).Offset(20).ToSql()
 
-	assert.Equal(t, sql, "UPDATE a SET b = ? LIMIT 10 OFFSET 20")
+	assert.Equal(t, sql, "UPDATE a SET `b` = ? LIMIT 10 OFFSET 20")
 	assert.Equal(t, args, []interface{}{1})
+}
+
+func TestUpdateKeywordColumnName(t *testing.T) {
+	s := createRealSessionWithFixtures()
+
+	// Insert a user with a key
+	res, err := s.InsertInto("dbr_people").Columns("name", "email", "key").Values("Benjamin", "ben@whitehouse.gov", "6").Exec()
+	assert.NoError(t, err)
+
+	// Update the key
+	res, err = s.Update("dbr_people").Set("key", "6-revoked").Where(Eq{"key": "6"}).Exec()
+	assert.NoError(t, err)
+
+	// Assert our record was updated (and only our record)
+	rowsAff, err := res.RowsAffected()
+	assert.NoError(t, err)
+	assert.Equal(t, rowsAff, 1)
+
+	var person dbrPerson
+	err = s.Select("*").From("dbr_people").Where(Eq{"email": "ben@whitehouse.gov"}).LoadOne(&person)
+	assert.NoError(t, err)
+
+	assert.Equal(t, person.Name, "Benjamin")
+	assert.Equal(t, person.Key.String, "6-revoked")
 }
 
 func TestUpdateReal(t *testing.T) {

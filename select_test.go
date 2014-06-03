@@ -81,7 +81,7 @@ func TestSelectFullToSql(t *testing.T) {
 		Offset(8).
 		ToSql()
 
-	assert.Equal(t, sql, "SELECT DISTINCT a, b FROM c WHERE (d = ? OR e = ?) AND (f = ?) AND (g = ?) AND (h IN ?) GROUP BY i HAVING (j = k) ORDER BY l LIMIT 7 OFFSET 8")
+	assert.Equal(t, sql, "SELECT DISTINCT a, b FROM c WHERE (d = ? OR e = ?) AND (`f` = ?) AND (`g` = ?) AND (`h` IN ?) GROUP BY i HAVING (j = k) ORDER BY l LIMIT 7 OFFSET 8")
 	assert.Equal(t, args, []interface{}{1, "wat", 2, 3, []int{4, 5, 6}})
 }
 
@@ -140,11 +140,11 @@ func TestSelectWhereMapSql(t *testing.T) {
 	s := createFakeSession()
 
 	sql, args := s.Select("a").From("b").Where(map[string]interface{}{"a": 1}).ToSql()
-	assert.Equal(t, sql, "SELECT a FROM b WHERE (a = ?)")
+	assert.Equal(t, sql, "SELECT a FROM b WHERE (`a` = ?)")
 	assert.Equal(t, args, []interface{}{1})
 
 	sql, args = s.Select("a").From("b").Where(map[string]interface{}{"a": 1, "b": true}).ToSql()
-	assert.Equal(t, sql, "SELECT a FROM b WHERE (a = ?) AND (b = ?)")
+	assert.Equal(t, sql, "SELECT a FROM b WHERE (`a` = ?) AND (`b` = ?)")
 	assert.Equal(t, args, []interface{}{1, true})
 
 	sql, args = s.Select("a").From("b").Where(map[string]interface{}{"a": nil}).ToSql()
@@ -152,11 +152,11 @@ func TestSelectWhereMapSql(t *testing.T) {
 	assert.Equal(t, args, []interface{}(nil))
 
 	sql, args = s.Select("a").From("b").Where(map[string]interface{}{"a": []int{1, 2, 3}}).ToSql()
-	assert.Equal(t, sql, "SELECT a FROM b WHERE (a IN ?)")
+	assert.Equal(t, sql, "SELECT a FROM b WHERE (`a` IN ?)")
 	assert.Equal(t, args, []interface{}{[]int{1, 2, 3}})
 
 	sql, args = s.Select("a").From("b").Where(map[string]interface{}{"a": []int{1}}).ToSql()
-	assert.Equal(t, sql, "SELECT a FROM b WHERE (a = ?)")
+	assert.Equal(t, sql, "SELECT a FROM b WHERE (`a` = ?)")
 	assert.Equal(t, args, []interface{}{1})
 
 	// NOTE: a has no valid values, we want a query that returns nothing
@@ -166,14 +166,14 @@ func TestSelectWhereMapSql(t *testing.T) {
 
 	var aval []int
 	sql, args = s.Select("a").From("b").Where(map[string]interface{}{"a": aval}).ToSql()
-	assert.Equal(t, sql, "SELECT a FROM b WHERE (a IS NULL)")
+	assert.Equal(t, sql, "SELECT a FROM b WHERE (`a` IS NULL)")
 	assert.Equal(t, args, []interface{}(nil))
 
 	sql, args = s.Select("a").From("b").
 		Where(map[string]interface{}{"a": []int(nil)}).
 		Where(map[string]interface{}{"b": false}).
 		ToSql()
-	assert.Equal(t, sql, "SELECT a FROM b WHERE (a IS NULL) AND (b = ?)")
+	assert.Equal(t, sql, "SELECT a FROM b WHERE (`a` IS NULL) AND (`b` = ?)")
 	assert.Equal(t, args, []interface{}{false})
 }
 
@@ -181,7 +181,7 @@ func TestSelectWhereEqSql(t *testing.T) {
 	s := createFakeSession()
 
 	sql, args := s.Select("a").From("b").Where(Eq{"a": 1, "b": []int64{1, 2, 3}}).ToSql()
-	assert.Equal(t, sql, "SELECT a FROM b WHERE (a = ?) AND (b IN ?)")
+	assert.Equal(t, sql, "SELECT a FROM b WHERE (`a` = ?) AND (`b` IN ?)")
 	assert.Equal(t, args, []interface{}{1, []int64{1, 2, 3}})
 }
 

@@ -2,6 +2,7 @@ package dbr
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 )
@@ -50,16 +51,18 @@ type dbrPerson struct {
 	Id    int64
 	Name  string
 	Email NullString
+	Key   NullString
 }
 
 func installFixtures(db *sql.DB) {
-	createTablePeople := `
+	createTablePeople := fmt.Sprintf(`
 		CREATE TABLE dbr_people (
 			id int(11) DEFAULT NULL auto_increment PRIMARY KEY,
 			name varchar(255) NOT NULL,
-			email varchar(255)
+			email varchar(255),
+			%s varchar(255)
 		)
-	`
+	`, "`key`")
 
 	sqlToRun := []string{
 		"DROP TABLE IF EXISTS dbr_people",
