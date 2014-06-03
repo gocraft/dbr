@@ -49,6 +49,20 @@ func (b *InsertBuilder) Record(record interface{}) *InsertBuilder {
 	return b
 }
 
+func (b *InsertBuilder) Pair(column string, value interface{}) *InsertBuilder {
+	b.Cols = append(b.Cols, column)
+	lenVals := len(b.Vals)
+	if lenVals == 0 {
+		args := []interface{}{value}
+		b.Vals = [][]interface{}{args}
+	} else if lenVals == 1 {
+		b.Vals[0] = append(b.Vals[0], value)
+	} else {
+		panic("pair only allows you to specify 1 record to insret")
+	}
+	return b
+}
+
 func (b *InsertBuilder) ToSql() (string, []interface{}) {
 	if len(b.Into) == 0 {
 		panic("no table specified")
