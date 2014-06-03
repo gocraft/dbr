@@ -12,7 +12,9 @@ type Tx struct {
 func (sess *Session) Begin() (*Tx, error) {
 	tx, err := sess.cxn.Db.Begin()
 	if err != nil {
-		return nil, sess.EventErr("dbr.begin", err)
+		return nil, sess.EventErr("dbr.begin.error", err)
+	} else {
+		sess.Event("dbr.begin")
 	}
 
 	return &Tx{
@@ -24,7 +26,9 @@ func (sess *Session) Begin() (*Tx, error) {
 func (tx *Tx) Commit() error {
 	err := tx.Tx.Commit()
 	if err != nil {
-		return tx.EventErr("dbr.commit", err)
+		return tx.EventErr("dbr.commit.error", err)
+	} else {
+		tx.Event("dbr.commit")
 	}
 	return nil
 }
@@ -33,6 +37,8 @@ func (tx *Tx) Rollback() error {
 	err := tx.Tx.Rollback()
 	if err != nil {
 		return tx.EventErr("dbr.rollback", err)
+	} else {
+		tx.Event("dbr.rollback")
 	}
 	return nil
 }
@@ -46,5 +52,7 @@ func (tx *Tx) RollbackUnlessCommitted() {
 		// ok
 	} else if err != nil {
 		tx.EventErr("dbr.rollback_unless_committed", err)
+	} else {
+		tx.Event("dbr.rollback")
 	}
 }
