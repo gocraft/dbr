@@ -93,7 +93,6 @@ func writeWhereCondition(sql *bytes.Buffer, k string, pred string, anyConditions
 		sql.WriteRune('(')
 		anyConditions = true
 	}
-	sql.WriteString(k)
 	Quoter.writeQuotedColumn(k, sql)
 	sql.WriteString(pred)
 	sql.WriteRune(')')

@@ -148,7 +148,7 @@ func TestSelectWhereMapSql(t *testing.T) {
 	assert.Equal(t, args, []interface{}{1, true})
 
 	sql, args = s.Select("a").From("b").Where(map[string]interface{}{"a": nil}).ToSql()
-	assert.Equal(t, sql, "SELECT a FROM b WHERE (a IS NULL)")
+	assert.Equal(t, sql, "SELECT a FROM b WHERE (`a` IS NULL)")
 	assert.Equal(t, args, []interface{}(nil))
 
 	sql, args = s.Select("a").From("b").Where(map[string]interface{}{"a": []int{1, 2, 3}}).ToSql()
