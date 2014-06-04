@@ -1,7 +1,7 @@
 package dbr
 
 import (
-	"fmt"
+	"bytes"
 )
 
 // Use Mysql quoting by default
@@ -9,12 +9,14 @@ var Quoter = MysqlQuoter{}
 
 // Interface for driver-swappable quoting
 type quoter interface {
-	QuoteColumn()
+	writeQuotedColumn()
 }
 
 // Mysql-specific quoting
 type MysqlQuoter struct{}
 
-func (q MysqlQuoter) QuoteColumn(column string) string {
-	return fmt.Sprintf("`%s`", column)
+func (q MysqlQuoter) writeQuotedColumn(column string, sql *bytes.Buffer) {
+	sql.WriteRune('`')
+	sql.WriteString(column)
+	sql.WriteRune('`')
 }

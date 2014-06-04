@@ -105,7 +105,7 @@ func (b *UpdateBuilder) ToSql() (string, []interface{}) {
 		if i > 0 {
 			sql.WriteString(", ")
 		}
-		sql.WriteString(Quoter.QuoteColumn(c.column))
+		Quoter.writeQuotedColumn(c.column, &sql)
 		sql.WriteString(" = ?")
 
 		args = append(args, c.value)
