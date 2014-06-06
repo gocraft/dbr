@@ -16,6 +16,7 @@ type Session struct {
 	EventReceiver
 }
 
+// A SessionRunner can do anything that a Session can except start a transaction.
 type SessionRunner interface {
 	Select(cols ...string) *SelectBuilder
 	SelectBySql(sql string, args ...interface{}) *SelectBuilder
