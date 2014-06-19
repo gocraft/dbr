@@ -52,6 +52,20 @@ func TestUpdateSetMapToSql(t *testing.T) {
 	assert.Equal(t, args, []interface{}{1, 2, 1})
 }
 
+func TestUpdateSetExprToSql(t *testing.T) {
+	s := createFakeSession()
+
+	sql, args := s.Update("a").Set("foo", 1).Set("bar", Expr("COALESCE(bar, 0) + 1")).Where("id = ?", 9).ToSql()
+
+	assert.Equal(t, sql, "UPDATE a SET `foo` = ?, `bar` = COALESCE(bar, 0) + 1 WHERE (id = ?)")
+	assert.Equal(t, args, []interface{}{1, 9})
+
+	sql, args = s.Update("a").Set("foo", 1).Set("bar", Expr("COALESCE(bar, 0) + ?", 2)).Where("id = ?", 9).ToSql()
+
+	assert.Equal(t, sql, "UPDATE a SET `foo` = ?, `bar` = COALESCE(bar, 0) + ? WHERE (id = ?)")
+	assert.Equal(t, args, []interface{}{1, 2, 9})
+}
+
 func TestUpdateTenStaringFromTwentyToSql(t *testing.T) {
 	s := createFakeSession()
 

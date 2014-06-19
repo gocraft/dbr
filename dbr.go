@@ -20,7 +20,7 @@ type Session struct {
 type SessionRunner interface {
 	Select(cols ...string) *SelectBuilder
 	SelectBySql(sql string, args ...interface{}) *SelectBuilder
-	
+
 	InsertInto(into string) *InsertBuilder
 	Update(table string) *UpdateBuilder
 	DeleteFrom(from string) *DeleteBuilder

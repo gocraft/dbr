@@ -106,9 +106,14 @@ func (b *UpdateBuilder) ToSql() (string, []interface{}) {
 			sql.WriteString(", ")
 		}
 		Quoter.writeQuotedColumn(c.column, &sql)
-		sql.WriteString(" = ?")
-
-		args = append(args, c.value)
+		if e, ok := c.value.(*expr); ok {
+			sql.WriteString(" = ")
+			sql.WriteString(e.Sql)
+			args = append(args, e.Values...)
+		} else {
+			sql.WriteString(" = ?")
+			args = append(args, c.value)
+		}
 	}
 
 	// Write WHERE clause if we have any fragments
