@@ -23,6 +23,7 @@ type SessionRunner interface {
 
 	InsertInto(into string) *InsertBuilder
 	Update(table string) *UpdateBuilder
+	UpdateBySql(sql string, args ...interface{}) *UpdateBuilder
 	DeleteFrom(from string) *DeleteBuilder
 }
 
