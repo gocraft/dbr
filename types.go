@@ -22,6 +22,10 @@ type NullTime struct {
 	mysql.NullTime
 }
 
+type NullBool struct {
+	sql.NullBool
+}
+
 var nullString = []byte("null")
 
 func (n *NullString) MarshalJSON() ([]byte, error) {
@@ -43,6 +47,14 @@ func (n *NullInt64) MarshalJSON() ([]byte, error) {
 func (n *NullTime) MarshalJSON() ([]byte, error) {
 	if n.Valid {
 		j, e := json.Marshal(n.Time)
+		return j, e
+	}
+	return nullString, nil
+}
+
+func (n *NullBool) MarshalJSON() ([]byte, error) {
+	if n.Valid {
+		j, e := json.Marshal(n.Bool)
 		return j, e
 	}
 	return nullString, nil
