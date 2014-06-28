@@ -39,8 +39,8 @@ func (sess *Session) Update(table string) *UpdateBuilder {
 
 func (sess *Session) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder {
 	return &UpdateBuilder{
-		Session: sess,
-		runner:  sess.cxn.Db,
+		Session:      sess,
+		runner:       sess.cxn.Db,
 		RawFullSql:   sql,
 		RawArguments: args,
 	}
@@ -56,8 +56,8 @@ func (tx *Tx) Update(table string) *UpdateBuilder {
 
 func (tx *Tx) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder {
 	return &UpdateBuilder{
-		Session: tx.Session,
-		runner:  tx.Tx,
+		Session:      tx.Session,
+		runner:       tx.Tx,
 		RawFullSql:   sql,
 		RawArguments: args,
 	}
@@ -110,7 +110,7 @@ func (b *UpdateBuilder) ToSql() (string, []interface{}) {
 	if b.RawFullSql != "" {
 		return b.RawFullSql, b.RawArguments
 	}
-	
+
 	if len(b.Table) == 0 {
 		panic("no table specified")
 	}

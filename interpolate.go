@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -70,7 +71,9 @@ func isFloat(k reflect.Kind) bool {
 //   - floats
 //   - strings (that are valid utf-8)
 //   - booleans
-//   - dates (TODO)
+//   - times
+var typeOfTime = reflect.TypeOf(time.Time{})
+
 func Interpolate(sql string, vals []interface{}) (string, error) {
 	if sql == "" && len(vals) == 0 {
 		return "", nil
@@ -129,6 +132,13 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 					buf.WriteRune('1')
 				} else {
 					buf.WriteRune('0')
+				}
+			} else if kindOfV == reflect.Struct {
+				if typeOfV := valueOfV.Type(); typeOfV == typeOfTime {
+					t := valueOfV.Interface().(time.Time)
+					buf.WriteString(escapeAndQuoteString(t.UTC().Format(timeFormat)))
+				} else {
+					return "", ErrInvalidValue
 				}
 			} else if kindOfV == reflect.Slice {
 				typeOfV := reflect.TypeOf(v)

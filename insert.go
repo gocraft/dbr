@@ -3,6 +3,7 @@ package dbr
 import (
 	"bytes"
 	"database/sql"
+	"fmt"
 	"reflect"
 	"time"
 )
@@ -135,7 +136,7 @@ func (b *InsertBuilder) Exec() (sql.Result, error) {
 
 	fullSql, err := Interpolate(sql, args)
 	if err != nil {
-		return nil, b.EventErrKv("dbr.insert.exec.interpolate", err, kvs{"sql": fullSql})
+		return nil, b.EventErrKv("dbr.insert.exec.interpolate", err, kvs{"sql": sql, "args": fmt.Sprint(args)})
 	}
 
 	// Start the timer:
