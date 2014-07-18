@@ -144,8 +144,12 @@ func TestSelectWhereMapSql(t *testing.T) {
 	assert.Equal(t, args, []interface{}{1})
 
 	sql, args = s.Select("a").From("b").Where(map[string]interface{}{"a": 1, "b": true}).ToSql()
-	assert.Equal(t, sql, "SELECT a FROM b WHERE (`a` = ?) AND (`b` = ?)")
-	assert.Equal(t, args, []interface{}{1, true})
+	if sql == "SELECT a FROM b WHERE (`a` = ?) AND (`b` = ?)" {
+		assert.Equal(t, args, []interface{}{1, true})
+	} else {
+		assert.Equal(t, sql, "SELECT a FROM b WHERE (`b` = ?) AND (`a` = ?)")
+		assert.Equal(t, args, []interface{}{true, 1})
+	}
 
 	sql, args = s.Select("a").From("b").Where(map[string]interface{}{"a": nil}).ToSql()
 	assert.Equal(t, sql, "SELECT a FROM b WHERE (`a` IS NULL)")
@@ -181,8 +185,12 @@ func TestSelectWhereEqSql(t *testing.T) {
 	s := createFakeSession()
 
 	sql, args := s.Select("a").From("b").Where(Eq{"a": 1, "b": []int64{1, 2, 3}}).ToSql()
-	assert.Equal(t, sql, "SELECT a FROM b WHERE (`a` = ?) AND (`b` IN ?)")
-	assert.Equal(t, args, []interface{}{1, []int64{1, 2, 3}})
+	if sql == "SELECT a FROM b WHERE (`a` = ?) AND (`b` IN ?)" {
+		assert.Equal(t, args, []interface{}{1, []int64{1, 2, 3}})
+	} else {
+		assert.Equal(t, sql, "SELECT a FROM b WHERE (`b` IN ?) AND (`a` = ?)")
+		assert.Equal(t, args, []interface{}{[]int64{1, 2, 3}, 1})
+	}
 }
 
 func TestSelectBySql(t *testing.T) {

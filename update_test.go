@@ -48,8 +48,12 @@ func TestUpdateSetMapToSql(t *testing.T) {
 
 	sql, args := s.Update("a").SetMap(map[string]interface{}{"b": 1, "c": 2}).Where("id = ?", 1).ToSql()
 
-	assert.Equal(t, sql, "UPDATE a SET `b` = ?, `c` = ? WHERE (id = ?)")
-	assert.Equal(t, args, []interface{}{1, 2, 1})
+	if sql == "UPDATE a SET `b` = ?, `c` = ? WHERE (id = ?)" {
+		assert.Equal(t, args, []interface{}{1, 2, 1})
+	} else {
+		assert.Equal(t, sql, "UPDATE a SET `c` = ?, `b` = ? WHERE (id = ?)")
+		assert.Equal(t, args, []interface{}{2, 1, 1})
+	}
 }
 
 func TestUpdateSetExprToSql(t *testing.T) {
