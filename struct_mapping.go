@@ -1,7 +1,6 @@
 package dbr
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"reflect"
@@ -70,30 +69,15 @@ func (sess *Session) calculateFieldMap(recordType reflect.Type, columns []string
 	return fieldMap, nil
 }
 
-func (sess *Session) holderFor(recordType reflect.Type, record reflect.Value, rows *sql.Rows) ([]interface{}, error) {
-
-	// Parts of this could be cached by: {recordType, rows.Columns()}. Or, {recordType, sqlTempalte}
-	// (i think. if sqlTemplate has mixed in values it might not be as efficient as it could be. It's almost like we want to parse the SQL query a bit to get Select and From and Join. Everything before Where.).
-
+func (sess *Session) holderFor(record reflect.Value, fieldMap[][]int) ([]interface{}, error) {
 	// Given a query and given a structure (field list), there's 2 sets of fields.
 	// Take the intersection. We can fill those in. great.
 	// For fields in the structure that aren't in the query, we'll let that slide if db:"-"
 	// For fields in the structure that aren't in the query but without db:"-", return error
 	// For fields in the query that aren't in the structure, we'll ignore them.
 
-	// Get the columns:
-	columns, err := rows.Columns()
-	if err != nil {
-		return nil, err
-	}
-	lenColumns := len(columns)
 
-	fieldMap, err := sess.calculateFieldMap(recordType, columns, false)
-	if err != nil {
-		return nil, err
-	}
-
-	holder := make([]interface{}, lenColumns) // In the future, this should be passed into this function.
+	holder := make([]interface{}, len(fieldMap)) // In the future, this should be passed into this function.
 	for i, fieldIndex := range fieldMap {
 		if fieldIndex == nil {
 			holder[i] = &destDummy
