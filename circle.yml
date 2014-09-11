@@ -1,0 +1,4 @@
+## Customize the test machine
+machine:
+  environment:
+    DBR_TEST_DSN: "ubuntu:@unix(/var/run/mysqld/mysqld.sock)/circle_test?charset=utf8&parseTime=true"
