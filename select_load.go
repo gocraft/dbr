@@ -191,7 +191,13 @@ func (b *SelectBuilder) LoadOne(dest interface{}) error {
 
 // Returns ErrNotFound if no value was found, and it was therefore not set.
 func (b *SelectBuilder) LoadValue(dest interface{}) error {
-	// TODO: make sure dest is a ptr to something
+	// Validate the dest
+	valueOfDest := reflect.ValueOf(dest)
+	kindOfDest := valueOfDest.Kind()
+
+	if kindOfDest != reflect.Ptr {
+		panic("Destination must be a pointer")
+	}
 
 	//
 	// Get full SQL
