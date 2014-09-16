@@ -1,8 +1,9 @@
 package dbr
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkSelectBasicSql(b *testing.B) {
@@ -293,6 +294,24 @@ func TestSelectLoadValue(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.True(t, id > 0)
+}
+
+func TestSelectLoadValues(t *testing.T) {
+	s := createRealSessionWithFixtures()
+
+	var names []string
+	count, err := s.Select("name").From("dbr_people").LoadValues(&names)
+
+	assert.NoError(t, err)
+	assert.Equal(t, count, 2)
+	assert.Equal(t, names, []string{"Jonathan", "Dmitri"})
+
+	var ids []int64
+	count, err = s.Select("id").From("dbr_people").Limit(1).LoadValues(&ids)
+
+	assert.NoError(t, err)
+	assert.Equal(t, count, 1)
+	assert.Equal(t, ids, []int64{1})
 }
 
 func TestSelectReturn(t *testing.T) {

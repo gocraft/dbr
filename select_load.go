@@ -224,3 +224,71 @@ func (b *SelectBuilder) LoadValue(dest interface{}) error {
 
 	return ErrNotFound
 }
+
+// Returns the number of values found
+func (b *SelectBuilder) LoadValues(dest interface{}) (int, error) {
+	// Validate the dest and reflection values we need
+
+	// This must be a pointer to a slice
+	valueOfDest := reflect.ValueOf(dest)
+	kindOfDest := valueOfDest.Kind()
+
+	if kindOfDest != reflect.Ptr {
+		panic("invalid type passed to LoadValues. Need a pointer to a slice")
+	}
+
+	// This must a slice
+	valueOfDest = reflect.Indirect(valueOfDest)
+	kindOfDest = valueOfDest.Kind()
+
+	if kindOfDest != reflect.Slice {
+		panic("invalid type passed to LoadValues. Need a pointer to a slice")
+	}
+
+	valueType := valueOfDest.Type().Elem()
+
+	//
+	// Get full SQL
+	//
+	fullSql, err := Interpolate(b.ToSql())
+	if err != nil {
+		return 0, err
+	}
+
+	numberOfRowsReturned := 0
+
+	// Start the timer:
+	startTime := time.Now()
+	defer func() { b.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
+
+	// Run the query:
+	rows, err := b.runner.Query(fullSql)
+	if err != nil {
+		return numberOfRowsReturned, b.EventErrKv("dbr.select.load_all_values.query", err, kvs{"sql": fullSql})
+	}
+	defer rows.Close()
+
+	sliceValue := valueOfDest
+	for rows.Next() {
+		// Create a new value to store our row:
+		pointerToNewValue := reflect.New(valueType)
+		newValue := reflect.Indirect(pointerToNewValue)
+
+		err = rows.Scan(pointerToNewValue.Interface())
+		if err != nil {
+			return numberOfRowsReturned, b.EventErrKv("dbr.select.load_all_values.scan", err, kvs{"sql": fullSql})
+		}
+
+		// Append our new value to the slice:
+		sliceValue = reflect.Append(sliceValue, newValue)
+
+		numberOfRowsReturned += 1
+	}
+	valueOfDest.Set(sliceValue)
+
+	if err := rows.Err(); err != nil {
+		return numberOfRowsReturned, b.EventErrKv("dbr.select.load_all_values.rows_err", err, kvs{"sql": fullSql})
+	}
+
+	return numberOfRowsReturned, nil
+}
