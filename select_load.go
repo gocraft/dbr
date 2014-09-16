@@ -12,11 +12,7 @@ import (
 // For fields in the structure that aren't in the query but without db:"-", return error
 // For fields in the query that aren't in the structure, we'll ignore them.
 
-// dest can be:
-// - addr of a structure
-// - addr of slice of pointers to structures
-// If it's a single structure, only the first record returned will be set.
-// If it's a slice it won't be emptied first. New records will be allocated for each found record.
+// dest must be a pointer to a slice of pointers to structs
 // Returns the number of items found (which is not necessarily the # of items set)
 func (b *SelectBuilder) LoadAll(dest interface{}) (int, error) {
 	//
