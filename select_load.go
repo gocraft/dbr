@@ -79,6 +79,9 @@ func (b *SelectBuilder) LoadAll(dest interface{}) (int, error) {
 		return numberOfRowsReturned, b.EventErrKv("dbr.select.load_all.calculateFieldMap", err, kvs{"sql": fullSql})
 	}
 
+	// Build a 'holder', which is an []interface{}. Each value will be the set to address of the field corresponding to our newly made records:
+	holder := make([]interface{}, len(fieldMap))
+
 	// Iterate over rows
 	sliceValue := valueOfDest
 	for rows.Next() {
@@ -86,14 +89,14 @@ func (b *SelectBuilder) LoadAll(dest interface{}) (int, error) {
 		pointerToNewRecord := reflect.New(recordType)
 		newRecord := reflect.Indirect(pointerToNewRecord)
 
-		// Build a 'holder', which is an []interface{}. Each value will be the address of the field corresponding to our newly made record:
-		holder, err := b.holderFor(newRecord, fieldMap)
+		// Prepare the holder for this record
+		scannable, err := b.prepareHolderFor(newRecord, fieldMap, holder)
 		if err != nil {
 			return numberOfRowsReturned, b.EventErrKv("dbr.select.load_all.holderFor", err, kvs{"sql": fullSql})
 		}
 
 		// Load up our new structure with the row's values
-		err = rows.Scan(holder...)
+		err = rows.Scan(scannable...)
 		if err != nil {
 			return numberOfRowsReturned, b.EventErrKv("dbr.select.load_all.scan", err, kvs{"sql": fullSql})
 		}
@@ -159,15 +162,18 @@ func (b *SelectBuilder) LoadOne(dest interface{}) error {
 		return b.EventErrKv("dbr.select.load_one.calculateFieldMap", err, kvs{"sql": fullSql})
 	}
 
+	// Build a 'holder', which is an []interface{}. Each value will be the set to address of the field corresponding to our newly made records:
+	holder := make([]interface{}, len(fieldMap))
+
 	if rows.Next() {
 		// Build a 'holder', which is an []interface{}. Each value will be the address of the field corresponding to our newly made record:
-		holder, err := b.holderFor(indirectOfDest, fieldMap)
+		scannable, err := b.prepareHolderFor(indirectOfDest, fieldMap, holder)
 		if err != nil {
 			return b.EventErrKv("dbr.select.load_one.holderFor", err, kvs{"sql": fullSql})
 		}
 
 		// Load up our new structure with the row's values
-		err = rows.Scan(holder...)
+		err = rows.Scan(scannable...)
 		if err != nil {
 			return b.EventErrKv("dbr.select.load_one.scan", err, kvs{"sql": fullSql})
 		}

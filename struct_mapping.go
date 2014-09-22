@@ -69,14 +69,13 @@ func (sess *Session) calculateFieldMap(recordType reflect.Type, columns []string
 	return fieldMap, nil
 }
 
-func (sess *Session) holderFor(record reflect.Value, fieldMap [][]int) ([]interface{}, error) {
+func (sess *Session) prepareHolderFor(record reflect.Value, fieldMap [][]int, holder []interface{}) ([]interface{}, error) {
 	// Given a query and given a structure (field list), there's 2 sets of fields.
 	// Take the intersection. We can fill those in. great.
 	// For fields in the structure that aren't in the query, we'll let that slide if db:"-"
 	// For fields in the structure that aren't in the query but without db:"-", return error
 	// For fields in the query that aren't in the structure, we'll ignore them.
 
-	holder := make([]interface{}, len(fieldMap)) // In the future, this should be passed into this function.
 	for i, fieldIndex := range fieldMap {
 		if fieldIndex == nil {
 			holder[i] = &destDummy
