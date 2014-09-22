@@ -75,13 +75,31 @@ func isFloat(k reflect.Kind) bool {
 var typeOfTime = reflect.TypeOf(time.Time{})
 
 func Interpolate(sql string, vals []interface{}) (string, error) {
-	if sql == "" && len(vals) == 0 {
+	// Get the number of arguments to add to this query
+	maxVals := len(vals)
+
+	// If our query is blank and has no args return early
+	// Args with a blank query is an error
+	if sql == "" {
+		if maxVals != 0 {
+			return "", ErrArgumentMismatch
+		}
 		return "", nil
 	}
 
-	curVal := 0
-	maxVals := len(vals)
+	// If we have no args and the query has no place holders return early
+	// No args for a query with place holders is an error
+	if len(vals) == 0 {
+		for _, c := range sql {
+			if c == '?' {
+				return "", ErrArgumentMismatch
+			}
+		}
+		return sql, nil
+	}
 
+	// Iterate over each rune in the sql string and replace with the next arg if it's a place holder
+	curVal := 0
 	buf := bytes.Buffer{}
 
 	for _, r := range sql {
