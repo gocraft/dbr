@@ -26,7 +26,7 @@ func newWhereFragment(whereSqlOrMap interface{}, args []interface{}) *whereFragm
 	return nil
 }
 
-// Invariant: only aclled when len(fragments) > 0
+// Invariant: only called when len(fragments) > 0
 func writeWhereFragmentsToSql(fragments []*whereFragment, sql *bytes.Buffer, args *[]interface{}) {
 	anyConditions := false
 	for _, f := range fragments {
