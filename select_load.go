@@ -14,7 +14,7 @@ import (
 
 // dest must be a pointer to a slice of pointers to structs
 // Returns the number of items found (which is not necessarily the # of items set)
-func (b *SelectBuilder) LoadAll(dest interface{}) (int, error) {
+func (b *SelectBuilder) LoadStructs(dest interface{}) (int, error) {
 	//
 	// Validate the dest, and extract the reflection values we need.
 	//
@@ -24,7 +24,7 @@ func (b *SelectBuilder) LoadAll(dest interface{}) (int, error) {
 	kindOfDest := valueOfDest.Kind()
 
 	if kindOfDest != reflect.Ptr {
-		panic("invalid type passed to LoadAll. Need a pointer to a slice")
+		panic("invalid type passed to LoadStructs. Need a pointer to a slice")
 	}
 
 	// This must a slice
@@ -32,7 +32,7 @@ func (b *SelectBuilder) LoadAll(dest interface{}) (int, error) {
 	kindOfDest = valueOfDest.Kind()
 
 	if kindOfDest != reflect.Slice {
-		panic("invalid type passed to LoadAll. Need a pointer to a slice")
+		panic("invalid type passed to LoadStructs. Need a pointer to a slice")
 	}
 
 	// The slice elements must be pointers to structures
@@ -82,7 +82,7 @@ func (b *SelectBuilder) LoadAll(dest interface{}) (int, error) {
 	// Build a 'holder', which is an []interface{}. Each value will be the set to address of the field corresponding to our newly made records:
 	holder := make([]interface{}, len(fieldMap))
 
-	// Iterate over rows
+	// Iterate over rows and scan their data into the structs
 	sliceValue := valueOfDest
 	for rows.Next() {
 		// Create a new record to store our row:
@@ -117,7 +117,7 @@ func (b *SelectBuilder) LoadAll(dest interface{}) (int, error) {
 }
 
 // Returns ErrNotFound if nothing was found
-func (b *SelectBuilder) LoadOne(dest interface{}) error {
+func (b *SelectBuilder) LoadStruct(dest interface{}) error {
 	//
 	// Validate the dest, and extract the reflection values we need.
 	//
@@ -251,7 +251,12 @@ func (b *SelectBuilder) LoadValues(dest interface{}) (int, error) {
 		panic("invalid type passed to LoadValues. Need a pointer to a slice")
 	}
 
-	valueType := valueOfDest.Type().Elem()
+	recordType := valueOfDest.Type().Elem()
+
+	recordTypeIsPtr := recordType.Kind() == reflect.Ptr
+	if recordTypeIsPtr {
+		reflect.ValueOf(dest)
+	}
 
 	//
 	// Get full SQL
@@ -277,7 +282,7 @@ func (b *SelectBuilder) LoadValues(dest interface{}) (int, error) {
 	sliceValue := valueOfDest
 	for rows.Next() {
 		// Create a new value to store our row:
-		pointerToNewValue := reflect.New(valueType)
+		pointerToNewValue := reflect.New(recordType)
 		newValue := reflect.Indirect(pointerToNewValue)
 
 		err = rows.Scan(pointerToNewValue.Interface())

@@ -2,8 +2,9 @@ package dbr
 
 import (
 	"database/sql"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type someRecord struct {
@@ -103,7 +104,7 @@ func validateInsertingBarack(t *testing.T, s *Session, res sql.Result, err error
 	assert.Equal(t, rowsAff, 1)
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where("id = ?", id).LoadOne(&person)
+	err = s.Select("*").From("dbr_people").Where("id = ?", id).LoadStruct(&person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, person.Id, id)

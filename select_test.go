@@ -219,11 +219,11 @@ func TestSelectVarieties(t *testing.T) {
 	assert.Equal(t, sql, sql2)
 }
 
-func TestSelectLoadAll(t *testing.T) {
+func TestSelectLoadStructs(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	var people []*dbrPerson
-	count, err := s.Select("id", "name", "email").From("dbr_people").OrderBy("id ASC").LoadAll(&people)
+	count, err := s.Select("id", "name", "email").From("dbr_people").OrderBy("id ASC").LoadStructs(&people)
 
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
@@ -246,12 +246,12 @@ func TestSelectLoadAll(t *testing.T) {
 	// TODO: test map
 }
 
-func TestSelectLoadOne(t *testing.T) {
+func TestSelectLoadStruct(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	// Found:
 	var person dbrPerson
-	err := s.Select("id", "name", "email").From("dbr_people").Where("email = ?", "jonathan@uservoice.com").LoadOne(&person)
+	err := s.Select("id", "name", "email").From("dbr_people").Where("email = ?", "jonathan@uservoice.com").LoadStruct(&person)
 	assert.NoError(t, err)
 	assert.True(t, person.Id > 0)
 	assert.Equal(t, person.Name, "Jonathan")
@@ -260,15 +260,15 @@ func TestSelectLoadOne(t *testing.T) {
 
 	// Not found:
 	var person2 dbrPerson
-	err = s.Select("id", "name", "email").From("dbr_people").Where("email = ?", "dontexist@uservoice.com").LoadOne(&person2)
+	err = s.Select("id", "name", "email").From("dbr_people").Where("email = ?", "dontexist@uservoice.com").LoadStruct(&person2)
 	assert.Equal(t, err, ErrNotFound)
 }
 
-func TestSelectBySqlLoadAll(t *testing.T) {
+func TestSelectBySqlLoadStructs(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	var people []*dbrPerson
-	count, err := s.SelectBySql("SELECT name FROM dbr_people WHERE email IN ?", []string{"jonathan@uservoice.com"}).LoadAll(&people)
+	count, err := s.SelectBySql("SELECT name FROM dbr_people WHERE email IN ?", []string{"jonathan@uservoice.com"}).LoadStructs(&people)
 
 	assert.NoError(t, err)
 	assert.Equal(t, count, 1)

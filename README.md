@@ -39,7 +39,7 @@ func main() {
 
 	// Get a record
 	var suggestion Suggestion
-	err := sess.Select("id, title").From("suggestions").Where("id = ?", 13).LoadOne(&suggestion)
+	err := sess.Select("id, title").From("suggestions").Where("id = ?", 13).LoadStruct(&suggestion)
 
 	if err != nil {
 		println("Record not found")
@@ -83,7 +83,7 @@ if err != nil {
 
 // Select all suggestions from the user
 allSuggestions := []*Suggestion{}
-count, err := sess.Select("*").From("suggestions").Where("user_id = ?", user.Id).LoadAll(&allSuggestions)
+count, err := sess.Select("*").From("suggestions").Where("user_id = ?", user.Id).LoadStructs(&allSuggestions)
 if err != nil {
 	log.Fatalln("Error selecting suggestions")
 }

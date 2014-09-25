@@ -2,8 +2,9 @@ package dbr
 
 import (
 	// "database/sql"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTransactionReal(t *testing.T) {
@@ -24,7 +25,7 @@ func TestTransactionReal(t *testing.T) {
 	assert.Equal(t, rowsAff, 1)
 
 	var person dbrPerson
-	err = tx.Select("*").From("dbr_people").Where("id = ?", id).LoadOne(&person)
+	err = tx.Select("*").From("dbr_people").Where("id = ?", id).LoadStruct(&person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, person.Id, id)
@@ -44,7 +45,7 @@ func TestTransactionRollbackReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	var person dbrPerson
-	err = tx.Select("*").From("dbr_people").Where("email = ?", "jonathan@uservoice.com").LoadOne(&person)
+	err = tx.Select("*").From("dbr_people").Where("email = ?", "jonathan@uservoice.com").LoadStruct(&person)
 	assert.NoError(t, err)
 	assert.Equal(t, person.Name, "Jonathan")
 

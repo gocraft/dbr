@@ -1,8 +1,9 @@
 package dbr
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkUpdateValuesSql(b *testing.B) {
@@ -96,7 +97,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.Equal(t, rowsAff, 1)
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where(Eq{"email": "ben@whitehouse.gov"}).LoadOne(&person)
+	err = s.Select("*").From("dbr_people").Where(Eq{"email": "ben@whitehouse.gov"}).LoadStruct(&person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, person.Name, "Benjamin")
@@ -120,7 +121,7 @@ func TestUpdateReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where("id = ?", id).LoadOne(&person)
+	err = s.Select("*").From("dbr_people").Where("id = ?", id).LoadStruct(&person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, person.Id, id)
