@@ -4,7 +4,7 @@ import (
 	"bytes"
 )
 
-// Quoter is the quiter to use for quoting text; use Mysql quoting by default
+// Quoter is the quoter to use for quoting text; use Mysql quoting by default
 var Quoter = MysqlQuoter{}
 
 // Interface for driver-swappable quoting
