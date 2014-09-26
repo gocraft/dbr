@@ -10,14 +10,14 @@ func BenchmarkSelectBasicSql(b *testing.B) {
 	s := createFakeSession()
 
 	// Do some allocations outside the loop so they don't affect the results
-	arg_eq := Eq{"a": []int{1, 2, 3}}
+	argEq := Eq{"a": []int{1, 2, 3}}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		s.Select("something_id", "user_id", "other").
 			From("some_table").
 			Where("d = ? OR e = ?", 1, "wat").
-			Where(arg_eq).
+			Where(argEq).
 			OrderDir("id", false).
 			Paginate(1, 20).
 			ToSql()
@@ -28,9 +28,9 @@ func BenchmarkSelectFullSql(b *testing.B) {
 	s := createFakeSession()
 
 	// Do some allocations outside the loop so they don't affect the results
-	arg_eq1 := Eq{"f": 2, "x": "hi"}
-	arg_eq2 := map[string]interface{}{"g": 3}
-	arg_eq3 := Eq{"h": []int{1, 2, 3}}
+	argEq1 := Eq{"f": 2, "x": "hi"}
+	argEq2 := map[string]interface{}{"g": 3}
+	argEq3 := Eq{"h": []int{1, 2, 3}}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -38,9 +38,9 @@ func BenchmarkSelectFullSql(b *testing.B) {
 			Distinct().
 			From("c").
 			Where("d = ? OR e = ?", 1, "wat").
-			Where(arg_eq1).
-			Where(arg_eq2).
-			Where(arg_eq3).
+			Where(argEq1).
+			Where(argEq2).
+			Where(argEq3).
 			GroupBy("i").
 			GroupBy("ii").
 			GroupBy("iii").
