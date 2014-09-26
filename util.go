@@ -4,7 +4,7 @@ package dbr
 var NameMapping = camelCaseToSnakeCase
 
 func camelCaseToSnakeCase(name string) string {
-	newstr := make([]rune, 0)
+	var newstr []rune
 	firstTime := true
 
 	for _, chr := range name {

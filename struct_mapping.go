@@ -33,7 +33,7 @@ func (sess *Session) calculateFieldMap(recordType reflect.Type, columns []string
 			curIdxs := curEntry.Idxs
 			lenFields := curType.NumField()
 
-			for j := 0; j < lenFields; j += 1 {
+			for j := 0; j < lenFields; j++ {
 				fieldStruct := curType.Field(j)
 
 				// Skip unexported field

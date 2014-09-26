@@ -105,7 +105,7 @@ func (b *SelectBuilder) LoadStructs(dest interface{}) (int, error) {
 		// Append our new record to the slice:
 		sliceValue = reflect.Append(sliceValue, pointerToNewRecord)
 
-		numberOfRowsReturned += 1
+		numberOfRowsReturned++
 	}
 	valueOfDest.Set(sliceValue)
 
@@ -253,7 +253,7 @@ func (b *SelectBuilder) LoadValues(dest interface{}) (int, error) {
 		// Append our new value to the slice:
 		sliceValue = reflect.Append(sliceValue, newValue)
 
-		numberOfRowsReturned += 1
+		numberOfRowsReturned++
 	}
 	valueOfDest.Set(sliceValue)
 

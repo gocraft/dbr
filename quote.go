@@ -4,7 +4,7 @@ import (
 	"bytes"
 )
 
-// Use Mysql quoting by default
+// Quoter is the quiter to use for quoting text; use Mysql quoting by default
 var Quoter = MysqlQuoter{}
 
 // Interface for driver-swappable quoting
@@ -12,7 +12,7 @@ type quoter interface {
 	writeQuotedColumn()
 }
 
-// Mysql-specific quoting
+// MysqlQuoter implements Mysql-specific quoting
 type MysqlQuoter struct{}
 
 func (q MysqlQuoter) writeQuotedColumn(column string, sql *bytes.Buffer) {

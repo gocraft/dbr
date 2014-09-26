@@ -116,9 +116,8 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 				val, err := valuer.Value()
 				if err != nil {
 					return "", err
-				} else {
-					v = val
 				}
+				v = val
 			}
 
 			valueOfV := reflect.ValueOf(v)
@@ -127,15 +126,15 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 			if v == nil {
 				buf.WriteString("NULL")
 			} else if isInt(kindOfV) {
-				var ival int64 = valueOfV.Int()
+				var ival = valueOfV.Int()
 
 				buf.WriteString(strconv.FormatInt(ival, 10))
 			} else if isUint(kindOfV) {
-				var uival uint64 = valueOfV.Uint()
+				var uival = valueOfV.Uint()
 
 				buf.WriteString(strconv.FormatUint(uival, 10))
 			} else if kindOfV == reflect.String {
-				var str string = valueOfV.String()
+				var str = valueOfV.String()
 
 				if !utf8.ValidString(str) {
 					return "", ErrNotUTF8
@@ -143,11 +142,11 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 
 				buf.WriteString(escapeAndQuoteString(str))
 			} else if isFloat(kindOfV) {
-				var fval float64 = valueOfV.Float()
+				var fval = valueOfV.Float()
 
 				buf.WriteString(strconv.FormatFloat(fval, 'f', -1, 64))
 			} else if kindOfV == reflect.Bool {
-				var bval bool = valueOfV.Bool()
+				var bval = valueOfV.Bool()
 
 				if bval {
 					buf.WriteRune('1')
@@ -172,18 +171,18 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 				if sliceLen == 0 {
 					return "", ErrInvalidSliceLength
 				} else if isInt(kindOfSubtype) {
-					for i := 0; i < sliceLen; i += 1 {
-						var ival int64 = valueOfV.Index(i).Int()
+					for i := 0; i < sliceLen; i++ {
+						var ival = valueOfV.Index(i).Int()
 						stringSlice = append(stringSlice, strconv.FormatInt(ival, 10))
 					}
 				} else if isUint(kindOfSubtype) {
-					for i := 0; i < sliceLen; i += 1 {
-						var uival uint64 = valueOfV.Index(i).Uint()
+					for i := 0; i < sliceLen; i++ {
+						var uival = valueOfV.Index(i).Uint()
 						stringSlice = append(stringSlice, strconv.FormatUint(uival, 10))
 					}
 				} else if kindOfSubtype == reflect.String {
-					for i := 0; i < sliceLen; i += 1 {
-						var str string = valueOfV.Index(i).String()
+					for i := 0; i < sliceLen; i++ {
+						var str = valueOfV.Index(i).String()
 						if !utf8.ValidString(str) {
 							return "", ErrNotUTF8
 						}
@@ -199,7 +198,7 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 				return "", ErrInvalidValue
 			}
 
-			curVal += 1
+			curVal++
 		} else {
 			return "", ErrArgumentMismatch
 		}

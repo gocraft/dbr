@@ -163,8 +163,8 @@ func (b *InsertBuilder) Exec() (sql.Result, error) {
 		val := reflect.Indirect(reflect.ValueOf(rec))
 		if val.Kind() == reflect.Struct && val.CanSet() {
 			if idField := val.FieldByName("Id"); idField.IsValid() && idField.Kind() == reflect.Int64 {
-				if lastId, err := result.LastInsertId(); err == nil {
-					idField.Set(reflect.ValueOf(lastId))
+				if lastID, err := result.LastInsertId(); err == nil {
+					idField.Set(reflect.ValueOf(lastID))
 				} else {
 					b.EventErrKv("dbr.insert.exec.last_inserted_id", err, kvs{"sql": fullSql})
 				}
