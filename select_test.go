@@ -324,6 +324,14 @@ func TestSelectReturn(t *testing.T) {
 	count, err := s.Select("COUNT(*)").From("dbr_people").ReturnInt64()
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
+
+	names, err := s.Select("name").From("dbr_people").Where("email = 'jonathan@uservoice.com'").ReturnStrings()
+	assert.NoError(t, err)
+	assert.Equal(t, names, []string{"Jonathan"})
+
+	counts, err := s.Select("COUNT(*)").From("dbr_people").ReturnInt64s()
+	assert.NoError(t, err)
+	assert.Equal(t, counts, []int64{2})
 }
 
 // Series of tests that test mapping struct fields to columns
