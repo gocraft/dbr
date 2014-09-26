@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// UpdateBuilder contains the clauses for an UPDATE statement
 type UpdateBuilder struct {
 	*Session
 	runner
@@ -29,6 +30,7 @@ type setClause struct {
 	value  interface{}
 }
 
+// Update creates a new UpdateBuilder for the given table
 func (sess *Session) Update(table string) *UpdateBuilder {
 	return &UpdateBuilder{
 		Session: sess,
@@ -37,6 +39,7 @@ func (sess *Session) Update(table string) *UpdateBuilder {
 	}
 }
 
+// UpdateBySql creates a new UpdateBuilder for the given SQL string and arguments
 func (sess *Session) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder {
 	return &UpdateBuilder{
 		Session:      sess,
@@ -46,6 +49,7 @@ func (sess *Session) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder
 	}
 }
 
+// Update creates a new UpdateBuilder for the given table bound to a transaction
 func (tx *Tx) Update(table string) *UpdateBuilder {
 	return &UpdateBuilder{
 		Session: tx.Session,
@@ -54,6 +58,7 @@ func (tx *Tx) Update(table string) *UpdateBuilder {
 	}
 }
 
+// UpdateBySql creates a new UpdateBuilder for the given SQL string and arguments bound to a transaction
 func (tx *Tx) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder {
 	return &UpdateBuilder{
 		Session:      tx.Session,
@@ -63,11 +68,13 @@ func (tx *Tx) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder {
 	}
 }
 
+// Set appends a column/value pair for the statement
 func (b *UpdateBuilder) Set(column string, value interface{}) *UpdateBuilder {
 	b.SetClauses = append(b.SetClauses, &setClause{column: column, value: value})
 	return b
 }
 
+// SetMap appends the elements of the map as column/value pairs for the statement
 func (b *UpdateBuilder) SetMap(clauses map[string]interface{}) *UpdateBuilder {
 	for col, val := range clauses {
 		b = b.Set(col, val)
@@ -75,16 +82,19 @@ func (b *UpdateBuilder) SetMap(clauses map[string]interface{}) *UpdateBuilder {
 	return b
 }
 
+// Where appends a WHERE clause to the statement
 func (b *UpdateBuilder) Where(whereSqlOrMap interface{}, args ...interface{}) *UpdateBuilder {
 	b.WhereFragments = append(b.WhereFragments, newWhereFragment(whereSqlOrMap, args))
 	return b
 }
 
+// OrderBy appends a column to ORDER the statement by
 func (b *UpdateBuilder) OrderBy(ord string) *UpdateBuilder {
 	b.OrderBys = append(b.OrderBys, ord)
 	return b
 }
 
+// OrderDir appends a column to ORDER the statement by with a given direction
 func (b *UpdateBuilder) OrderDir(ord string, isAsc bool) *UpdateBuilder {
 	if isAsc {
 		b.OrderBys = append(b.OrderBys, ord+" ASC")
@@ -94,18 +104,22 @@ func (b *UpdateBuilder) OrderDir(ord string, isAsc bool) *UpdateBuilder {
 	return b
 }
 
+// Limit sets a limit for the statement; overrides any existing LIMIT
 func (b *UpdateBuilder) Limit(limit uint64) *UpdateBuilder {
 	b.LimitCount = limit
 	b.LimitValid = true
 	return b
 }
 
+// Offset sets an offset for the statement; overrides any existing OFFSET
 func (b *UpdateBuilder) Offset(offset uint64) *UpdateBuilder {
 	b.OffsetCount = offset
 	b.OffsetValid = true
 	return b
 }
 
+// ToSql serialized the UpdateBuilder to a SQL string
+// It returns the string with placeholders and a slice of query arguments
 func (b *UpdateBuilder) ToSql() (string, []interface{}) {
 	if b.RawFullSql != "" {
 		return b.RawFullSql, b.RawArguments
@@ -171,6 +185,8 @@ func (b *UpdateBuilder) ToSql() (string, []interface{}) {
 	return sql.String(), args
 }
 
+// Exec executes the statement represented by the UpdateBuilder
+// It returns the raw database/sql Result and an error if there was one
 func (b *UpdateBuilder) Exec() (sql.Result, error) {
 	sql, args := b.ToSql()
 

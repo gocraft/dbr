@@ -23,18 +23,21 @@ package dbr
 //  - There's a lot of possible types. Do we want to include ALL of them? u?int{8,16,32,64}?, strings, null varieties, etc.
 //    - Let's just do the common, non-null varieties.
 
+// ReturnInt64 executes the SelectBuilder and returns the value returns as an int64
 func (b *SelectBuilder) ReturnInt64() (int64, error) {
 	var v int64
 	err := b.LoadValue(&v)
 	return v, err
 }
 
+// ReturnUint64 executes the SelectBuilder and returns the value returns as an uint64
 func (b *SelectBuilder) ReturnUint64() (uint64, error) {
 	var v uint64
 	err := b.LoadValue(&v)
 	return v, err
 }
 
+// ReturnString executes the SelectBuilder and returns the value returns as a string
 func (b *SelectBuilder) ReturnString() (string, error) {
 	var v string
 	err := b.LoadValue(&v)

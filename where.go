@@ -5,6 +5,9 @@ import (
 	"reflect"
 )
 
+// Eq is a map column -> value pairs which must be matched in a query
+type Eq map[string]interface{}
+
 type whereFragment struct {
 	Condition   string
 	Values      []interface{}

@@ -74,6 +74,9 @@ func isFloat(k reflect.Kind) bool {
 //   - times
 var typeOfTime = reflect.TypeOf(time.Time{})
 
+// Interpolate takes a SQL string with placeholders and a list of arguments to
+// replace them with. Returns a blank string and error if the number of placeholders
+// does not match the number of arguments.
 func Interpolate(sql string, vals []interface{}) (string, error) {
 	// Get the number of arguments to add to this query
 	maxVals := len(vals)

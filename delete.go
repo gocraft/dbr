@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// DeleteBuilder contains the clauses for a DELETE statement
 type DeleteBuilder struct {
 	*Session
 	runner
@@ -20,6 +21,7 @@ type DeleteBuilder struct {
 	OffsetValid    bool
 }
 
+// DeleteFrom creates a new DeleteBuilder for the given table
 func (sess *Session) DeleteFrom(from string) *DeleteBuilder {
 	return &DeleteBuilder{
 		Session: sess,
@@ -28,6 +30,8 @@ func (sess *Session) DeleteFrom(from string) *DeleteBuilder {
 	}
 }
 
+// DeleteFrom creates a new DeleteBuilder for the given table
+// in the context for a transaction
 func (tx *Tx) DeleteFrom(from string) *DeleteBuilder {
 	return &DeleteBuilder{
 		Session: tx.Session,
@@ -36,16 +40,20 @@ func (tx *Tx) DeleteFrom(from string) *DeleteBuilder {
 	}
 }
 
+// Where appends a WHERE clause to the statement whereSqlOrMap can be a
+// string or map. If it's a string, args wil replaces any places holders
 func (b *DeleteBuilder) Where(whereSqlOrMap interface{}, args ...interface{}) *DeleteBuilder {
 	b.WhereFragments = append(b.WhereFragments, newWhereFragment(whereSqlOrMap, args))
 	return b
 }
 
+// OrderBy appends an ORDER BY clause to the statement
 func (b *DeleteBuilder) OrderBy(ord string) *DeleteBuilder {
 	b.OrderBys = append(b.OrderBys, ord)
 	return b
 }
 
+// OrderDir appends an ORDER BY clause with a direction to the statement
 func (b *DeleteBuilder) OrderDir(ord string, isAsc bool) *DeleteBuilder {
 	if isAsc {
 		b.OrderBys = append(b.OrderBys, ord+" ASC")
@@ -55,18 +63,22 @@ func (b *DeleteBuilder) OrderDir(ord string, isAsc bool) *DeleteBuilder {
 	return b
 }
 
+// Limit sets a LIMIT clause for the statement; overrides any existing LIMIT
 func (b *DeleteBuilder) Limit(limit uint64) *DeleteBuilder {
 	b.LimitCount = limit
 	b.LimitValid = true
 	return b
 }
 
+// Offset sets an OFFSET clause for the statement; overrides any existing OFFSET
 func (b *DeleteBuilder) Offset(offset uint64) *DeleteBuilder {
 	b.OffsetCount = offset
 	b.OffsetValid = true
 	return b
 }
 
+// ToSql serialized the DeleteBuilder to a SQL string
+// It returns the string with placeholders and a slice of query arguments
 func (b *DeleteBuilder) ToSql() (string, []interface{}) {
 	if len(b.From) == 0 {
 		panic("no table specified")
@@ -108,6 +120,8 @@ func (b *DeleteBuilder) ToSql() (string, []interface{}) {
 	return sql.String(), args
 }
 
+// Exec executes the statement represented by the DeleteBuilder
+// It returns the raw database/sql Result and an error if there was one
 func (b *DeleteBuilder) Exec() (sql.Result, error) {
 	sql, args := b.ToSql()
 

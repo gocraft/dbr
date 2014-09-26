@@ -1,5 +1,6 @@
 package dbr
 
+// NameMapping is the routine to use when mapping column names to struct properties
 var NameMapping = camelCaseToSnakeCase
 
 func camelCaseToSnakeCase(name string) string {

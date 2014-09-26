@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// InsertBuilder contains the clauses for an INSERT statement
 type InsertBuilder struct {
 	*Session
 	runner
@@ -18,6 +19,7 @@ type InsertBuilder struct {
 	Recs []interface{}
 }
 
+// InsertInto instantiates a InsertBuilder for the given table
 func (sess *Session) InsertInto(into string) *InsertBuilder {
 	return &InsertBuilder{
 		Session: sess,
@@ -26,6 +28,7 @@ func (sess *Session) InsertInto(into string) *InsertBuilder {
 	}
 }
 
+// InsertInto instantiates a InsertBuilder for the given table bound to a transaction
 func (tx *Tx) InsertInto(into string) *InsertBuilder {
 	return &InsertBuilder{
 		Session: tx.Session,
@@ -34,22 +37,25 @@ func (tx *Tx) InsertInto(into string) *InsertBuilder {
 	}
 }
 
+// Columns appends columns to insert in the statement
 func (b *InsertBuilder) Columns(columns ...string) *InsertBuilder {
 	b.Cols = columns
 	return b
 }
 
+// Values appends a set of values to the statement
 func (b *InsertBuilder) Values(vals ...interface{}) *InsertBuilder {
 	b.Vals = append(b.Vals, vals)
 	return b
 }
 
-// Pulls in values to match Columns from the record
+// Record pulls in values to match Columns from the record
 func (b *InsertBuilder) Record(record interface{}) *InsertBuilder {
 	b.Recs = append(b.Recs, record)
 	return b
 }
 
+// Pair adds a key/value pair to the statement
 func (b *InsertBuilder) Pair(column string, value interface{}) *InsertBuilder {
 	b.Cols = append(b.Cols, column)
 	lenVals := len(b.Vals)
@@ -64,6 +70,8 @@ func (b *InsertBuilder) Pair(column string, value interface{}) *InsertBuilder {
 	return b
 }
 
+// ToSql serialized the InsertBuilder to a SQL string
+// It returns the string with placeholders and a slice of query arguments
 func (b *InsertBuilder) ToSql() (string, []interface{}) {
 	if len(b.Into) == 0 {
 		panic("no table specified")
@@ -130,7 +138,8 @@ func (b *InsertBuilder) ToSql() (string, []interface{}) {
 	return sql.String(), args
 }
 
-// Executes the insert against the database
+// Exec executes the statement represented by the InsertBuilder
+// It returns the raw database/sql Result and an error if there was one
 func (b *InsertBuilder) Exec() (sql.Result, error) {
 	sql, args := b.ToSql()
 

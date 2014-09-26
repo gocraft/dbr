@@ -4,11 +4,13 @@ import (
 	"database/sql"
 )
 
+// Tx is a transaction for the given Session
 type Tx struct {
 	*Session
 	*sql.Tx
 }
 
+// Begin creates a transaction for the given session
 func (sess *Session) Begin() (*Tx, error) {
 	tx, err := sess.cxn.Db.Begin()
 	if err != nil {
@@ -23,6 +25,7 @@ func (sess *Session) Begin() (*Tx, error) {
 	}, nil
 }
 
+// Commit finishes the transaction
 func (tx *Tx) Commit() error {
 	err := tx.Tx.Commit()
 	if err != nil {
@@ -33,6 +36,7 @@ func (tx *Tx) Commit() error {
 	return nil
 }
 
+// Rollback cancels the transaction
 func (tx *Tx) Rollback() error {
 	err := tx.Tx.Rollback()
 	if err != nil {
@@ -43,7 +47,7 @@ func (tx *Tx) Rollback() error {
 	return nil
 }
 
-// Rollsback the transaction unless it has already been committed or rolled back.
+// RollbackUnlessCommitted rollsback the transaction unless it has already been committed or rolled back.
 // Useful to defer tx.RollbackUnlessCommitted() -- so you don't have to handle N failure cases
 // Keep in mind the only way to detect an error on the rollback is via the event log.
 func (tx *Tx) RollbackUnlessCommitted() {
