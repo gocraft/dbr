@@ -9,6 +9,14 @@ From your GOPATH:
 go get github.com/gocraft/dbr
 ```
 
+You'll also want a driver for database/sql. Currently only MySQL has been tested (specifically [github.com/go-sql-driver/mysql](https://github.com/go-sql-driver/mysql)). Postgres (and others) probably won't work yet, but I would like to support it. PRs welcome!
+
+You can get the MySQL driver with:
+
+```bash
+go get github.com/go-sql-driver/mysql
+```
+
 ## Getting Started
 
 ```go
@@ -22,8 +30,9 @@ import (
 
 // Simple data model
 type Suggestion struct {
-	Id     int64
-	Title  string
+	Id     int64 `json:"id"`
+	Title  string `json:"title"`
+	CreatedAt dbr.NullTime `json:"created_at"`
 }
 
 // Hold a single global connection (pooling provided by sql driver)
@@ -35,68 +44,113 @@ func main() {
 	connection = dbr.NewConnection(db, nil)
 
 	// Create a session for each business unit of execution (e.g. a web request or goworkers job)
-	sess := connection.NewSession(nil)
+	dbrSess := connection.NewSession(nil)
 
 	// Get a record
 	var suggestion Suggestion
-	err := sess.Select("id, title").From("suggestions").Where("id = ?", 13).LoadStruct(&suggestion)
+	err := dbrSess.Select("id, title").From("suggestions").Where("id = ?", 13).LoadStruct(&suggestion)
 
 	if err != nil {
-		println("Record not found")
+		println(err.Error())
 	} else {
 		println("Title:", suggestion.Title)
 	}
+
+	// JSON-ready, with dbr.Null* types serialized like you want
+	recordJson, _ := json.Marshal(&suggestion)
+	println(string(recordJson))
 }
 ```
 
-## Features
+## Feature highlights
 * **Simple reading and wrting** -  Structs, primitives, and slices thereof are supported. Results are mapped directly into your data structures without extra effort.
 * **Composable query building** - Allow you to easily create queries in a dynamic and fluent manner.
-* **Builtin session-aware logging** - A pluggable logging interface is available which supports events, errors, and timers.
+* **Session-aware logging** - A pluggable logging interface is available which supports events, errors, and timers.
+* **Custom SQL interpolation** - Ability to support more advanced constructs like IN clauses, and avoid throwaway prepared statements.
+* **JSON Friendly** - Null values encode like you want, hiding their implementation details
 
-## Performance
-Performance is a main goal. There are many existing data access solutions/patterns that trade performance for ease of use. While dbr should be simple to learn and use, it should also be fast and memory effient.
-
-
-
-TODO: (TS) babble about prepared statements, allocs, maybe reflection
+## Driver support
+Currently only MySQL has been tested because that is what we use. I would like to support others if there is time, but contributions are gladly accepted. Feel free to make an issue if you're interested in adding support and we can discuss what it would take.
 
 ## Usage Examples
 The tests are a great place to see how to perform various queries, but here are a few highlights.
 
-### Simple Insert/Select Record
+### Simple Record CRUD
 ```go
-// Create new user
-// Creating a record atomatically populates an int64 Id field if present
-user := &User{DisplayName: "Tyler"}
-_, err := sess.InsertInto("users").Columns("display_name").Record(user).Exec()
-if err != nil {
-	log.Fatalln("Error creating new user")
-}
+// Create a new suggestion record
+suggestion := &Suggestion{Title: "My Cool Suggestion", State: "open"}
 
-// Create a new suggestion for the user
-suggestion := &Suggestion{UserId: user.Id, Title: "New Suggestion"}
-_, err = sess.InsertInto("suggestions").Columns("user_id", "title").Record(suggestion).Exec()
-if err != nil {
-	log.Fatalln("Error creating new suggestion")
-}
+// Insert; inserting a record automatically sets an int64 Id field if present
+response, err := dbrSess.InsertInto("suggestions").Columns("title", "state").Record(suggestion).Exec()
 
-// Select all suggestions from the user
-allSuggestions := []*Suggestion{}
-count, err := sess.Select("*").From("suggestions").Where("user_id = ?", user.Id).LoadStructs(&allSuggestions)
-if err != nil {
-	log.Fatalln("Error selecting suggestions")
+// Update
+response, err = dbrSess.Update("suggestions").Set("title", "My New Title").Where("id = ?", suggestion.Id).Exec()
+
+// Select
+var otherSuggestion Suggestion
+err = dbrSess.Select("id, title").From("suggestions").Where("id = ?", suggestion.Id).LoadStruct(&otherSuggestion)
+
+// Delete
+response, err = dbrSess.DeleteFrom("suggestions").Where("id = ?", otherSuggestion.Id).Limit(1).Exec()
+```
+
+### Primitive Values
+```go
+// Load primitives into existing variables
+var ids []int64
+idCount, err := sess.Select("id").From("suggestions").LoadValues(&ids)
+
+var titles []string
+titleCount, err := sess.Select("title").From("suggestions").LoadValues(&titles)
+
+// Or return them directly
+ids, err = sess.Select("id").From("suggestions").ReturnInt64s()
+titles, err = sess.Select("title").From("suggestions").ReturnStrings()
+```
+
+### Overriding Column Names With Struct Tags
+```go
+// By default dbr converts CamelCase property names to snake_case column_names
+// You can override this with struct tags, just like with JSON tags
+// This is especially helpful while migrating from legacy systems
+type Suggestion struct {
+	Id        int64          `json:"id"`
+	Title     dbr.NullString `json:"title" db:"subject"` // subjects are called titles now
+    CreatedAt dbr.NullTime `json:"created_at"`
 }
 ```
 
-### Inserting multiple records
+### Embedded structs
+```go
+// Columns are mapped to fields breadth-first
+type Suggestion struct {
+    Id        int64        `json:"id"`
+    Title     string       `json:"title"`
+    User      *struct {
+        Id int64 `json:"user_id" db:"user_id"`
+    }
+}
+
+var suggestion Suggestion
+err := dbrSess.Select("id, title, user_id").From("suggestions").Limit(1).LoadStruct(&suggestion)
+```
+
+### JSON encoding of Null* types
+```go
+// dbr.Null* types serialize to JSON like you want
+suggestion := &Suggestion{Id: 1, Title: "Test Title"}
+jsonBytes, err := json.Marshal(&suggestion)
+println(string(jsonBytes)) // {"id":1,"title":"Test Title","created_at":null}
+```
+
+### Inserting Multiple Records
 ```go
 // Start bulding an INSERT statement
-createDevsBuilder := sess.InsertInto("developers").Columns("name", "language")
+createDevsBuilder := sess.InsertInto("developers").Columns("name", "language", "employee_number")
 
 // Add some new developers
 for i := 0; i < 3; i++ {
-	createDevsBuilder.Record(&Developer{Name: "Gopher", Language: "Go"})
+	createDevsBuilder.Record(&Developer{Name: "Gopher", Language: "Go", EmployeeNumber: i})
 }
 
 // Execute statment
@@ -106,9 +160,9 @@ if err != nil {
 }
 ```
 
-### Update Records
+### Updating Records
 ```go
-// Update any Rubyists to Gophers
+// Update any rubyists to gophers
 response, err := sess.Update("developers").Set("name", "Gopher").Set("language", "Go").Where("language = ?", "Ruby").Exec()
 
 
@@ -117,11 +171,65 @@ attrsMap := map[string]interface{}{"name": "Gopher", "language": "Go"}
 response, err := sess.Update("developers").SetMap(attrsMap).Where("language = ?", "Ruby").Exec()
 ```
 
+### Transactions
+```go
+// Basic transaction usage
 
+// Start transaction
+tx, err := dbrSess.Begin()
+if err != nil {
+    log.Fatalln(err.Error())
+}
 
-TODO: (TS) add some cool examples; e.g. primitive loading, inserting/updating records, complex conditions, txns, embedded structs, struct tags, json marshaling
+// Issue some statements
+tx.Update("suggestions").Set("state", "deleted").Where("deleted_at IS NOT NULL").Exec()
+tx.Update("comments").Set("state", "deleted").Where("deleted_at IS NOT NULL").Exec()
 
+// Commit the transaction
+err = tx.Commit()
+```
 
+### Generate SQL without executing
+If you're only interested in building queries or want the built SQL for logging, you can generate it without executing
+```go
+// Create builder
+builder := dbrSess.Select("*").From("suggestions").Where("subdomain_id = ?", 1)
+
+// Get builder's SQL and arguments
+sql, args := builder.ToSql()
+fmt.Println(sql) // SELECT * FROM suggestions WHERE (subdomain_id = ?)
+fmt.Println(args) // [1]
+```
+
+If you're only interested interested in dbr's query building and logging you could do something like this
+```go
+func main() {
+	// Create the connection during application initialization
+	db, _ := sql.Open("mysql", "root@unix(/tmp/mysqld.sock)/your_database")
+	connection := dbr.NewConnection(db, nil)
+
+	// Create a session for each business unit of execution (e.g. a web request or goworkers job)
+	dbrSess := connection.NewSession(nil)
+
+	// Create builder
+	builder := dbrSess.Select("*").From("suggestions").Where("subdomain_id = ?", 1)
+
+	// Get builder's SQL and arguments
+	sql, args := builder.ToSql()
+
+    // Use raw database/sql for actual query
+	rows, err := db.Query(sql, args...)
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
+```
+
+## Performance
+Performance is a primary goal of dbr. I have a [collection of dbr related benchmarks](https://github.com/tyler-smith/golang-sql-benchmark) that should probably be checked when making performance-impacting changes.
+
+## Contributing
+We gladly accept contributions. We want to keep dbr pretty light but I certainly don't mind discussing any changes or additions. Feel free to open an issue if you'd like to discus a potential change.
 
 ## Thanks & Authors
 Inspiration from these excellent libraries:
@@ -131,42 +239,3 @@ Inspiration from these excellent libraries:
 Authors:
 *  Jonathan Novak -- [https://github.com/cypriss](https://github.com/cypriss)
 *  Tyler Smith -- [https://github.com/tyler-smith](https://github.com/tyler-smith)
-
----
-
-
-
-
-
-
-## TODO: (TS) REMOVE OR CLEANUP
-## Usage
-
-// At app initialization or something:
-db, err := sql.Open("mysql", "...")
-connection := dbr.New(db) // global variable
-
-// In a business unit of execution (web request, job):
-sess := connection.NewSession()
-
-// Load records directly into a record, a map, or a slice:
-err := sess.Select("*").From("suggestions").Where("x = ?", x).Load(&suggestion)
-
-// Get a raw SQL string back:
-sqlString, err := sess.Select("*").From("suggestions").Where("x = ?", x).Sql()
-
-sess.Select("*").From("suggestions").WhereEq(dbr.Eq{"deleted_at": nil})
-
-
-// To be determined: given a type like type Suggestion struct {...},  how do we map from results -> record efficiently
-
-
-// Additionally, logging/metrics. Ideas:
-// tight integreation with Health
-// or...
-// option to log all sql queries by table name
-
-txn := sess.MustBegin()
-err := txn.InsertInto("suggestions", []string{"title", "user_id"}, &sugg)
-rowsUpdated, err := txn.Update("suggestions", []string{"title", "user_id"}, &sugg)
-txn.Commit()
