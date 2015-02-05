@@ -314,6 +314,13 @@ rows, err := db.Query(sql, args...)
 if err != nil {
     log.Fatalln(err)
 }
+
+// Alternatively you can build the full query
+query, err := dbr.Interpolate(builder.ToSql())
+if err != nil {
+    log.Fatalln(err)
+}
+fmt.Println(query) // SELECT * FROM suggestions WHERE (subdomain_id = 1)
 ```
 
 ## Contributing
