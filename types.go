@@ -16,6 +16,11 @@ type NullString struct {
 	sql.NullString
 }
 
+// NullFloat64 is a type that can be null or a float64
+type NullFloat64 struct {
+	sql.NullFloat64
+}
+
 // NullInt64 is a type that can be null or an int
 type NullInt64 struct {
 	sql.NullInt64
@@ -37,6 +42,15 @@ var nullString = []byte("null")
 func (n *NullString) MarshalJSON() ([]byte, error) {
 	if n.Valid {
 		j, e := json.Marshal(n.String)
+		return j, e
+	}
+	return nullString, nil
+}
+
+// MarshalJSON correctly serializes a NullFloat64 to JSON
+func (n *NullFloat64) MarshalJSON() ([]byte, error) {
+	if n.Valid {
+		j, e := json.Marshal(n.Float64)
 		return j, e
 	}
 	return nullString, nil
