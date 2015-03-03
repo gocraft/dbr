@@ -1,8 +1,10 @@
 package dbr
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
+	"time"
 
 	"github.com/go-sql-driver/mysql"
 )
@@ -81,4 +83,45 @@ func (n *NullBool) MarshalJSON() ([]byte, error) {
 		return j, e
 	}
 	return nullString, nil
+}
+
+// UnmarshalJSON correctly deserialize a NullString from JSON
+func (n *NullString) UnmarshalJSON(b []byte) error {
+	var s interface{}
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	return n.Scan(s)
+}
+
+// UnmarshalJSON correctly deserialize a NullInt64 from JSON
+func (n *NullInt64) UnmarshalJSON(b []byte) error {
+	var s interface{}
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	return n.Scan(s)
+}
+
+// UnmarshalJSON correctly deserialize a NullTime from JSON
+func (n *NullTime) UnmarshalJSON(b []byte) error {
+	// scan for null
+	if bytes.Equal(b, nullString) {
+		return n.Scan(nil)
+	}
+	// scan for JSON timestamp
+	var t time.Time
+	if err := json.Unmarshal(b, &t); err != nil {
+		return err
+	}
+	return n.Scan(t)
+}
+
+// UnmarshalJSON correctly deserialize a NullBool from JSON
+func (n *NullBool) UnmarshalJSON(b []byte) error {
+	var s interface{}
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	return n.Scan(s)
 }
