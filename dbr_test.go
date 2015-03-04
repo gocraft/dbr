@@ -54,8 +54,17 @@ type dbrPerson struct {
 	Key   NullString
 }
 
+type nullTypedRecord struct {
+	Id         int64
+	StringVal  NullString
+	Int64Val   NullInt64
+	Float64Val NullFloat64
+	TimeVal    NullTime
+	BoolVal    NullBool
+}
+
 func installFixtures(db *sql.DB) {
-	createTablePeople := fmt.Sprintf(`
+	createPeopleTable := fmt.Sprintf(`
 		CREATE TABLE dbr_people (
 			id int(11) DEFAULT NULL auto_increment PRIMARY KEY,
 			name varchar(255) NOT NULL,
@@ -64,11 +73,25 @@ func installFixtures(db *sql.DB) {
 		)
 	`, "`key`")
 
+	createNullTypesTable := `
+		CREATE TABLE null_types (
+			id int(11) DEFAULT NULL auto_increment PRIMARY KEY,
+			string_val varchar(255) NULL,
+			int64_val int(11) NULL,
+			float64_val float NULL,
+			time_val datetime NULL,
+			bool_val bool NULL
+		)
+	`
+
 	sqlToRun := []string{
 		"DROP TABLE IF EXISTS dbr_people",
-		createTablePeople,
+		createPeopleTable,
 		"INSERT INTO dbr_people (name,email) VALUES ('Jonathan', 'jonathan@uservoice.com')",
 		"INSERT INTO dbr_people (name,email) VALUES ('Dmitri', 'zavorotni@jadius.com')",
+
+		"DROP TABLE IF EXISTS null_types",
+		createNullTypesTable,
 	}
 
 	for _, v := range sqlToRun {
