@@ -49,19 +49,19 @@ func (n *NullString) MarshalJSON() ([]byte, error) {
 	return nullString, nil
 }
 
-// MarshalJSON correctly serializes a NullFloat64 to JSON
-func (n *NullFloat64) MarshalJSON() ([]byte, error) {
+// MarshalJSON correctly serializes a NullInt64 to JSON
+func (n *NullInt64) MarshalJSON() ([]byte, error) {
 	if n.Valid {
-		j, e := json.Marshal(n.Float64)
+		j, e := json.Marshal(n.Int64)
 		return j, e
 	}
 	return nullString, nil
 }
 
-// MarshalJSON correctly serializes a NullInt64 to JSON
-func (n *NullInt64) MarshalJSON() ([]byte, error) {
+// MarshalJSON correctly serializes a NullFloat64 to JSON
+func (n *NullFloat64) MarshalJSON() ([]byte, error) {
 	if n.Valid {
-		j, e := json.Marshal(n.Int64)
+		j, e := json.Marshal(n.Float64)
 		return j, e
 	}
 	return nullString, nil
@@ -94,8 +94,8 @@ func (n *NullString) UnmarshalJSON(b []byte) error {
 	return n.Scan(s)
 }
 
-// UnmarshalJSON correctly deserialize a NullFloat64 from JSON
-func (n *NullFloat64) UnmarshalJSON(b []byte) error {
+// UnmarshalJSON correctly deserialize a NullInt64 from JSON
+func (n *NullInt64) UnmarshalJSON(b []byte) error {
 	var s interface{}
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
@@ -103,8 +103,8 @@ func (n *NullFloat64) UnmarshalJSON(b []byte) error {
 	return n.Scan(s)
 }
 
-// UnmarshalJSON correctly deserialize a NullInt64 from JSON
-func (n *NullInt64) UnmarshalJSON(b []byte) error {
+// UnmarshalJSON correctly deserialize a NullFloat64 from JSON
+func (n *NullFloat64) UnmarshalJSON(b []byte) error {
 	var s interface{}
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
