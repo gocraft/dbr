@@ -94,6 +94,15 @@ func (n *NullString) UnmarshalJSON(b []byte) error {
 	return n.Scan(s)
 }
 
+// UnmarshalJSON correctly deserialize a NullFloat64 from JSON
+func (n *NullFloat64) UnmarshalJSON(b []byte) error {
+	var s interface{}
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	return n.Scan(s)
+}
+
 // UnmarshalJSON correctly deserialize a NullInt64 from JSON
 func (n *NullInt64) UnmarshalJSON(b []byte) error {
 	var s interface{}
