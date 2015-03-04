@@ -85,7 +85,7 @@ func (n *NullBool) MarshalJSON() ([]byte, error) {
 	return nullString, nil
 }
 
-// UnmarshalJSON correctly deserialize a NullString from JSON
+// UnmarshalJSON correctly deserializes a NullString from JSON
 func (n *NullString) UnmarshalJSON(b []byte) error {
 	var s interface{}
 	if err := json.Unmarshal(b, &s); err != nil {
@@ -94,7 +94,7 @@ func (n *NullString) UnmarshalJSON(b []byte) error {
 	return n.Scan(s)
 }
 
-// UnmarshalJSON correctly deserialize a NullInt64 from JSON
+// UnmarshalJSON correctly deserializes a NullInt64 from JSON
 func (n *NullInt64) UnmarshalJSON(b []byte) error {
 	var s interface{}
 	if err := json.Unmarshal(b, &s); err != nil {
@@ -103,7 +103,7 @@ func (n *NullInt64) UnmarshalJSON(b []byte) error {
 	return n.Scan(s)
 }
 
-// UnmarshalJSON correctly deserialize a NullFloat64 from JSON
+// UnmarshalJSON correctly deserializes a NullFloat64 from JSON
 func (n *NullFloat64) UnmarshalJSON(b []byte) error {
 	var s interface{}
 	if err := json.Unmarshal(b, &s); err != nil {
@@ -112,7 +112,7 @@ func (n *NullFloat64) UnmarshalJSON(b []byte) error {
 	return n.Scan(s)
 }
 
-// UnmarshalJSON correctly deserialize a NullTime from JSON
+// UnmarshalJSON correctly deserializes a NullTime from JSON
 func (n *NullTime) UnmarshalJSON(b []byte) error {
 	// scan for null
 	if bytes.Equal(b, nullString) {
@@ -126,7 +126,7 @@ func (n *NullTime) UnmarshalJSON(b []byte) error {
 	return n.Scan(t)
 }
 
-// UnmarshalJSON correctly deserialize a NullBool from JSON
+// UnmarshalJSON correctly deserializes a NullBool from JSON
 func (n *NullBool) UnmarshalJSON(b []byte) error {
 	var s interface{}
 	if err := json.Unmarshal(b, &s); err != nil {

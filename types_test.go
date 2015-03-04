@@ -77,7 +77,7 @@ func TestNullTypeJSONMarshal(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, test.expectedJSON, rawJSON)
 
-		// Umarshal it back
+		// Unmarshal it back
 		newRecord := &nullTypedRecord{}
 		err = json.Unmarshal([]byte(rawJSON), newRecord)
 		assert.NoError(t, err)
