@@ -13,32 +13,45 @@ import (
 func TestNullTypeScanning(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
-	// Create and test scanning a completely NULL row
-	nullRecordPrototype := &nullTypedRecord{}
-	res, err := s.InsertInto("null_types").Columns("string_val", "int64_val", "float64_val", "time_val", "bool_val").Record(nullRecordPrototype).Exec()
-	assert.NoError(t, err)
-	nullID, err := res.LastInsertId()
-	assert.NoError(t, err)
+	type nullTypeScanningTest struct {
+		record *nullTypedRecord
+		valid  bool
+	}
 
-	nullTypeSet := &nullTypedRecord{}
-	err = s.Select("*").From("null_types").Where("id = ?", nullID).LoadStruct(nullTypeSet)
-	assert.NoError(t, err)
-	assert.Equal(t, nullRecordPrototype, nullTypeSet)
+	tests := []nullTypeScanningTest{
+		nullTypeScanningTest{
+			record: &nullTypedRecord{},
+			valid:  false,
+		},
+		nullTypeScanningTest{
+			record: newNullTypedRecordWithData(),
+			valid:  true,
+		},
+	}
 
-	// Create and test scanning a completely NOT NULL row
-	notNullRecordPrototype := newNullTypedRecordWithData()
-	res, err = s.InsertInto("null_types").Columns("string_val", "int64_val", "float64_val", "time_val", "bool_val").Record(notNullRecordPrototype).Exec()
-	assert.NoError(t, err)
-	notNullID, err := res.LastInsertId()
-	assert.NoError(t, err)
+	for _, test := range tests {
+		// Create the record in the db
+		res, err := s.InsertInto("null_types").Columns("string_val", "int64_val", "float64_val", "time_val", "bool_val").Record(test.record).Exec()
+		assert.NoError(t, err)
+		id, err := res.LastInsertId()
+		assert.NoError(t, err)
 
-	notNullTypeSet := &nullTypedRecord{}
-	err = s.Select("*").From("null_types").Where("id = ?", notNullID).LoadStruct(notNullTypeSet)
-	assert.NoError(t, err)
-	assert.Equal(t, notNullRecordPrototype, notNullTypeSet)
+		// Scan it back and check that all fields are of the correct validity and are
+		// equal to the reference record
+		nullTypeSet := &nullTypedRecord{}
+		err = s.Select("*").From("null_types").Where("id = ?", id).LoadStruct(nullTypeSet)
+		assert.NoError(t, err)
 
-	notNullTypeSet.StringVal.String = "newString"
-	assert.NotEqual(t, notNullRecordPrototype, notNullTypeSet)
+		assert.Equal(t, test.record, nullTypeSet)
+		assert.Equal(t, test.valid, nullTypeSet.StringVal.Valid)
+		assert.Equal(t, test.valid, nullTypeSet.Int64Val.Valid)
+		assert.Equal(t, test.valid, nullTypeSet.Float64Val.Valid)
+		assert.Equal(t, test.valid, nullTypeSet.TimeVal.Valid)
+		assert.Equal(t, test.valid, nullTypeSet.BoolVal.Valid)
+
+		nullTypeSet.StringVal.String = "newStringVal"
+		assert.NotEqual(t, test.record, nullTypeSet)
+	}
 }
 
 func TestNullTypeJSONMarshal(t *testing.T) {
