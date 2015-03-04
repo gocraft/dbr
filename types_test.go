@@ -42,15 +42,34 @@ func TestNullTypeScanning(t *testing.T) {
 }
 
 func TestNullTypeJSONMarshal(t *testing.T) {
-	nullRecord := &nullTypedRecord{}
-	nullJSON, err := json.Marshal(nullRecord)
-	assert.NoError(t, err)
-	assert.Equal(t, `{"Id":0,"StringVal":null,"Int64Val":null,"Float64Val":null,"TimeVal":null,"BoolVal":null}`, string(nullJSON))
+	type nullTypeJSONTest struct {
+		record       *nullTypedRecord
+		expectedJSON []byte
+	}
 
-	notNullRecord := newNullTypedRecordWithData()
-	notNullJSON, err := json.Marshal(notNullRecord)
-	assert.NoError(t, err)
-	assert.Equal(t, `{"Id":0,"StringVal":"wow","Int64Val":42,"Float64Val":1.618,"TimeVal":"2009-01-03T18:15:05Z","BoolVal":true}`, string(notNullJSON))
+	tests := []nullTypeJSONTest{
+		nullTypeJSONTest{
+			record:       &nullTypedRecord{},
+			expectedJSON: []byte(`{"Id":0,"StringVal":null,"Int64Val":null,"Float64Val":null,"TimeVal":null,"BoolVal":null}`),
+		},
+		nullTypeJSONTest{
+			record:       newNullTypedRecordWithData(),
+			expectedJSON: []byte(`{"Id":0,"StringVal":"wow","Int64Val":42,"Float64Val":1.618,"TimeVal":"2009-01-03T18:15:05Z","BoolVal":true}`),
+		},
+	}
+
+	for _, test := range tests {
+		// Marshal the record
+		rawJSON, err := json.Marshal(test.record)
+		assert.NoError(t, err)
+		assert.Equal(t, test.expectedJSON, rawJSON)
+
+		// Umarshal it back
+		newRecord := &nullTypedRecord{}
+		err = json.Unmarshal([]byte(rawJSON), newRecord)
+		assert.NoError(t, err)
+		assert.Equal(t, test.record, newRecord)
+	}
 }
 
 func newNullTypedRecordWithData() *nullTypedRecord {
