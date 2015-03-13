@@ -323,8 +323,15 @@ if err != nil {
 fmt.Println(query) // SELECT * FROM suggestions WHERE (subdomain_id = 1)
 ```
 
-## Contributing
-We gladly accept contributions. We want to keep dbr pretty light but I certainly don't mind discussing any changes or additions. Feel free to open an issue if you'd like to discus a potential change.
+## gocraft
+
+gocraft offers a toolkit for building web apps. Currently these packages are available:
+
+* [gocraft/web](https://github.com/gocraft/web) - Go Router + Middleware. Your Contexts.
+* [gocraft/dbr](https://github.com/gocraft/dbr) - Additions to Go's database/sql for super fast performance and convenience.
+* [gocraft/health](https://github.com/gocraft/health) -  Instrument your web apps with logging and metrics.
+
+These packages were developed by the [engineering team](https://eng.uservoice.com) at [UserVoice](https://www.uservoice.com) and currently power much of its infrastructure and tech stack.
 
 ## Thanks & Authors
 Inspiration from these excellent libraries:
@@ -334,3 +341,4 @@ Inspiration from these excellent libraries:
 Authors:
 *  Jonathan Novak -- [https://github.com/cypriss](https://github.com/cypriss)
 *  Tyler Smith -- [https://github.com/tyler-smith](https://github.com/tyler-smith)
+*  Sponsored by [UserVoice](https://eng.uservoice.com)
