@@ -9,8 +9,9 @@ import (
 var destDummy interface{}
 
 type fieldMapQueueElement struct {
-	Type reflect.Type
-	Idxs []int
+	Type   reflect.Type
+	Idxs   []int
+	Prefix string
 }
 
 // recordType is the type of a structure
@@ -46,17 +47,22 @@ func (sess *Session) calculateFieldMap(recordType reflect.Type, columns []string
 					if name == "" {
 						name = NameMapping(fieldStruct.Name)
 					}
-					if name == col {
+					if curEntry.Prefix+name == col {
 						fieldMap[i] = append(curIdxs, j)
 						break QueueLoop
 					}
-				}
 
-				if fieldStruct.Type.Kind() == reflect.Struct {
-					var idxs2 []int
-					copy(idxs2, curIdxs)
-					idxs2 = append(idxs2, j)
-					queue = append(queue, fieldMapQueueElement{Type: fieldStruct.Type, Idxs: idxs2})
+					if fieldStruct.Type.Kind() == reflect.Struct {
+						var idxs2 []int
+						copy(idxs2, curIdxs)
+						idxs2 = append(idxs2, j)
+						queue = append(queue, fieldMapQueueElement{Type: fieldStruct.Type, Idxs: idxs2, Prefix: name + "__"})
+					} else if fieldStruct.Type.Kind() == reflect.Ptr && fieldStruct.Type.Elem().Kind() == reflect.Struct {
+						var idxs2 []int
+						copy(idxs2, curIdxs)
+						idxs2 = append(idxs2, j)
+						queue = append(queue, fieldMapQueueElement{Type: fieldStruct.Type.Elem(), Idxs: idxs2, Prefix: name + "__"})
+					}
 				}
 			}
 		}
@@ -80,7 +86,7 @@ func (sess *Session) prepareHolderFor(record reflect.Value, fieldMap [][]int, ho
 		if fieldIndex == nil {
 			holder[i] = &destDummy
 		} else {
-			field := record.FieldByIndex(fieldIndex)
+			field := fieldByIndexFor(record, fieldIndex)
 			holder[i] = field.Addr().Interface()
 		}
 	}
@@ -100,10 +106,27 @@ func (sess *Session) valuesFor(recordType reflect.Type, record reflect.Value, co
 		if fieldIndex == nil {
 			panic("wtf bro")
 		} else {
-			field := record.FieldByIndex(fieldIndex)
+			field := fieldByIndexFor(record, fieldIndex)
 			values[i] = field.Interface()
 		}
 	}
 
 	return values, nil
+}
+
+// Get or create field structure
+func fieldByIndexFor(record reflect.Value, index []int) reflect.Value {
+	if record.Kind() == reflect.Ptr {
+		record = record.Elem()
+	}
+
+	if len(index) < 2 {
+		return record.FieldByIndex(index)
+	}
+
+	field := record.FieldByIndex([]int{index[0]})
+	if field.IsNil() {
+		field.Set(reflect.New(field.Type().Elem()))
+	}
+	return fieldByIndexFor(field, index[1:])
 }
