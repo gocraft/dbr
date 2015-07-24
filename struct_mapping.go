@@ -42,7 +42,11 @@ func (sess *Session) calculateFieldMap(recordType reflect.Type, columns []string
 					continue
 				}
 
-				name := fieldStruct.Tag.Get("db")
+				name := fieldStruct.Tag.Get("dbr")
+				if len(name) < 1 {
+					name = fieldStruct.Tag.Get("db")
+				}
+
 				if name != "-" {
 					if name == "" {
 						name = NameMapping(fieldStruct.Name)
