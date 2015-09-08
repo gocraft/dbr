@@ -94,7 +94,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	// Assert our record was updated (and only our record)
 	rowsAff, err := res.RowsAffected()
 	assert.NoError(t, err)
-	assert.Equal(t, rowsAff, 1)
+	assert.Equal(t, rowsAff, int64(1))
 
 	var person dbrPerson
 	err = s.Select("*").From("dbr_people").Where(Eq{"email": "ben@whitehouse.gov"}).LoadStruct(&person)

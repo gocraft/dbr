@@ -274,7 +274,7 @@ func TestSelectBySqlLoadStructs(t *testing.T) {
 	assert.Equal(t, count, 1)
 	if len(people) == 1 {
 		assert.Equal(t, people[0].Name, "Jonathan")
-		assert.Equal(t, people[0].Id, 0)              // not set
+		assert.Equal(t, people[0].Id, int64(0))       // not set
 		assert.Equal(t, people[0].Email.Valid, false) // not set
 		assert.Equal(t, people[0].Email.String, "")   // not set
 	}
@@ -323,7 +323,7 @@ func TestSelectReturn(t *testing.T) {
 
 	count, err := s.Select("COUNT(*)").From("dbr_people").ReturnInt64()
 	assert.NoError(t, err)
-	assert.Equal(t, count, 2)
+	assert.Equal(t, count, int64(2))
 
 	names, err := s.Select("name").From("dbr_people").Where("email = 'jonathan@uservoice.com'").ReturnStrings()
 	assert.NoError(t, err)

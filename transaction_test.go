@@ -22,7 +22,7 @@ func TestTransactionReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.True(t, id > 0)
-	assert.Equal(t, rowsAff, 1)
+	assert.Equal(t, rowsAff, int64(1))
 
 	var person dbrPerson
 	err = tx.Select("*").From("dbr_people").Where("id = ?", id).LoadStruct(&person)
