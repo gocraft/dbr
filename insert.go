@@ -37,11 +37,12 @@ func (tx *Tx) InsertInto(into string) *InsertBuilder {
 	}
 }
 
+// InsertMap inserts the elements of the map as column/value pairs for the statement
 func (b *InsertBuilder) InsertMap(m map[string]interface{}) *InsertBuilder {
-	var val []interface{}
+	var vals []interface{}
 	for k, v := range m {
 		b.Cols = append(b.Cols, k)
-		val = append(val, v)
+		vals = append(vals, v)
 	}
 	b.Vals = append(b.Vals, vals)
 	return b
