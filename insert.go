@@ -37,6 +37,16 @@ func (tx *Tx) InsertInto(into string) *InsertBuilder {
 	}
 }
 
+func (b *InsertBuilder) InsertMap(m map[string]interface{}) *InsertBuilder {
+	var val []interface{}
+	for k, v := range m {
+		b.Cols = append(b.Cols, k)
+		val = append(val, v)
+	}
+	b.Vals = append(b.Vals, vals)
+	return b
+}
+
 // Columns appends columns to insert in the statement
 func (b *InsertBuilder) Columns(columns ...string) *InsertBuilder {
 	b.Cols = columns
