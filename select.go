@@ -1,210 +1,238 @@
 package dbr
 
-import (
-	"bytes"
-	"fmt"
-)
+import "fmt"
 
-// SelectBuilder contains the clauses for a SELECT statement
-type SelectBuilder struct {
-	*Session
-	runner
+// SelectStmt builds `SELECT ...`
+type SelectStmt struct {
+	raw
 
-	RawFullSql   string
-	RawArguments []interface{}
+	IsDistinct bool
 
-	IsDistinct      bool
-	Columns         []string
-	FromTable       string
-	WhereFragments  []*whereFragment
-	GroupBys        []string
-	HavingFragments []*whereFragment
-	OrderBys        []string
-	LimitCount      uint64
-	LimitValid      bool
-	OffsetCount     uint64
-	OffsetValid     bool
+	Column    []interface{}
+	Table     interface{}
+	JoinTable []Builder
+
+	WhereCond  []Condition
+	Group      []Builder
+	HavingCond []Condition
+	Order      []Builder
+
+	LimitCount  int64
+	OffsetCount int64
 }
 
-// Select creates a new SelectBuilder that select that given columns
-func (sess *Session) Select(cols ...string) *SelectBuilder {
-	return &SelectBuilder{
-		Session: sess,
-		runner:  sess.cxn.Db,
-		Columns: cols,
+// Build builds `SELECT ...` in dialect
+func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
+	if b.raw.Query != "" {
+		return b.raw.Build(d, buf)
+	}
+
+	if len(b.Column) == 0 {
+		return ErrColumnNotSpecified
+	}
+
+	buf.WriteString("SELECT ")
+
+	if b.IsDistinct {
+		buf.WriteString("DISTINCT ")
+	}
+
+	for i, col := range b.Column {
+		if i > 0 {
+			buf.WriteString(", ")
+		}
+		switch col := col.(type) {
+		case string:
+			// FIXME: no quote ident
+			buf.WriteString(col)
+		default:
+			buf.WriteString(d.Placeholder())
+			buf.WriteValue(col)
+		}
+	}
+
+	if b.Table != nil {
+		buf.WriteString(" FROM ")
+		switch table := b.Table.(type) {
+		case string:
+			// FIXME: no quote ident
+			buf.WriteString(table)
+		default:
+			buf.WriteString(d.Placeholder())
+			buf.WriteValue(table)
+		}
+		if len(b.JoinTable) > 0 {
+			for _, join := range b.JoinTable {
+				err := join.Build(d, buf)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	if len(b.WhereCond) > 0 {
+		buf.WriteString(" WHERE ")
+		err := And(b.WhereCond...).Build(d, buf)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(b.Group) > 0 {
+		buf.WriteString(" GROUP BY ")
+		for i, group := range b.Group {
+			if i > 0 {
+				buf.WriteString(", ")
+			}
+			err := group.Build(d, buf)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(b.HavingCond) > 0 {
+		buf.WriteString(" HAVING ")
+		err := And(b.HavingCond...).Build(d, buf)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(b.Order) > 0 {
+		buf.WriteString(" ORDER BY ")
+		for i, order := range b.Order {
+			if i > 0 {
+				buf.WriteString(", ")
+			}
+			err := order.Build(d, buf)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if b.LimitCount >= 0 {
+		buf.WriteString(" LIMIT ")
+		buf.WriteString(fmt.Sprint(b.LimitCount))
+	}
+
+	if b.OffsetCount >= 0 {
+		buf.WriteString(" OFFSET ")
+		buf.WriteString(fmt.Sprint(b.OffsetCount))
+	}
+	return nil
+}
+
+// Select creates a SelectStmt
+func Select(column ...interface{}) *SelectStmt {
+	return &SelectStmt{
+		Column:      column,
+		LimitCount:  -1,
+		OffsetCount: -1,
 	}
 }
 
-// SelectBySql creates a new SelectBuilder for the given SQL string and arguments
-func (sess *Session) SelectBySql(sql string, args ...interface{}) *SelectBuilder {
-	return &SelectBuilder{
-		Session:      sess,
-		runner:       sess.cxn.Db,
-		RawFullSql:   sql,
-		RawArguments: args,
+// From specifies table
+func (b *SelectStmt) From(table interface{}) *SelectStmt {
+	b.Table = table
+	return b
+}
+
+// SelectBySql creates a SelectStmt from raw query
+func SelectBySql(query string, value ...interface{}) *SelectStmt {
+	return &SelectStmt{
+		raw: raw{
+			Query: query,
+			Value: value,
+		},
+		LimitCount:  -1,
+		OffsetCount: -1,
 	}
 }
 
-// Select creates a new SelectBuilder that select that given columns bound to the transaction
-func (tx *Tx) Select(cols ...string) *SelectBuilder {
-	return &SelectBuilder{
-		Session: tx.Session,
-		runner:  tx.Tx,
-		Columns: cols,
-	}
-}
-
-// SelectBySql creates a new SelectBuilder for the given SQL string and arguments bound to the transaction
-func (tx *Tx) SelectBySql(sql string, args ...interface{}) *SelectBuilder {
-	return &SelectBuilder{
-		Session:      tx.Session,
-		runner:       tx.Tx,
-		RawFullSql:   sql,
-		RawArguments: args,
-	}
-}
-
-// Distinct marks the statement as a DISTINCT SELECT
-func (b *SelectBuilder) Distinct() *SelectBuilder {
+// Distinct adds `DISTINCT`
+func (b *SelectStmt) Distinct() *SelectStmt {
 	b.IsDistinct = true
 	return b
 }
 
-// From sets the table to SELECT FROM
-func (b *SelectBuilder) From(from string) *SelectBuilder {
-	b.FromTable = from
-	return b
-}
-
-// Where appends a WHERE clause to the statement for the given string and args
-// or map of column/value pairs
-func (b *SelectBuilder) Where(whereSqlOrMap interface{}, args ...interface{}) *SelectBuilder {
-	b.WhereFragments = append(b.WhereFragments, newWhereFragment(whereSqlOrMap, args))
-	return b
-}
-
-// GroupBy appends a column to group the statement
-func (b *SelectBuilder) GroupBy(group string) *SelectBuilder {
-	b.GroupBys = append(b.GroupBys, group)
-	return b
-}
-
-// Having appends a HAVING clause to the statement
-func (b *SelectBuilder) Having(whereSqlOrMap interface{}, args ...interface{}) *SelectBuilder {
-	b.HavingFragments = append(b.HavingFragments, newWhereFragment(whereSqlOrMap, args))
-	return b
-}
-
-// OrderBy appends a column to ORDER the statement by
-func (b *SelectBuilder) OrderBy(ord string) *SelectBuilder {
-	b.OrderBys = append(b.OrderBys, ord)
-	return b
-}
-
-// OrderDir appends a column to ORDER the statement by with a given direction
-func (b *SelectBuilder) OrderDir(ord string, isAsc bool) *SelectBuilder {
-	if isAsc {
-		b.OrderBys = append(b.OrderBys, ord+" ASC")
-	} else {
-		b.OrderBys = append(b.OrderBys, ord+" DESC")
+// Where adds a where condition
+func (b *SelectStmt) Where(query interface{}, value ...interface{}) *SelectStmt {
+	switch query := query.(type) {
+	case string:
+		b.WhereCond = append(b.WhereCond, Expr(query, value...))
+	case Condition:
+		b.WhereCond = append(b.WhereCond, query)
 	}
 	return b
 }
 
-// Limit sets a limit for the statement; overrides any existing LIMIT
-func (b *SelectBuilder) Limit(limit uint64) *SelectBuilder {
-	b.LimitCount = limit
-	b.LimitValid = true
+// Having adds a having condition
+func (b *SelectStmt) Having(query interface{}, value ...interface{}) *SelectStmt {
+	switch query := query.(type) {
+	case string:
+		b.HavingCond = append(b.HavingCond, Expr(query, value...))
+	case Condition:
+		b.HavingCond = append(b.HavingCond, query)
+	}
 	return b
 }
 
-// Offset sets an offset for the statement; overrides any existing OFFSET
-func (b *SelectBuilder) Offset(offset uint64) *SelectBuilder {
-	b.OffsetCount = offset
-	b.OffsetValid = true
+// GroupBy specifies columns for grouping
+func (b *SelectStmt) GroupBy(col ...string) *SelectStmt {
+	for _, group := range col {
+		b.Group = append(b.Group, Expr(group))
+	}
 	return b
 }
 
-// Paginate sets LIMIT/OFFSET for the statement based on the given page/perPage
-// Assumes page/perPage are valid. Page and perPage must be >= 1
-func (b *SelectBuilder) Paginate(page, perPage uint64) *SelectBuilder {
-	b.Limit(perPage)
-	b.Offset((page - 1) * perPage)
+// OrderBy specifies columns for ordering
+func (b *SelectStmt) OrderAsc(col string) *SelectStmt {
+	b.Order = append(b.Order, Order(col, ASC))
 	return b
 }
 
-// ToSql serialized the SelectBuilder to a SQL string
-// It returns the string with placeholders and a slice of query arguments
-func (b *SelectBuilder) ToSql() (string, []interface{}) {
-	if b.RawFullSql != "" {
-		return b.RawFullSql, b.RawArguments
-	}
+func (b *SelectStmt) OrderDesc(col string) *SelectStmt {
+	b.Order = append(b.Order, Order(col, DESC))
+	return b
+}
 
-	if len(b.Columns) == 0 {
-		panic("no columns specified")
-	}
-	if len(b.FromTable) == 0 {
-		panic("no table specified")
-	}
+// Limit adds limit
+func (b *SelectStmt) Limit(n uint64) *SelectStmt {
+	b.LimitCount = int64(n)
+	return b
+}
 
-	var sql bytes.Buffer
-	var args []interface{}
+// Offset adds offset
+func (b *SelectStmt) Offset(n uint64) *SelectStmt {
+	b.OffsetCount = int64(n)
+	return b
+}
 
-	sql.WriteString("SELECT ")
+// Join joins table on condition
+func (b *SelectStmt) Join(table, on interface{}) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, Join(Inner, table, on))
+	return b
+}
 
-	if b.IsDistinct {
-		sql.WriteString("DISTINCT ")
-	}
+func (b *SelectStmt) LeftJoin(table, on interface{}) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, Join(Left, table, on))
+	return b
+}
 
-	for i, s := range b.Columns {
-		if i > 0 {
-			sql.WriteString(", ")
-		}
-		sql.WriteString(s)
-	}
+func (b *SelectStmt) RightJoin(table, on interface{}) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, Join(Right, table, on))
+	return b
+}
 
-	sql.WriteString(" FROM ")
-	sql.WriteString(b.FromTable)
+func (b *SelectStmt) FullJoin(table, on interface{}) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, Join(Full, table, on))
+	return b
+}
 
-	if len(b.WhereFragments) > 0 {
-		sql.WriteString(" WHERE ")
-		writeWhereFragmentsToSql(b.WhereFragments, &sql, &args)
-	}
-
-	if len(b.GroupBys) > 0 {
-		sql.WriteString(" GROUP BY ")
-		for i, s := range b.GroupBys {
-			if i > 0 {
-				sql.WriteString(", ")
-			}
-			sql.WriteString(s)
-		}
-	}
-
-	if len(b.HavingFragments) > 0 {
-		sql.WriteString(" HAVING ")
-		writeWhereFragmentsToSql(b.HavingFragments, &sql, &args)
-	}
-
-	if len(b.OrderBys) > 0 {
-		sql.WriteString(" ORDER BY ")
-		for i, s := range b.OrderBys {
-			if i > 0 {
-				sql.WriteString(", ")
-			}
-			sql.WriteString(s)
-		}
-	}
-
-	if b.LimitValid {
-		sql.WriteString(" LIMIT ")
-		fmt.Fprint(&sql, b.LimitCount)
-	}
-
-	if b.OffsetValid {
-		sql.WriteString(" OFFSET ")
-		fmt.Fprint(&sql, b.OffsetCount)
-	}
-
-	return sql.String(), args
+// As creates alias for select statement
+func (b *SelectStmt) As(alias string) Builder {
+	return as(b, alias)
 }

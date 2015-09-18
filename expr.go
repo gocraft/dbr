@@ -1,11 +1,18 @@
 package dbr
 
-type expr struct {
-	Sql    string
-	Values []interface{}
+// XxxBuilders all support raw query
+type raw struct {
+	Query string
+	Value []interface{}
 }
 
-// Expr is a SQL fragment with placeholders, and a slice of args to replace them with
-func Expr(sql string, values ...interface{}) *expr {
-	return &expr{Sql: sql, Values: values}
+// Expr should be used when sql syntax is not supported
+func Expr(query string, value ...interface{}) Builder {
+	return &raw{Query: query, Value: value}
+}
+
+func (raw *raw) Build(_ Dialect, buf Buffer) error {
+	buf.WriteString(raw.Query)
+	buf.WriteValue(raw.Value...)
+	return nil
 }

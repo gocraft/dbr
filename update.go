@@ -1,208 +1,96 @@
 package dbr
 
-import (
-	"bytes"
-	"database/sql"
-	"fmt"
-	"time"
-)
+// UpdateStmt builds `UPDATE ...`
+type UpdateStmt struct {
+	raw
 
-// UpdateBuilder contains the clauses for an UPDATE statement
-type UpdateBuilder struct {
-	*Session
-	runner
+	Table string
+	Value map[string]interface{}
 
-	RawFullSql   string
-	RawArguments []interface{}
-
-	Table          string
-	SetClauses     []*setClause
-	WhereFragments []*whereFragment
-	OrderBys       []string
-	LimitCount     uint64
-	LimitValid     bool
-	OffsetCount    uint64
-	OffsetValid    bool
+	WhereCond []Condition
 }
 
-type setClause struct {
-	column string
-	value  interface{}
-}
-
-// Update creates a new UpdateBuilder for the given table
-func (sess *Session) Update(table string) *UpdateBuilder {
-	return &UpdateBuilder{
-		Session: sess,
-		runner:  sess.cxn.Db,
-		Table:   table,
-	}
-}
-
-// UpdateBySql creates a new UpdateBuilder for the given SQL string and arguments
-func (sess *Session) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder {
-	return &UpdateBuilder{
-		Session:      sess,
-		runner:       sess.cxn.Db,
-		RawFullSql:   sql,
-		RawArguments: args,
-	}
-}
-
-// Update creates a new UpdateBuilder for the given table bound to a transaction
-func (tx *Tx) Update(table string) *UpdateBuilder {
-	return &UpdateBuilder{
-		Session: tx.Session,
-		runner:  tx.Tx,
-		Table:   table,
-	}
-}
-
-// UpdateBySql creates a new UpdateBuilder for the given SQL string and arguments bound to a transaction
-func (tx *Tx) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder {
-	return &UpdateBuilder{
-		Session:      tx.Session,
-		runner:       tx.Tx,
-		RawFullSql:   sql,
-		RawArguments: args,
-	}
-}
-
-// Set appends a column/value pair for the statement
-func (b *UpdateBuilder) Set(column string, value interface{}) *UpdateBuilder {
-	b.SetClauses = append(b.SetClauses, &setClause{column: column, value: value})
-	return b
-}
-
-// SetMap appends the elements of the map as column/value pairs for the statement
-func (b *UpdateBuilder) SetMap(clauses map[string]interface{}) *UpdateBuilder {
-	for col, val := range clauses {
-		b = b.Set(col, val)
-	}
-	return b
-}
-
-// Where appends a WHERE clause to the statement
-func (b *UpdateBuilder) Where(whereSqlOrMap interface{}, args ...interface{}) *UpdateBuilder {
-	b.WhereFragments = append(b.WhereFragments, newWhereFragment(whereSqlOrMap, args))
-	return b
-}
-
-// OrderBy appends a column to ORDER the statement by
-func (b *UpdateBuilder) OrderBy(ord string) *UpdateBuilder {
-	b.OrderBys = append(b.OrderBys, ord)
-	return b
-}
-
-// OrderDir appends a column to ORDER the statement by with a given direction
-func (b *UpdateBuilder) OrderDir(ord string, isAsc bool) *UpdateBuilder {
-	if isAsc {
-		b.OrderBys = append(b.OrderBys, ord+" ASC")
-	} else {
-		b.OrderBys = append(b.OrderBys, ord+" DESC")
-	}
-	return b
-}
-
-// Limit sets a limit for the statement; overrides any existing LIMIT
-func (b *UpdateBuilder) Limit(limit uint64) *UpdateBuilder {
-	b.LimitCount = limit
-	b.LimitValid = true
-	return b
-}
-
-// Offset sets an offset for the statement; overrides any existing OFFSET
-func (b *UpdateBuilder) Offset(offset uint64) *UpdateBuilder {
-	b.OffsetCount = offset
-	b.OffsetValid = true
-	return b
-}
-
-// ToSql serialized the UpdateBuilder to a SQL string
-// It returns the string with placeholders and a slice of query arguments
-func (b *UpdateBuilder) ToSql() (string, []interface{}) {
-	if b.RawFullSql != "" {
-		return b.RawFullSql, b.RawArguments
+// Build builds `UPDATE ...` in dialect
+func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
+	if b.raw.Query != "" {
+		return b.raw.Build(d, buf)
 	}
 
-	if len(b.Table) == 0 {
-		panic("no table specified")
-	}
-	if len(b.SetClauses) == 0 {
-		panic("no set clauses specified")
+	if b.Table == "" {
+		return ErrTableNotSpecified
 	}
 
-	var sql bytes.Buffer
-	var args []interface{}
+	if len(b.Value) == 0 {
+		return ErrColumnNotSpecified
+	}
 
-	sql.WriteString("UPDATE ")
-	sql.WriteString(b.Table)
-	sql.WriteString(" SET ")
+	buf.WriteString("UPDATE ")
+	buf.WriteString(d.QuoteIdent(b.Table))
+	buf.WriteString(" SET ")
 
-	// Build SET clause SQL with placeholders and add values to args
-	for i, c := range b.SetClauses {
+	i := 0
+	for col, v := range b.Value {
 		if i > 0 {
-			sql.WriteString(", ")
+			buf.WriteString(", ")
 		}
-		Quoter.writeQuotedColumn(c.column, &sql)
-		if e, ok := c.value.(*expr); ok {
-			sql.WriteString(" = ")
-			sql.WriteString(e.Sql)
-			args = append(args, e.Values...)
-		} else {
-			sql.WriteString(" = ?")
-			args = append(args, c.value)
-		}
+		buf.WriteString(d.QuoteIdent(col))
+		buf.WriteString(" = ")
+		buf.WriteString(d.Placeholder())
+
+		buf.WriteValue(v)
+		i++
 	}
 
-	// Write WHERE clause if we have any fragments
-	if len(b.WhereFragments) > 0 {
-		sql.WriteString(" WHERE ")
-		writeWhereFragmentsToSql(b.WhereFragments, &sql, &args)
-	}
-
-	// Ordering and limiting
-	if len(b.OrderBys) > 0 {
-		sql.WriteString(" ORDER BY ")
-		for i, s := range b.OrderBys {
-			if i > 0 {
-				sql.WriteString(", ")
-			}
-			sql.WriteString(s)
+	if len(b.WhereCond) > 0 {
+		buf.WriteString(" WHERE ")
+		err := And(b.WhereCond...).Build(d, buf)
+		if err != nil {
+			return err
 		}
 	}
-
-	if b.LimitValid {
-		sql.WriteString(" LIMIT ")
-		fmt.Fprint(&sql, b.LimitCount)
-	}
-
-	if b.OffsetValid {
-		sql.WriteString(" OFFSET ")
-		fmt.Fprint(&sql, b.OffsetCount)
-	}
-
-	return sql.String(), args
+	return nil
 }
 
-// Exec executes the statement represented by the UpdateBuilder
-// It returns the raw database/sql Result and an error if there was one
-func (b *UpdateBuilder) Exec() (sql.Result, error) {
-	sql, args := b.ToSql()
-
-	fullSql, err := Interpolate(sql, args)
-	if err != nil {
-		return nil, b.EventErrKv("dbr.update.exec.interpolate", err, kvs{"sql": fullSql})
+// Update creates an UpdateStmt
+func Update(table string) *UpdateStmt {
+	return &UpdateStmt{
+		Table: table,
+		Value: make(map[string]interface{}),
 	}
+}
 
-	// Start the timer:
-	startTime := time.Now()
-	defer func() { b.TimingKv("dbr.update", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
-
-	result, err := b.runner.Exec(fullSql)
-	if err != nil {
-		return result, b.EventErrKv("dbr.update.exec.exec", err, kvs{"sql": fullSql})
+// UpdateBySql creates an UpdateStmt with raw query
+func UpdateBySql(query string, value ...interface{}) *UpdateStmt {
+	return &UpdateStmt{
+		raw: raw{
+			Query: query,
+			Value: value,
+		},
+		Value: make(map[string]interface{}),
 	}
+}
 
-	return result, nil
+// Where adds a where condition
+func (b *UpdateStmt) Where(query interface{}, value ...interface{}) *UpdateStmt {
+	switch query := query.(type) {
+	case string:
+		b.WhereCond = append(b.WhereCond, Expr(query, value...))
+	case Condition:
+		b.WhereCond = append(b.WhereCond, query)
+	}
+	return b
+}
+
+// Set specifies a key-value pair
+func (b *UpdateStmt) Set(column string, value interface{}) *UpdateStmt {
+	b.Value[column] = value
+	return b
+}
+
+// SetMap specifies a list of key-value pair
+func (b *UpdateStmt) SetMap(m map[string]interface{}) *UpdateStmt {
+	for col, val := range m {
+		b.Set(col, val)
+	}
+	return b
 }

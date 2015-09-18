@@ -7,7 +7,7 @@ import (
 
 type nowSentinel struct{}
 
-// Now is a value that serializes to the curren time
+// Now is a value that serializes to the current time
 var Now = nowSentinel{}
 var timeFormat = "2006-01-02 15:04:05"
 

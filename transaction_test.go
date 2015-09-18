@@ -1,54 +1,53 @@
 package dbr
 
 import (
-	// "database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTransactionReal(t *testing.T) {
-	s := createRealSessionWithFixtures()
+func TestTransactionCommit(t *testing.T) {
+	for _, sess := range []*Session{mysqlSession, postgresSession} {
+		tx, err := sess.Begin()
+		assert.NoError(t, err)
 
-	tx, err := s.Begin()
-	assert.NoError(t, err)
+		id := nextID()
 
-	res, err := tx.InsertInto("dbr_people").Columns("name", "email").Values("Barack", "obama@whitehouse.gov").Exec()
+		result, err := tx.InsertInto("dbr_people").Columns("id", "name", "email").Values(id, "Barack", "obama@whitehouse.gov").Exec()
+		assert.NoError(t, err)
 
-	assert.NoError(t, err)
-	id, err := res.LastInsertId()
-	assert.NoError(t, err)
-	rowsAff, err := res.RowsAffected()
-	assert.NoError(t, err)
+		rowsAffected, err := result.RowsAffected()
+		assert.NoError(t, err)
+		assert.EqualValues(t, 1, rowsAffected)
 
-	assert.True(t, id > 0)
-	assert.Equal(t, rowsAff, 1)
+		err = tx.Commit()
+		assert.NoError(t, err)
 
-	var person dbrPerson
-	err = tx.Select("*").From("dbr_people").Where("id = ?", id).LoadStruct(&person)
-	assert.NoError(t, err)
-
-	assert.Equal(t, person.Id, id)
-	assert.Equal(t, person.Name, "Barack")
-	assert.Equal(t, person.Email.Valid, true)
-	assert.Equal(t, person.Email.String, "obama@whitehouse.gov")
-
-	err = tx.Commit()
-	assert.NoError(t, err)
+		var person dbrPerson
+		err = tx.Select("*").From("dbr_people").Where(Eq("id", id)).LoadStruct(&person)
+		assert.Error(t, err)
+	}
 }
 
-func TestTransactionRollbackReal(t *testing.T) {
-	// Insert by specifying values
-	s := createRealSessionWithFixtures()
+func TestTransactionRollback(t *testing.T) {
+	for _, sess := range []*Session{mysqlSession, postgresSession} {
+		tx, err := sess.Begin()
+		assert.NoError(t, err)
 
-	tx, err := s.Begin()
-	assert.NoError(t, err)
+		id := nextID()
 
-	var person dbrPerson
-	err = tx.Select("*").From("dbr_people").Where("email = ?", "jonathan@uservoice.com").LoadStruct(&person)
-	assert.NoError(t, err)
-	assert.Equal(t, person.Name, "Jonathan")
+		result, err := tx.InsertInto("dbr_people").Columns("id", "name", "email").Values(id, "Barack", "obama@whitehouse.gov").Exec()
+		assert.NoError(t, err)
 
-	err = tx.Rollback()
-	assert.NoError(t, err)
+		rowsAffected, err := result.RowsAffected()
+		assert.NoError(t, err)
+		assert.EqualValues(t, 1, rowsAffected)
+
+		err = tx.Rollback()
+		assert.NoError(t, err)
+
+		var person dbrPerson
+		err = tx.Select("*").From("dbr_people").Where(Eq("id", id)).LoadStruct(&person)
+		assert.Error(t, err)
+	}
 }

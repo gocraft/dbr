@@ -5,69 +5,133 @@ gocraft/dbr provides additions to Go's database/sql for super fast performance a
 ## Getting Started
 
 ```go
-package main
+// create a connection
+conn, _ := dbr.Open("postgres", "...")
 
-import (
-	"database/sql"
-	"encoding/json"
-	"fmt"
+// create a session for each business unit of execution (e.g. a web request or goworkers job)
+sess := conn.NewSession(nil)
 
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/gocraft/dbr"
-)
+// get a record
+var suggestion Suggestion
+sess.Select("id", "title").From("suggestions").Where("id = ?", 1).LoadStruct(&suggestion)
 
-// Simple data model
-type Suggestion struct {
-	Id        int64
-	Title     string
-	CreatedAt dbr.NullTime
-}
-
-// Hold a single global connection (pooling provided by sql driver)
-var connection *dbr.Connection
-
-func main() {
-	// Create the connection during application initialization
-	db, _ := sql.Open("mysql", "root@unix(/tmp/mysqld.sock)/your_database")
-	connection = dbr.NewConnection(db, nil)
-
-	// Create a session for each business unit of execution (e.g. a web request or goworkers job)
-	dbrSess := connection.NewSession(nil)
-
-	// Get a record
-	var suggestion Suggestion
-	err := dbrSess.Select("id, title").From("suggestions").Where("id = ?", 13).LoadStruct(&suggestion)
-
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println("Title:", suggestion.Title)
-	}
-
-	// JSON-ready, with dbr.Null* types serialized like you want
-	recordJson, _ := json.Marshal(&suggestion)
-	fmt.Println(string(recordJson))
-}
+// JSON-ready, with dbr.Null* types serialized like you want
+json.Marshal(&suggestion)
 ```
 
 ## Feature highlights
 
+### Join (new)
+Join multiple tables.
+
+```go
+sess.Select("*").From("suggestions").Join("people", "people.suggestion_id = suggestions.id")
+sess.Select("*").From("suggestions").LeftJoin("people", "people.suggestion_id = suggestions.id")
+sess.Select("*").From("suggestions").RightJoin("people", "people.suggestion_id = suggestions.id")
+sess.Select("*").From("suggestions").FullJoin("people", "people.suggestion_id = suggestions.id")
+```
+
+### Load (new)
+The new `Load()` can replace LoadStruct, LoadStructs, LoadValue and LoadValues. In addition, the new `Load()` can load almost everything.
+
+```go
+var suggestions []Suggestion
+sess.Select("*").From("suggestions").Load(&suggestions)
+```
+
+### Identity (new)
+
+This can be used to quote database column or table.
+
+```go
+dbr.I("suggestions.id") // `suggestions`.`id`
+```
+
+### Subquery (new)
+
+```go
+sess.Select("count(id)").From(dbr.Select("*").From("suggestions").As("count"))
+```
+
+### Union (new)
+
+```go
+dbr.Union(
+  dbr.Select("*"),
+  dbr.Select("*"),
+)
+
+dbr.UnionAll(
+  dbr.Select("*"),
+  dbr.Select("*"),
+)
+```
+
+Union can be used for `SelectStmt.From()`.
+
+### Alias (new)
+
+Also known as `AS`, and it is supported for:
+
+* SelectStmt
+* Identity
+* Union
+
+### Condition (new)
+
+Building arbitrary condition with:
+
+* And
+* Or
+* Eq
+* Neq
+* Gt
+* Gte
+* Lt
+* Lte
+
+```go
+dbr.And(
+  dbr.Or(
+    dbr.Gt("created_at", "2015-09-10"),
+    dbr.Lte("created_at", "2015-09-11"),
+  ),
+  dbr.Eq("title", "hello world"),
+)
+```
+
+Building simple condition with:
+
+* AndMap (previously EqMap)
+* OrMap
+
+```go
+dbr.AndMap{
+  "label": "testing",
+  "age": 20,
+}
+
+dbr.OrMap{
+  "label": "testing",
+  "age": 20,
+}
+```
+
+All these can be used where `Condition` is expected.
+
 ### Automatically map results to structs
 Querying is the heart of gocraft/dbr. Automatically map results to structs:
+
 ```go
-var posts []*struct {
-	Id int64
-	Title string
-	Body dbr.NullString
-}
-err := sess.Select("id, title, body").
-	From("posts").Where("id = ?", id).LoadStruct(&post)
+var suggestion Suggestion
+sess.Select("id", "title", "body").From("suggestions").Where("id = ?", 1).LoadStruct(&suggestion)
 ```
 
 Additionally, easily query a single value or a slice of values:
+
 ```go
-id, err := sess.SelectBySql("SELECT id FROM posts WHERE title=?", title).ReturnInt64()
-ids, err := sess.SelectBySql("SELECT id FROM posts", title).ReturnInt64s()
+var suggestions []Suggestion
+sess.Select("id", "title", "body").From("suggestions").OrderBy("id").LoadStruct(&suggestions)
 ```
 
 See below for many more examples.
@@ -77,43 +141,28 @@ gocraft/dbr supports both.
 
 Sweet Query Builder:
 ```go
-builder := sess.Select("title", "body").
-	From("posts").
-	Where("created_at > ?", someTime).
-	OrderBy("id ASC").
+stmt := dbr.Select("title", "body").
+	From("suggestions").
+	OrderBy("id").
 	Limit(10)
-
-var posts []*Post
-n, err := builder.LoadStructs(&posts)
 ```
 
 Plain SQL:
+
 ```go
-n, err := sess.SelectBySql(`SELECT title, body FROM posts WHERE created_at > ?
-                              ORDER BY id ASC LIMIT 10`, someTime).LoadStructs(&post)
+builder := dbr.SelectBySql("SELECT `title`, `body` FROM `suggestions` ORDER BY `id` ASC LIMIT 10")
 ```
 
 ### IN queries that aren't horrible
 Traditionally, database/sql uses prepared statements, which means each argument in an IN clause needs its own question mark. gocraft/dbr, on the other hand, handles interpolation itself so that you can easily use a single question mark paired with a dynamically sized slice.
 
 ```go
-// Traditional database/sql way:
-ids := []int64{1,2,3,4,5}
-questionMarks := []string
-for _, _ := range ids {
-	questionMarks = append(questionMarks, "?")
-}
-query := fmt.Sprintf("SELECT * FROM posts WHERE id IN (%s)",
-	strings.Join(questionMarks, ",") // lolwut
-rows, err := db.Query(query, ids) 
-
-// gocraft/dbr way:
-ids := []int64{1,2,3,4,5}
-n, err := sess.SelectBySql("SELECT * FROM posts WHERE id IN ?", ids) // yay
+ids := []int64{1, 2, 3, 4, 5}
+builder.Where("id IN ?", ids) // `id` IN ?
 ```
 
 ### Amazing instrumentation
-Writing instrumented code is a first-class concern for gocraft/dbr. We instrument each query to emit to a gocraft/health-compatible EventReceiver interface. NOTE: we have not released gocraft/health yet. This allows you to instrument your app to easily connect gocraft/dbr to your metrics systems, such statsd.
+Writing instrumented code is a first-class concern for gocraft/dbr. We instrument each query to emit to a gocraft/health-compatible EventReceiver interface.
 
 ### Faster performance than using using database/sql directly
 Every time you call database/sql's db.Query("SELECT ...") method, under the hood, the mysql driver will create a prepared statement, execute it, and then throw it away. This has a big performance cost.
@@ -146,70 +195,17 @@ Not quite what you want. gocraft/dbr has dbr.NullString (and the rest of the Nul
 }
 ```
 
-## Driver support
-Currently only MySQL has been tested because that is what we use. Feel free to make an issue for Postgres if you're interested in adding support and we can discuss what it would take.
-
-## Usage Examples
-
 ### Making a session
 All queries in gocraft/dbr are made in the context of a session. This is because when instrumenting your app, it's important to understand which business action the query took place in. See gocraft/health for more detail.
 
 Here's an example web endpoint that makes a session:
-```go
-// At app startup. If you have a gocraft/health stream, pass it here instead of nil.
-dbrCxn = dbr.NewConnection(db, nil)
-
-func SuggestionsIndex(rw http.ResponseWriter, r *http.Request) {
-	// Make a session. If you have a gocraft/health job, pass it here instead of nil.
-	dbrSess := connection.NewSession(nil)
-
-	// Do queries with the session:
-	var sugg Suggestion
-	err := dbrSess.Select("id, title").From("suggestions").
-		Where("id = ?", suggestion.Id).LoadStruct(&sugg)
-
-	// Render stuff, etc. Nothing else needs to be done with dbr.
-}
-```
 
 ### Simple Record CRUD
-```go
-// Create a new suggestion record
-suggestion := &Suggestion{Title: "My Cool Suggestion", State: "open"}
 
-// Insert; inserting a record automatically sets an int64 Id field if present
-response, err := dbrSess.InsertInto("suggestions").
-	Columns("title", "state").Record(suggestion).Exec()
-
-// Update
-response, err = dbrSess.Update("suggestions").
-	Set("title", "My New Title").Where("id = ?", suggestion.Id).Exec()
-
-// Select
-var otherSuggestion Suggestion
-err = dbrSess.Select("id, title").From("suggestions").
-	Where("id = ?", suggestion.Id).LoadStruct(&otherSuggestion)
-
-// Delete
-response, err = dbrSess.DeleteFrom("suggestions").
-	Where("id = ?", otherSuggestion.Id).Limit(1).Exec()
-```
-
-### Primitive Values
-```go
-// Load primitives into existing variables
-var ids []int64
-idCount, err := sess.Select("id").From("suggestions").LoadValues(&ids)
-
-var titles []string
-titleCount, err := sess.Select("title").From("suggestions").LoadValues(&titles)
-
-// Or return them directly
-ids, err = sess.Select("id").From("suggestions").ReturnInt64s()
-titles, err = sess.Select("title").From("suggestions").ReturnStrings()
-```
+See `TestBasicCRUD`.
 
 ### Overriding Column Names With Struct Tags
+
 ```go
 // By default dbr converts CamelCase property names to snake_case column_names
 // You can override this with struct tags, just like with JSON tags
@@ -221,20 +217,22 @@ type Suggestion struct {
 }
 ```
 
-### Embedded structs
+### Load from/to structs
+
 ```go
-// Columns are mapped to fields breadth-first
+// columns are mapped by tag then by field
 type Suggestion struct {
-    Id        int64
-    Title     string
-    User      *struct {
-        Id int64 `db:"user_id"`
-    }
+	ID int64  // id, will be autoloaded by last insert id
+	Title string // title
+	Url string `db:"-"` // ignored
+	secret string // ignored
+	Body dbr.NullString `db:"content"` // content
+	User User
 }
 
-var suggestion Suggestion
-err := dbrSess.Select("id, title, user_id").From("suggestions").
-	Limit(1).LoadStruct(&suggestion)
+type User struct {
+	Name string // name
+}
 ```
 
 ### JSON encoding of Null* types
@@ -246,84 +244,33 @@ fmt.Println(string(jsonBytes)) // {"id":1,"title":"Test Title","created_at":null
 ```
 
 ### Inserting Multiple Records
-```go
-// Start bulding an INSERT statement
-createDevsBuilder := sess.InsertInto("developers").
-	Columns("name", "language", "employee_number")
 
-// Add some new developers
-for i := 0; i < 3; i++ {
-	createDevsBuilder.Record(&Dev{Name: "Gopher", Language: "Go", EmployeeNumber: i})
-}
-
-// Execute statment
-_, err := createDevsBuilder.Exec()
-if err != nil {
-	log.Fatalln("Error creating developers", err)
-}
+```
+sess.InsertInto("suggestions").Columns("title", "body")
+	.Record(suggestion1)
+	.Record(suggestion2)
 ```
 
 ### Updating Records
+
 ```go
-// Update any rubyists to gophers
-response, err := sess.Update("developers").
-	Set("name", "Gopher").
-	Set("language", "Go").
-	Where("language = ?", "Ruby").Exec()
-
-
-// Alternatively use a map of attributes to update
-attrsMap := map[string]interface{}{"name": "Gopher", "language": "Go"}
-response, err := sess.Update("developers").
-	SetMap(attrsMap).Where("language = ?", "Ruby").Exec()
+sess.Update("suggestions").
+	Set("title", "Gopher").
+	Set("body", "I love go.").
+	Where("id = ?", 1)
 ```
 
 ### Transactions
+
 ```go
-// Start txn
-tx, err := c.Dbr.Begin()
-if err != nil {
-	return err
-}
-
-// Rollback unless we're successful. You can also manually call tx.Rollback() if you'd like.
-defer tx.RollbackUnlessCommitted()
-
-// Issue statements that might cause errors
-res, err := tx.Update("suggestions").Set("state", "deleted").Where("deleted_at IS NOT NULL").Exec()
-if err != nil {
-	return err
-}
-
-// Commit the transaction
-if err := tx.Commit(); err != nil {
-	return err
-}
+tx, err := sess.Begin()
+tx.Rollback()
 ```
 
-### Generate SQL without executing
-```go
-// Create builder
-builder := dbrSess.Select("*").From("suggestions").Where("subdomain_id = ?", 1)
+## Driver support
 
-// Get builder's SQL and arguments
-sql, args := builder.ToSql()
-fmt.Println(sql) // SELECT * FROM suggestions WHERE (subdomain_id = ?)
-fmt.Println(args) // [1]
-
-// Use raw database/sql for actual query
-rows, err := db.Query(sql, args...)
-if err != nil {
-    log.Fatalln(err)
-}
-
-// Alternatively you can build the full query
-query, err := dbr.Interpolate(builder.ToSql())
-if err != nil {
-    log.Fatalln(err)
-}
-fmt.Println(query) // SELECT * FROM suggestions WHERE (subdomain_id = 1)
-```
+* MySQL
+* PostgreSQL
 
 ## gocraft
 
@@ -343,4 +290,5 @@ Inspiration from these excellent libraries:
 Authors:
 *  Jonathan Novak -- [https://github.com/cypriss](https://github.com/cypriss)
 *  Tyler Smith -- [https://github.com/tyler-smith](https://github.com/tyler-smith)
+*  Tai-Lin Chu -- [https://github.com/taylorchu](https://github.com/taylorchu)
 *  Sponsored by [UserVoice](https://eng.uservoice.com)

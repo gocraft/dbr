@@ -1,104 +1,87 @@
 package dbr
 
 import (
-	"database/sql/driver"
-	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
+
+	"github.com/gocraft/dbr/dialect"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestInterpolateNil(t *testing.T) {
-	args := []interface{}{nil}
-
-	str, err := Interpolate("SELECT * FROM x WHERE a = ?", args)
-	assert.NoError(t, err)
-	assert.Equal(t, str, "SELECT * FROM x WHERE a = NULL")
-}
-
-func TestInterpolateInts(t *testing.T) {
-	args := []interface{}{
-		int(1),
-		int8(-2),
-		int16(3),
-		int32(4),
-		int64(5),
-		uint(6),
-		uint8(7),
-		uint16(8),
-		uint32(9),
-		uint64(10),
+func TestInterpolateForDialect(t *testing.T) {
+	for _, test := range []struct {
+		query string
+		value []interface{}
+		want  string
+	}{
+		{
+			query: "?",
+			value: []interface{}{nil},
+			want:  "NULL",
+		},
+		{
+			query: "?",
+			value: []interface{}{`'"'"`},
+			want:  "'\\'\\\"\\'\\\"'",
+		},
+		{
+			query: "? ?",
+			value: []interface{}{true, false},
+			want:  "1 0",
+		},
+		{
+			query: "? ?",
+			value: []interface{}{1, 1.23},
+			want:  "1 1.23",
+		},
+		{
+			query: "?",
+			value: []interface{}{time.Date(2008, 9, 17, 20, 4, 26, 0, time.UTC)},
+			want:  "'2008-09-17 20:04:26'",
+		},
+		{
+			query: "?",
+			value: []interface{}{[]string{"one", "two"}},
+			want:  "('one','two')",
+		},
+		{
+			query: "?",
+			value: []interface{}{[]byte{0x1, 0x2, 0x3}},
+			want:  "0x010203",
+		},
+		{
+			query: "start?end",
+			value: []interface{}{new(int)},
+			want:  "start0end",
+		},
+		{
+			query: "?",
+			value: []interface{}{Select("a").From("table")},
+			want:  "(SELECT a FROM table)",
+		},
+		{
+			query: "?",
+			value: []interface{}{I("a1").As("a2")},
+			want:  "`a1` AS `a2`",
+		},
+		{
+			query: "?",
+			value: []interface{}{Select("a").From("table").As("a1")},
+			want:  "(SELECT a FROM table) AS `a1`",
+		},
+		{
+			query: "?",
+			value: []interface{}{
+				UnionAll(
+					Select("a").From("table1"),
+					Select("b").From("table2"),
+				).As("t"),
+			},
+			want: "((SELECT a FROM table1) UNION ALL (SELECT b FROM table2)) AS `t`",
+		},
+	} {
+		s, err := InterpolateForDialect(test.query, test.value, dialect.MySQL)
+		assert.NoError(t, err)
+		assert.Equal(t, test.want, s)
 	}
-
-	str, err := Interpolate("SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ? AND e = ? AND f = ? AND g = ? AND h = ? AND i = ? AND j = ?", args)
-	assert.NoError(t, err)
-	assert.Equal(t, str, "SELECT * FROM x WHERE a = 1 AND b = -2 AND c = 3 AND d = 4 AND e = 5 AND f = 6 AND g = 7 AND h = 8 AND i = 9 AND j = 10")
-}
-
-func TestInterpolateBools(t *testing.T) {
-	args := []interface{}{true, false}
-
-	str, err := Interpolate("SELECT * FROM x WHERE a = ? AND b = ?", args)
-	assert.NoError(t, err)
-	assert.Equal(t, str, "SELECT * FROM x WHERE a = 1 AND b = 0")
-}
-
-func TestInterpolateFloats(t *testing.T) {
-	args := []interface{}{float32(0.15625), float64(3.14159)}
-
-	str, err := Interpolate("SELECT * FROM x WHERE a = ? AND b = ?", args)
-	assert.NoError(t, err)
-	assert.Equal(t, str, "SELECT * FROM x WHERE a = 0.15625 AND b = 3.14159")
-}
-
-func TestInterpolateStrings(t *testing.T) {
-	args := []interface{}{"hello", "\"hello's \\ world\" \n\r\x00\x1a"}
-
-	str, err := Interpolate("SELECT * FROM x WHERE a = ? AND b = ?", args)
-	assert.NoError(t, err)
-	assert.Equal(t, str, "SELECT * FROM x WHERE a = 'hello' AND b = '\\\"hello\\'s \\\\ world\\\" \\n\\r\\x00\\x1a'")
-}
-
-func TestInterpolateSlices(t *testing.T) {
-	args := []interface{}{[]int{1}, []int{1, 2, 3}, []uint32{5, 6, 7}, []string{"wat", "ok"}}
-
-	str, err := Interpolate("SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ?", args)
-	assert.NoError(t, err)
-	assert.Equal(t, str, "SELECT * FROM x WHERE a = (1) AND b = (1,2,3) AND c = (5,6,7) AND d = ('wat','ok')")
-}
-
-type myString struct {
-	Present bool
-	Val     string
-}
-
-func (m myString) Value() (driver.Value, error) {
-	if m.Present {
-		return m.Val, nil
-	} else {
-		return nil, nil
-	}
-}
-
-func TestIntepolatingValuers(t *testing.T) {
-	args := []interface{}{myString{true, "wat"}, myString{false, "fry"}}
-
-	str, err := Interpolate("SELECT * FROM x WHERE a = ? AND b = ?", args)
-	assert.NoError(t, err)
-	assert.Equal(t, str, "SELECT * FROM x WHERE a = 'wat' AND b = NULL")
-}
-
-func TestInterpolateErrors(t *testing.T) {
-	_, err := Interpolate("SELECT * FROM x WHERE a = ? AND b = ?", []interface{}{1})
-	assert.Equal(t, err, ErrArgumentMismatch)
-
-	_, err = Interpolate("SELECT * FROM x WHERE", []interface{}{1})
-	assert.Equal(t, err, ErrArgumentMismatch)
-
-	_, err = Interpolate("SELECT * FROM x WHERE a = ?", []interface{}{string([]byte{0x34, 0xFF, 0xFE})})
-	assert.Equal(t, err, ErrNotUTF8)
-
-	_, err = Interpolate("SELECT * FROM x WHERE a = ?", []interface{}{struct{}{}})
-	assert.Equal(t, err, ErrInvalidValue)
-
-	_, err = Interpolate("SELECT * FROM x WHERE a = ?", []interface{}{[]struct{}{struct{}{}, struct{}{}}})
-	assert.Equal(t, err, ErrInvalidSliceValue)
 }
