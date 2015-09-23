@@ -8,6 +8,10 @@ import (
 )
 
 func TestTransactionReal(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping real database tests in short mode")
+	}
+
 	s := createRealSessionWithFixtures()
 
 	tx, err := s.Begin()
@@ -38,6 +42,10 @@ func TestTransactionReal(t *testing.T) {
 }
 
 func TestTransactionRollbackReal(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping real database tests in short mode")
+	}
+
 	// Insert by specifying values
 	s := createRealSessionWithFixtures()
 

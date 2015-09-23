@@ -41,6 +41,10 @@ func TestDeleteTenStaringFromTwentyToSql(t *testing.T) {
 }
 
 func TestDeleteReal(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping real database tests in short mode")
+	}
+
 	s := createRealSessionWithFixtures()
 
 	// Insert a Barack

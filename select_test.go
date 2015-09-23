@@ -220,6 +220,10 @@ func TestSelectVarieties(t *testing.T) {
 }
 
 func TestSelectLoadStructs(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping real database tests in short mode")
+	}
+
 	s := createRealSessionWithFixtures()
 
 	var people []*dbrPerson
@@ -247,6 +251,10 @@ func TestSelectLoadStructs(t *testing.T) {
 }
 
 func TestSelectLoadStruct(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping real database tests in short mode")
+	}
+
 	s := createRealSessionWithFixtures()
 
 	// Found:
@@ -265,6 +273,10 @@ func TestSelectLoadStruct(t *testing.T) {
 }
 
 func TestSelectBySqlLoadStructs(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping real database tests in short mode")
+	}
+
 	s := createRealSessionWithFixtures()
 
 	var people []*dbrPerson
@@ -281,6 +293,10 @@ func TestSelectBySqlLoadStructs(t *testing.T) {
 }
 
 func TestSelectLoadValue(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping real database tests in short mode")
+	}
+
 	s := createRealSessionWithFixtures()
 
 	var name string
@@ -297,6 +313,10 @@ func TestSelectLoadValue(t *testing.T) {
 }
 
 func TestSelectLoadValues(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping real database tests in short mode")
+	}
+
 	s := createRealSessionWithFixtures()
 
 	var names []string
@@ -315,6 +335,10 @@ func TestSelectLoadValues(t *testing.T) {
 }
 
 func TestSelectReturn(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping real database tests in short mode")
+	}
+
 	s := createRealSessionWithFixtures()
 
 	name, err := s.Select("name").From("dbr_people").Where("email = 'jonathan@uservoice.com'").ReturnString()

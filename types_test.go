@@ -11,6 +11,10 @@ import (
 )
 
 func TestNullTypeScanning(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping real database tests in short mode")
+	}
+
 	s := createRealSessionWithFixtures()
 
 	type nullTypeScanningTest struct {
