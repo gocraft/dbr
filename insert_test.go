@@ -59,7 +59,7 @@ func TestInsertRecordsToSql(t *testing.T) {
 	sql, args := s.InsertInto("a").Columns("something_id", "user_id", "other").Record(objs[0]).Record(objs[1]).ToSql()
 
 	assert.Equal(t, sql, "INSERT INTO a (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?)")
-	assert.Equal(t, args, []interface{}{1, 88, false, 2, 99, true})
+	assert.Equal(t, args, []interface{}{1, int64(88), false, 2, int64(99), true})
 }
 
 func TestInsertKeywordColumnName(t *testing.T) {
