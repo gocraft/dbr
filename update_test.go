@@ -81,6 +81,10 @@ func TestUpdateTenStaringFromTwentyToSql(t *testing.T) {
 }
 
 func TestUpdateKeywordColumnName(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping real database tests in short mode")
+	}
+
 	s := createRealSessionWithFixtures()
 
 	// Insert a user with a key
@@ -105,6 +109,10 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 }
 
 func TestUpdateReal(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping real database tests in short mode")
+	}
+
 	s := createRealSessionWithFixtures()
 
 	// Insert a George

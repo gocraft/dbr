@@ -59,10 +59,14 @@ func TestInsertRecordsToSql(t *testing.T) {
 	sql, args := s.InsertInto("a").Columns("something_id", "user_id", "other").Record(objs[0]).Record(objs[1]).ToSql()
 
 	assert.Equal(t, sql, "INSERT INTO a (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?)")
-	assert.Equal(t, args, []interface{}{1, 88, false, 2, 99, true})
+	assert.Equal(t, args, []interface{}{1, int64(88), false, 2, int64(99), true})
 }
 
 func TestInsertKeywordColumnName(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping real database tests in short mode")
+	}
+
 	// Insert a column whose name is reserved
 	s := createRealSessionWithFixtures()
 	res, err := s.InsertInto("dbr_people").Columns("name", "key").Values("Barack", "44").Exec()
@@ -74,6 +78,10 @@ func TestInsertKeywordColumnName(t *testing.T) {
 }
 
 func TestInsertReal(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping real database tests in short mode")
+	}
+
 	// Insert by specifying values
 	s := createRealSessionWithFixtures()
 	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values("Barack", "obama@whitehouse.gov").Exec()
