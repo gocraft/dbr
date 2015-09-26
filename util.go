@@ -28,11 +28,13 @@ func structMap(value reflect.Value) map[string]reflect.Value {
 	return m
 }
 
+var (
+	typeValuer = reflect.TypeOf((*driver.Valuer)(nil)).Elem()
+)
+
 func structValue(m map[string]reflect.Value, value reflect.Value) {
-	if value.IsValid() {
-		if _, ok := value.Interface().(driver.Valuer); ok {
-			return
-		}
+	if value.Type().Implements(typeValuer) {
+		return
 	}
 	switch value.Kind() {
 	case reflect.Ptr:
