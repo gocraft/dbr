@@ -38,6 +38,9 @@ func structValue(m map[string]reflect.Value, value reflect.Value) {
 	}
 	switch value.Kind() {
 	case reflect.Ptr:
+		if value.IsNil() {
+			return
+		}
 		structValue(m, value.Elem())
 	case reflect.Struct:
 		t := value.Type()

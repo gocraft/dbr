@@ -68,7 +68,7 @@ func findPtr(column []string, value reflect.Value) ([]interface{}, error) {
 		}
 		return ptr, nil
 	case reflect.Ptr:
-		if value.CanSet() {
+		if value.IsNil() {
 			value.Set(reflect.New(value.Type().Elem()))
 		}
 		return findPtr(column, value.Elem())
