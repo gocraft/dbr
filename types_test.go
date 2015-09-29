@@ -45,24 +45,55 @@ func TestNullTypesScanning(t *testing.T) {
 
 func TestNullTypesJSON(t *testing.T) {
 	for _, test := range []struct {
-		in   nullTypedRecord
-		want []byte
+		in   interface{}
+		in2  interface{}
+		out  interface{}
+		want string
 	}{
 		{
-			want: []byte(`{"Id":0,"StringVal":null,"Int64Val":null,"Float64Val":null,"TimeVal":null,"BoolVal":null}`),
+			in:   &filledRecord.BoolVal,
+			in2:  filledRecord.BoolVal,
+			out:  new(NullBool),
+			want: "true",
 		},
 		{
-			in:   filledRecord,
-			want: []byte(`{"Id":0,"StringVal":"wow","Int64Val":42,"Float64Val":1.618,"TimeVal":"2009-01-03T18:15:05Z","BoolVal":true}`),
+			in:   &filledRecord.Float64Val,
+			in2:  filledRecord.Float64Val,
+			out:  new(NullFloat64),
+			want: "1.618",
+		},
+		{
+			in:   &filledRecord.Int64Val,
+			in2:  filledRecord.Int64Val,
+			out:  new(NullInt64),
+			want: "42",
+		},
+		{
+			in:   &filledRecord.StringVal,
+			in2:  filledRecord.StringVal,
+			out:  new(NullString),
+			want: `"wow"`,
+		},
+		{
+			in:   &filledRecord.TimeVal,
+			in2:  filledRecord.TimeVal,
+			out:  new(NullTime),
+			want: `"2009-01-03T18:15:05Z"`,
 		},
 	} {
-		b, err := json.Marshal(&test.in)
+		// marshal ptr
+		b, err := json.Marshal(test.in)
 		assert.NoError(t, err)
-		assert.Equal(t, test.want, b)
+		assert.Equal(t, test.want, string(b))
 
-		var record nullTypedRecord
-		err = json.Unmarshal(test.want, &record)
+		// marshal value
+		b, err = json.Marshal(test.in2)
 		assert.NoError(t, err)
-		assert.Equal(t, test.in, record)
+		assert.Equal(t, test.want, string(b))
+
+		// unmarshal
+		err = json.Unmarshal(b, test.out)
+		assert.NoError(t, err)
+		assert.Equal(t, test.in, test.out)
 	}
 }

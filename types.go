@@ -55,7 +55,7 @@ type NullBool struct {
 var nullString = []byte("null")
 
 // MarshalJSON correctly serializes a NullString to JSON
-func (n *NullString) MarshalJSON() ([]byte, error) {
+func (n NullString) MarshalJSON() ([]byte, error) {
 	if n.Valid {
 		return json.Marshal(n.String)
 	}
@@ -63,7 +63,7 @@ func (n *NullString) MarshalJSON() ([]byte, error) {
 }
 
 // MarshalJSON correctly serializes a NullInt64 to JSON
-func (n *NullInt64) MarshalJSON() ([]byte, error) {
+func (n NullInt64) MarshalJSON() ([]byte, error) {
 	if n.Valid {
 		return json.Marshal(n.Int64)
 	}
@@ -71,7 +71,7 @@ func (n *NullInt64) MarshalJSON() ([]byte, error) {
 }
 
 // MarshalJSON correctly serializes a NullFloat64 to JSON
-func (n *NullFloat64) MarshalJSON() ([]byte, error) {
+func (n NullFloat64) MarshalJSON() ([]byte, error) {
 	if n.Valid {
 		return json.Marshal(n.Float64)
 	}
@@ -79,7 +79,7 @@ func (n *NullFloat64) MarshalJSON() ([]byte, error) {
 }
 
 // MarshalJSON correctly serializes a NullTime to JSON
-func (n *NullTime) MarshalJSON() ([]byte, error) {
+func (n NullTime) MarshalJSON() ([]byte, error) {
 	if n.Valid {
 		return json.Marshal(n.Time)
 	}
@@ -87,7 +87,7 @@ func (n *NullTime) MarshalJSON() ([]byte, error) {
 }
 
 // MarshalJSON correctly serializes a NullBool to JSON
-func (n *NullBool) MarshalJSON() ([]byte, error) {
+func (n NullBool) MarshalJSON() ([]byte, error) {
 	if n.Valid {
 		return json.Marshal(n.Bool)
 	}

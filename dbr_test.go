@@ -100,7 +100,7 @@ func reset(conn *Connection) {
 	} {
 		_, err := conn.Exec(v)
 		if err != nil {
-			log.Fatal("Failed to execute statement: ", v, " Got error: ", err)
+			log.Fatalf("Failed to execute statement: %s, Got error: %s", v, err)
 		}
 	}
 }
