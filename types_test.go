@@ -36,8 +36,10 @@ func TestNullTypesScanning(t *testing.T) {
 			var record nullTypedRecord
 			err = sess.Select("*").From("null_types").Where(Eq("id", test.in.Id)).LoadStruct(&record)
 			assert.NoError(t, err)
-			// TODO: https://github.com/lib/pq/issues/329
-			record.TimeVal.Time = test.in.TimeVal.Time
+			if sess == postgresSession {
+				// TODO: https://github.com/lib/pq/issues/329
+				record.TimeVal.Time = test.in.TimeVal.Time
+			}
 			assert.Equal(t, test.in, record)
 		}
 	}
