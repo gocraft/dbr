@@ -145,7 +145,7 @@ func encodePlaceholder(value interface{}, d Dialect, w StringWriter) error {
 		}
 		if v.Len() == 0 {
 			// FIXME: support zero-length slice
-			return ErrNotSupported
+			return ErrInvalidSliceLength
 		}
 		w.WriteString("(")
 		for i := 0; i < v.Len(); i++ {
