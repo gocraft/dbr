@@ -37,12 +37,6 @@ func (d mysql) EncodeString(s string) string {
 			buf.WriteString(`\Z`)
 		case '\\':
 			buf.WriteString(`\\`)
-			/*
-				case '%':
-					buf.WriteString(`\%`)
-				case '_':
-					buf.WriteString(`\_`)
-			*/
 		default:
 			buf.WriteByte(s[i])
 		}
@@ -60,7 +54,7 @@ func (d mysql) EncodeBool(b bool) string {
 }
 
 func (d mysql) EncodeTime(t time.Time) string {
-	return d.EncodeString(t.UTC().Format(timeFormat))
+	return `'` + t.UTC().Format(timeFormat) + `'`
 }
 
 func (d mysql) EncodeBytes(b []byte) string {

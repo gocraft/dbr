@@ -2,6 +2,7 @@ package dialect
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -12,7 +13,8 @@ func (d postgreSQL) QuoteIdent(s string) string {
 }
 
 func (d postgreSQL) EncodeString(s string) string {
-	return MySQL.EncodeString(s)
+	// http://www.postgresql.org/docs/9.2/static/sql-syntax-lexical.html
+	return `'` + strings.Replace(s, `'`, `''`, -1) + `'`
 }
 
 func (d postgreSQL) EncodeBool(b bool) string {
@@ -27,7 +29,7 @@ func (d postgreSQL) EncodeTime(t time.Time) string {
 }
 
 func (d postgreSQL) EncodeBytes(b []byte) string {
-	return d.EncodeString(fmt.Sprintf(`\x%x`, b))
+	return fmt.Sprintf(`E'\\x%x'`, b)
 }
 
 func (d postgreSQL) Placeholder() string {
