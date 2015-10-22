@@ -79,6 +79,11 @@ func TestInterpolateForDialect(t *testing.T) {
 			},
 			want: "((SELECT a FROM table1) UNION ALL (SELECT b FROM table2)) AS `t`",
 		},
+		{
+			query: "?",
+			value: []interface{}{time.Month(7)},
+			want:  "7",
+		},
 	} {
 		s, err := InterpolateForDialect(test.query, test.value, dialect.MySQL)
 		assert.NoError(t, err)

@@ -3,8 +3,8 @@ package dbr
 import (
 	"bytes"
 	"database/sql/driver"
-	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -115,7 +115,8 @@ func encodePlaceholder(value interface{}, d Dialect, w StringWriter) error {
 	case reflect.Int32:
 		fallthrough
 	case reflect.Int64:
-		fallthrough
+		w.WriteString(strconv.FormatInt(v.Int(), 10))
+		return nil
 	case reflect.Uint:
 		fallthrough
 	case reflect.Uint8:
@@ -125,12 +126,12 @@ func encodePlaceholder(value interface{}, d Dialect, w StringWriter) error {
 	case reflect.Uint32:
 		fallthrough
 	case reflect.Uint64:
-		fallthrough
+		w.WriteString(strconv.FormatUint(v.Uint(), 10))
+		return nil
 	case reflect.Float32:
 		fallthrough
 	case reflect.Float64:
-		// TODO: verify this works
-		w.WriteString(fmt.Sprint(v.Interface()))
+		w.WriteString(strconv.FormatFloat(v.Float(), 'f', -1, 64))
 		return nil
 	case reflect.Struct:
 		if v.Type() == reflect.TypeOf(time.Time{}) {
