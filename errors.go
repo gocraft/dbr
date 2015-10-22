@@ -10,5 +10,5 @@ var (
 	ErrColumnNotSpecified = errors.New("dbr: column not specified")
 	ErrInvalidPointer     = errors.New("dbr: attempt to load into an invalid pointer")
 	ErrPlaceholderCount   = errors.New("dbr: wrong placeholder count")
-	ErrInvalidSliceLength = errors.New("length of slice is 0. length must be >= 1")
+	ErrInvalidSliceLength = errors.New("dbr: length of slice is 0. length must be >= 1")
 )
