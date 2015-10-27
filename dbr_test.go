@@ -25,7 +25,7 @@ func nextID() int64 {
 }
 
 const (
-	mysqlDSN    = "root@unix(/tmp/mysql.sock)/uservoice_test?charset=utf8&parseTime=true"
+	mysqlDSN    = "root@unix(/tmp/mysql.sock)/uservoice_test?charset=utf8"
 	postgresDSN = "postgres://postgres@localhost:5432/uservoice_test?sslmode=disable"
 )
 

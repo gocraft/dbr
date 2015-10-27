@@ -33,12 +33,6 @@ type NullTime struct {
 	Valid bool // Valid is true if Time is not NULL
 }
 
-// Scan implements the Scanner interface.
-func (n *NullTime) Scan(value interface{}) error {
-	n.Time, n.Valid = value.(time.Time)
-	return nil
-}
-
 // Value implements the driver Valuer interface.
 func (n NullTime) Value() (driver.Value, error) {
 	if !n.Valid {
@@ -167,4 +161,79 @@ func NewNullTime(v interface{}) (n NullTime) {
 func NewNullBool(v interface{}) (n NullBool) {
 	n.Scan(v)
 	return
+}
+
+// The `(*NullTime) Scan(interface{})` and `parseDateTime(string, *time.Location)`
+// functions are slightly modified versions of code from the github.com/go-sql-driver/mysql
+// package. They work with Postgres and MySQL databases. Potential future
+// drivers should ensure these will work for them, or come up with an alternative.
+//
+// Conforming with its licensing terms the copyright notice and link to the licence
+// are available below.
+//
+// Source: https://github.com/go-sql-driver/mysql/blob/527bcd55aab2e53314f1a150922560174b493034/utils.go#L452-L508
+
+// Copyright notice from original developers:
+//
+// Go MySQL Driver - A MySQL-Driver for Go's database/sql package
+//
+// Copyright 2012 The Go-MySQL-Driver Authors. All rights reserved.
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at http://mozilla.org/MPL/2.0/
+
+// Scan implements the Scanner interface.
+// The value type must be time.Time or string / []byte (formatted time-string),
+// otherwise Scan fails.
+func (n *NullTime) Scan(value interface{}) error {
+	var err error
+
+	if value == nil {
+		n.Time, n.Valid = time.Time{}, false
+		return nil
+	}
+
+	switch v := value.(type) {
+	case time.Time:
+		n.Time, n.Valid = v, true
+		return nil
+	case []byte:
+		n.Time, err = parseDateTime(string(v), time.UTC)
+		n.Valid = (err == nil)
+		return err
+	case string:
+		n.Time, err = parseDateTime(v, time.UTC)
+		n.Valid = (err == nil)
+		return err
+	}
+
+	n.Valid = false
+	return nil
+}
+
+func parseDateTime(str string, loc *time.Location) (time.Time, error) {
+	var t time.Time
+	var err error
+
+	base := "0000-00-00 00:00:00.0000000"
+	switch len(str) {
+	case 10, 19, 21, 22, 23, 24, 25, 26:
+		if str == base[:len(str)] {
+			return t, err
+		}
+		t, err = time.Parse(timeFormat[:len(str)], str)
+	default:
+		err = ErrInvalidTimestring
+		return t, err
+	}
+
+	// Adjust location
+	if err == nil && loc != time.UTC {
+		y, mo, d := t.Date()
+		h, mi, s := t.Clock()
+		t, err = time.Date(y, mo, d, h, mi, s, t.Nanosecond(), loc), nil
+	}
+
+	return t, err
 }

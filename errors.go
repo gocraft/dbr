@@ -11,4 +11,6 @@ var (
 	ErrInvalidPointer     = errors.New("dbr: attempt to load into an invalid pointer")
 	ErrPlaceholderCount   = errors.New("dbr: wrong placeholder count")
 	ErrInvalidSliceLength = errors.New("dbr: length of slice is 0. length must be >= 1")
+	ErrCantConvertToTime  = errors.New("dbr: can't convert to time.Time")
+	ErrInvalidTimestring  = errors.New("dbr: invalid time string")
 )
