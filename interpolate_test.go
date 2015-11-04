@@ -95,27 +95,26 @@ func TestInterpolateForDialect(t *testing.T) {
 // Attempts to test common SQL injection strings. See `InjectionAttempts` for
 // more information on the source and the strings themselves.
 func TestCommonSQLInjections(t *testing.T) {
-	for _, s := range []*Session{mysqlSession, postgresSession} {
-		for _, injectionAttempt := range strings.Split(InjectionAttempts, "\n") {
+	for _, sess := range []*Session{mysqlSession, postgresSession} {
+		for _, injectionAttempt := range strings.Split(injectionAttempts, "\n") {
 			// Create a user with the attempted injection as the email address
-			_, err := s.
-				InsertInto("dbr_people").
-				Columns("name", "email").
-				Values("A. User", injectionAttempt).
+			_, err := sess.InsertInto("dbr_people").
+				Pair("name", injectionAttempt).
 				Exec()
 			assert.NoError(t, err)
 
-			// SELECT the email back and ensure it's equal to the injection attempt
-			var email string
-			err = s.Select("email").From("dbr_people").OrderDir("id", false).Limit(1).LoadValue(&email)
-			assert.Equal(t, injectionAttempt, email)
+			// SELECT the name back and ensure it's equal to the injection attempt
+			var name string
+			err = sess.Select("name").From("dbr_people").OrderDir("id", false).Limit(1).LoadValue(&name)
+			assert.Equal(t, injectionAttempt, name)
 		}
 	}
 }
 
 // InjectionAttempts is a newline separated list of common SQL injection exploits
 // taken from https://wfuzz.googlecode.com/svn/trunk/wordlist/Injections/SQL.txt
-var InjectionAttempts = `
+
+const injectionAttempts = `
 '
 "
 #
