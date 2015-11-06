@@ -143,3 +143,28 @@ func (n *NullBool) UnmarshalJSON(b []byte) error {
 	}
 	return n.Scan(s)
 }
+
+func NewNullInt64(v interface{}) (n NullInt64) {
+	n.Scan(v)
+	return
+}
+
+func NewNullFloat64(v interface{}) (n NullFloat64) {
+	n.Scan(v)
+	return
+}
+
+func NewNullString(v interface{}) (n NullString) {
+	n.Scan(v)
+	return
+}
+
+func NewNullTime(v interface{}) (n NullTime) {
+	n.Scan(v)
+	return
+}
+
+func NewNullBool(v interface{}) (n NullBool) {
+	n.Scan(v)
+	return
+}
