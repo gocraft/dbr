@@ -22,6 +22,19 @@ func camelCaseToSnakeCase(name string) string {
 	return buf.String()
 }
 
+func columnName(field reflect.StructField) string {
+	tag := field.Tag.Get("db")
+	if tag == "-" {
+		// ignore
+		return ""
+	}
+	if tag != "" {
+		return tag
+	}
+	// no tag, but we can record the field name
+	return camelCaseToSnakeCase(field.Name)
+}
+
 func structMap(value reflect.Value) map[string]reflect.Value {
 	m := make(map[string]reflect.Value)
 	structValue(m, value)
@@ -50,18 +63,13 @@ func structValue(m map[string]reflect.Value, value reflect.Value) {
 				// unexported
 				continue
 			}
-			tag := field.Tag.Get("db")
-			if tag == "-" {
-				// ignore
+			col := columnName(field)
+			if col == "" {
 				continue
 			}
-			if tag == "" {
-				// no tag, but we can record the field name
-				tag = camelCaseToSnakeCase(field.Name)
-			}
 			fieldValue := value.Field(i)
-			if _, ok := m[tag]; !ok {
-				m[tag] = fieldValue
+			if _, ok := m[col]; !ok {
+				m[col] = fieldValue
 			}
 			structValue(m, fieldValue)
 		}

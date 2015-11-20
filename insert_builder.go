@@ -3,6 +3,8 @@ package dbr
 import (
 	"database/sql"
 	"reflect"
+
+	"github.com/gocraft/dbr/dialect"
 )
 
 type InsertBuilder struct {
@@ -10,7 +12,8 @@ type InsertBuilder struct {
 	EventReceiver
 	Dialect Dialect
 
-	RecordID reflect.Value
+	recordID       reflect.Value
+	recordIDColumn string // postgres RETURNING
 
 	*InsertStmt
 }
@@ -57,6 +60,10 @@ func (b *InsertBuilder) ToSql() (string, []interface{}) {
 	if err != nil {
 		panic(err)
 	}
+	if b.recordIDColumn != "" {
+		buf.WriteString(" RETURNING ")
+		buf.WriteString(b.Dialect.QuoteIdent(b.recordIDColumn))
+	}
 	return buf.String(), buf.Value()
 }
 
@@ -73,15 +80,52 @@ func (b *InsertBuilder) Pair(column string, value interface{}) *InsertBuilder {
 	return b
 }
 
+type sqlResult struct {
+	rowsAffected int64
+	lastInsertId int64
+}
+
+func (r *sqlResult) LastInsertId() (int64, error) {
+	return r.lastInsertId, nil
+}
+
+func (r *sqlResult) RowsAffected() (int64, error) {
+	return r.rowsAffected, nil
+}
+
 func (b *InsertBuilder) Exec() (sql.Result, error) {
-	result, err := exec(b.runner, b.EventReceiver, b, b.Dialect)
+	if len(b.Value) > 1 {
+		// remove reference to object for multiple insert
+		b.recordID = reflect.Value{}
+		b.recordIDColumn = ""
+	}
+
+	var (
+		result sql.Result
+		err    error
+	)
+	if b.recordIDColumn != "" {
+		// for postgres, try to load the returning id
+		var lastInsertId int64
+		_, err = query(b.runner, b.EventReceiver, b, b.Dialect, &lastInsertId)
+		if err == nil {
+			result = &sqlResult{
+				// implied because we only allow id injection if record count == 1
+				rowsAffected: 1,
+				lastInsertId: lastInsertId,
+			}
+		}
+	} else {
+		// normal
+		result, err = exec(b.runner, b.EventReceiver, b, b.Dialect)
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	if b.RecordID.IsValid() {
+	if b.recordID.IsValid() {
 		if id, err := result.LastInsertId(); err == nil {
-			b.RecordID.SetInt(id)
+			b.recordID.SetInt(id)
 		}
 	}
 
@@ -98,9 +142,17 @@ func (b *InsertBuilder) Record(structValue interface{}) *InsertBuilder {
 	if v.Kind() == reflect.Struct && v.CanSet() {
 		// ID is recommended by golint here
 		for _, name := range []string{"Id", "ID"} {
-			field := v.FieldByName(name)
-			if field.IsValid() && field.Kind() == reflect.Int64 {
-				b.RecordID = field
+			fieldValue := v.FieldByName(name)
+			if fieldValue.IsValid() && fieldValue.Kind() == reflect.Int64 {
+				if b.Dialect == dialect.PostgreSQL {
+					field, _ := v.Type().FieldByName(name)
+					col := columnName(field)
+					if col == "" {
+						continue
+					}
+					b.recordIDColumn = col
+				}
+				b.recordID = fieldValue
 				break
 			}
 		}

@@ -11,9 +11,7 @@ func TestTransactionCommit(t *testing.T) {
 		tx, err := sess.Begin()
 		assert.NoError(t, err)
 
-		id := nextID()
-
-		result, err := tx.InsertInto("dbr_people").Columns("id", "name", "email").Values(id, "Barack", "obama@whitehouse.gov").Exec()
+		result, err := tx.InsertInto("dbr_people").Columns("name").Values("A").Exec()
 		assert.NoError(t, err)
 
 		rowsAffected, err := result.RowsAffected()
@@ -22,10 +20,6 @@ func TestTransactionCommit(t *testing.T) {
 
 		err = tx.Commit()
 		assert.NoError(t, err)
-
-		var person dbrPerson
-		err = tx.Select("*").From("dbr_people").Where(Eq("id", id)).LoadStruct(&person)
-		assert.Error(t, err)
 	}
 }
 
@@ -34,9 +28,7 @@ func TestTransactionRollback(t *testing.T) {
 		tx, err := sess.Begin()
 		assert.NoError(t, err)
 
-		id := nextID()
-
-		result, err := tx.InsertInto("dbr_people").Columns("id", "name", "email").Values(id, "Barack", "obama@whitehouse.gov").Exec()
+		result, err := tx.InsertInto("dbr_people").Columns("name").Values("A").Exec()
 		assert.NoError(t, err)
 
 		rowsAffected, err := result.RowsAffected()
@@ -45,9 +37,5 @@ func TestTransactionRollback(t *testing.T) {
 
 		err = tx.Rollback()
 		assert.NoError(t, err)
-
-		var person dbrPerson
-		err = tx.Select("*").From("dbr_people").Where(Eq("id", id)).LoadStruct(&person)
-		assert.Error(t, err)
 	}
 }

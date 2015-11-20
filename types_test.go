@@ -1,7 +1,6 @@
 package dbr
 
 import (
-	"database/sql"
 	"encoding/json"
 	"testing"
 	"time"
@@ -11,11 +10,11 @@ import (
 
 var (
 	filledRecord = nullTypedRecord{
-		StringVal:  NullString{sql.NullString{String: "wow", Valid: true}},
-		Int64Val:   NullInt64{sql.NullInt64{Int64: 42, Valid: true}},
-		Float64Val: NullFloat64{sql.NullFloat64{Float64: 1.618, Valid: true}},
-		TimeVal:    NullTime{Time: time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC), Valid: true},
-		BoolVal:    NullBool{sql.NullBool{Bool: true, Valid: true}},
+		StringVal:  NewNullString("wow"),
+		Int64Val:   NewNullInt64(42),
+		Float64Val: NewNullFloat64(1.618),
+		TimeVal:    NewNullTime(time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC)),
+		BoolVal:    NewNullBool(true),
 	}
 )
 
@@ -29,8 +28,7 @@ func TestNullTypesScanning(t *testing.T) {
 		},
 	} {
 		for _, sess := range []*Session{mysqlSession, postgresSession} {
-			test.in.Id = nextID()
-			_, err := sess.InsertInto("null_types").Columns("id", "string_val", "int64_val", "float64_val", "time_val", "bool_val").Record(test.in).Exec()
+			_, err := sess.InsertInto("null_types").Columns("string_val", "int64_val", "float64_val", "time_val", "bool_val").Record(&test.in).Exec()
 			assert.NoError(t, err)
 
 			var record nullTypedRecord
@@ -38,7 +36,9 @@ func TestNullTypesScanning(t *testing.T) {
 			assert.NoError(t, err)
 			if sess == postgresSession {
 				// TODO: https://github.com/lib/pq/issues/329
-				record.TimeVal.Time = test.in.TimeVal.Time
+				if !record.TimeVal.Time.IsZero() {
+					record.TimeVal.Time = record.TimeVal.Time.UTC()
+				}
 			}
 			assert.Equal(t, test.in, record)
 		}
