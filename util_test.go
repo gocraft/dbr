@@ -41,6 +41,10 @@ func TestSnakeCase(t *testing.T) {
 			in:   "Float64Val",
 			want: "float64_val",
 		},
+		{
+			in:   "XMLName",
+			want: "xml_name",
+		},
 	} {
 		assert.Equal(t, test.want, camelCaseToSnakeCase(test.in))
 	}

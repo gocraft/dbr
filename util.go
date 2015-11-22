@@ -14,7 +14,9 @@ func camelCaseToSnakeCase(name string) string {
 
 	for i := 0; i < len(runes); i++ {
 		buf.WriteRune(unicode.ToLower(runes[i]))
-		if !unicode.IsUpper(runes[i]) && i != len(runes)-1 && unicode.IsUpper(runes[i+1]) {
+		if i != len(runes)-1 && unicode.IsUpper(runes[i+1]) &&
+			(unicode.IsLower(runes[i]) || unicode.IsDigit(runes[i]) ||
+				(i != len(runes)-2 && unicode.IsLower(runes[i+2]))) {
 			buf.WriteRune('_')
 		}
 	}
