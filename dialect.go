@@ -10,6 +10,4 @@ type Dialect interface {
 	EncodeBool(b bool) string
 	EncodeTime(t time.Time) string
 	EncodeBytes(b []byte) string
-
-	Placeholder() string
 }

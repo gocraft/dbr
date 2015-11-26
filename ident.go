@@ -15,7 +15,7 @@ func (i I) As(alias string) Builder {
 
 func as(expr interface{}, alias string) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
-		buf.WriteString(d.Placeholder())
+		buf.WriteString(placeholder)
 		buf.WriteValue(expr)
 		buf.WriteString(" AS ")
 		buf.WriteString(d.QuoteIdent(alias))

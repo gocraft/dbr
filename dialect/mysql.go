@@ -60,7 +60,3 @@ func (d mysql) EncodeTime(t time.Time) string {
 func (d mysql) EncodeBytes(b []byte) string {
 	return fmt.Sprintf(`0x%x`, b)
 }
-
-func (d mysql) Placeholder() string {
-	return "?"
-}

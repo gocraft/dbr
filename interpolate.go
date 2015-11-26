@@ -3,7 +3,9 @@ package dbr
 import (
 	"bytes"
 	"database/sql/driver"
+	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -27,33 +29,61 @@ func InterpolateForDialect(query string, value []interface{}, d Dialect) (string
 	return buf.String(), nil
 }
 
-func interpolate(query string, value []interface{}, d Dialect, w StringWriter) error {
-	placeholder := d.Placeholder()
+const (
+	placeholder = "?"
+)
 
-	if strings.Count(query, placeholder) != len(value) {
-		return ErrPlaceholderCount
+func convertDollarPlaceholder(query string, n int, w StringWriter) {
+	index := strings.Index(query, placeholder)
+	if index == -1 {
+		w.WriteString(query)
+		return
 	}
+	w.WriteString(query[:index])
+	w.WriteString(fmt.Sprintf("$%d", n))
+	convertDollarPlaceholder(query[index+len(placeholder):], n+1, w)
+}
 
-	valueIndex := 0
+var (
+	dollarPlaceholderRegexp = regexp.MustCompile(`\$[0-9]+`)
+)
+
+func interpolate(query string, value []interface{}, d Dialect, w StringWriter) error {
+	used := make([]bool, len(value))
+
+	buf := new(bytes.Buffer)
+	convertDollarPlaceholder(query, 1, buf)
+	query = buf.String()
 
 	for {
-		index := strings.Index(query, placeholder)
-		if index == -1 {
+		index := dollarPlaceholderRegexp.FindStringIndex(query)
+		if index == nil {
 			break
 		}
-		w.WriteString(query[:index])
-		query = query[index+len(placeholder):]
+		w.WriteString(query[:index[0]])
 
-		err := encodePlaceholder(value[valueIndex], d, w)
+		// after $
+		n, _ := strconv.Atoi(query[index[0]+1 : index[1]])
+		if n < 1 || n > len(value) {
+			return ErrPlaceholderCount
+		}
+		err := encodePlaceholder(value[n-1], d, w)
 		if err != nil {
 			return err
 		}
-
-		valueIndex++
+		used[n-1] = true
+		query = query[index[1]:]
 	}
 
 	// placeholder not found; write remaining query
 	w.WriteString(query)
+
+	for _, u := range used {
+		if !u {
+			// unused value
+			return ErrPlaceholderCount
+		}
+	}
 
 	return nil
 }
