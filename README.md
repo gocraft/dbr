@@ -6,7 +6,7 @@ gocraft/dbr provides additions to Go's database/sql for super fast performance a
 
 ```go
 // create a connection
-conn, _ := dbr.Open("postgres", "...")
+conn, _ := dbr.Open("postgress", "your_user:password@tcp(127.0.0.1:5432)/your_db", nil)
 
 // create a session for each business unit of execution (e.g. a web request or goworkers job)
 sess := conn.NewSession(nil)
@@ -22,6 +22,7 @@ json.Marshal(&suggestion)
 ## Feature highlights
 
 ### Join (new)
+
 Join multiple tables.
 
 ```go
@@ -32,6 +33,7 @@ sess.Select("*").From("suggestions").FullJoin("people", "people.suggestion_id = 
 ```
 
 ### Load (new)
+
 The new `Load()` can replace LoadStruct, LoadStructs, LoadValue and LoadValues. In addition, the new `Load()` can load almost everything.
 
 ```go
@@ -77,6 +79,12 @@ Also known as `AS`, and it is supported for:
 * Identity
 * Union
 
+This can be used to define table name alias.
+
+```go
+sess.Select("*").From(dbr.I("suggestions").As("s")).Join(dbr.I("people").As("p"), "p.suggestion_id = s.id")
+```
+
 ### Condition (new)
 
 Building arbitrary condition with:
@@ -119,7 +127,17 @@ dbr.OrMap{
 
 All these can be used where `Condition` is expected.
 
+```go
+condition := dbr.AndMap{
+  "label": "testing",
+  "age": 20,
+}
+
+sess.Select("*").From("suggestions").Where(condition)
+```
+
 ### Automatically map results to structs
+
 Querying is the heart of gocraft/dbr. Automatically map results to structs:
 
 ```go
@@ -137,14 +155,21 @@ sess.Select("id", "title", "body").From("suggestions").OrderBy("id").LoadStruct(
 See below for many more examples.
 
 ### Use a Sweet Query Builder or use Plain SQL
+
 gocraft/dbr supports both.
 
 Sweet Query Builder:
+
 ```go
+buf := dbr.NewBuffer()
+
 stmt := dbr.Select("title", "body").
-	From("suggestions").
-	OrderBy("id").
-	Limit(10)
+    From("suggestions").
+    OrderAsc("id").
+    Limit(10)
+
+stmt.Build(dialect.MySQL, buf)
+fmt.Println(buf) // SELECT title, body FROM suggestions ORDER BY id ASC LIMIT 10
 ```
 
 Plain SQL:
@@ -154,6 +179,7 @@ builder := dbr.SelectBySql("SELECT `title`, `body` FROM `suggestions` ORDER BY `
 ```
 
 ### IN queries that aren't horrible
+
 Traditionally, database/sql uses prepared statements, which means each argument in an IN clause needs its own question mark. gocraft/dbr, on the other hand, handles interpolation itself so that you can easily use a single question mark paired with a dynamically sized slice.
 
 ```go
@@ -162,9 +188,11 @@ builder.Where("id IN ?", ids) // `id` IN ?
 ```
 
 ### Amazing instrumentation
+
 Writing instrumented code is a first-class concern for gocraft/dbr. We instrument each query to emit to a gocraft/health-compatible EventReceiver interface.
 
 ### Faster performance than using using database/sql directly
+
 Every time you call database/sql's db.Query("SELECT ...") method, under the hood, the mysql driver will create a prepared statement, execute it, and then throw it away. This has a big performance cost.
 
 gocraft/dbr doesn't use prepared statements. We ported mysql's query escape functionality directly into our package, which means we interpolate all of those question marks with their arguments before they get to MySQL. The result of this is that it's way faster, and just as secure.
@@ -172,7 +200,9 @@ gocraft/dbr doesn't use prepared statements. We ported mysql's query escape func
 Check out these [benchmarks](https://github.com/tyler-smith/golang-sql-benchmark).
 
 ### JSON Friendly
+
 Every try to JSON-encode a sql.NullString? You get:
+
 ```json
 {
 	"str1": {
@@ -196,6 +226,7 @@ Not quite what you want. gocraft/dbr has dbr.NullString (and the rest of the Nul
 ```
 
 ### Making a session
+
 All queries in gocraft/dbr are made in the context of a session. This is because when instrumenting your app, it's important to understand which business action the query took place in. See gocraft/health for more detail.
 
 Here's an example web endpoint that makes a session:
@@ -203,6 +234,11 @@ Here's an example web endpoint that makes a session:
 ### Simple Record CRUD
 
 See `TestBasicCRUD`.
+
+- (INSERT)[https://github.com/gocraft/dbr/blob/master/insert_test.go]
+- (SELECT)[https://github.com/gocraft/dbr/blob/master/select_test.go]
+- (UPDATE)[https://github.com/gocraft/dbr/blob/master/update_test.go]
+- (DELETE)[https://github.com/gocraft/dbr/blob/master/delete_test.go]
 
 ### Overriding Column Names With Struct Tags
 
@@ -236,6 +272,7 @@ type User struct {
 ```
 
 ### JSON encoding of Null* types
+
 ```go
 // dbr.Null* types serialize to JSON like you want
 suggestion := &Suggestion{Id: 1, Title: "Test Title"}
@@ -260,11 +297,33 @@ sess.Update("suggestions").
 	Where("id = ?", 1)
 ```
 
+`SetMap()`:
+
+```go
+attrsMap := map[string]interface{}{"title": "Gopher", "body": "We love go."}
+
+sess.Update("suggestions").
+    SetMap(attrsMap).
+    Where("id = ?", 1)
+```
+
 ### Transactions
 
 ```go
 tx, err := sess.Begin()
-tx.Rollback()
+
+err := doSomething()
+if err != nil {
+    tx.Rollback()
+} else {
+    tx.Commit()
+}
+```
+
+`RollbackUnlessCommitted()` can be used with defer statement in a function.
+
+```go
+defer tx.RollbackUnlessCommitted()
 ```
 
 ## Driver support
