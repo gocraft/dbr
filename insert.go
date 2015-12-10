@@ -12,6 +12,7 @@ type InsertStmt struct {
 	Table  string
 	Column []string
 	Value  [][]interface{}
+	IgnoreDuplicates bool
 }
 
 // Build builds `INSERT INTO ...` in dialect
@@ -28,9 +29,13 @@ func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 		return ErrColumnNotSpecified
 	}
 
-	buf.WriteString("INSERT INTO ")
-	buf.WriteString(d.QuoteIdent(b.Table))
+	insertInto := "INSERT INTO "
+	if b.IgnoreDuplicates {
+		insertInto = "INSERT IGNORE INTO "
+	}
 
+	buf.WriteString(insertInto)
+	buf.WriteString(d.QuoteIdent(b.Table))
 	buf.WriteString(" (")
 
 	placeholder := new(bytes.Buffer)
