@@ -9,7 +9,6 @@ type InsertBuilder struct {
 	runner
 	EventReceiver
 	Dialect Dialect
-
 	RecordID reflect.Value
 
 	*InsertStmt
@@ -112,5 +111,10 @@ func (b *InsertBuilder) Record(structValue interface{}) *InsertBuilder {
 
 func (b *InsertBuilder) Values(value ...interface{}) *InsertBuilder {
 	b.InsertStmt.Values(value...)
+	return b
+}
+
+func (b *InsertBuilder) IgnoreDuplicateEntries() *InsertBuilder {
+	b.InsertStmt.IgnoreDuplicates = true
 	return b
 }
