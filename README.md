@@ -164,7 +164,7 @@ builder.Where("id IN ?", ids) // `id` IN ?
 ### Amazing instrumentation
 Writing instrumented code is a first-class concern for gocraft/dbr. We instrument each query to emit to a gocraft/health-compatible EventReceiver interface.
 
-### Faster performance than using using database/sql directly
+### Faster performance than using database/sql directly
 Every time you call database/sql's db.Query("SELECT ...") method, under the hood, the mysql driver will create a prepared statement, execute it, and then throw it away. This has a big performance cost.
 
 gocraft/dbr doesn't use prepared statements. We ported mysql's query escape functionality directly into our package, which means we interpolate all of those question marks with their arguments before they get to MySQL. The result of this is that it's way faster, and just as secure.
