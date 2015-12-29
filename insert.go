@@ -31,22 +31,20 @@ func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 	buf.WriteString("INSERT INTO ")
 	buf.WriteString(d.QuoteIdent(b.Table))
 
+	placeholderBuf := new(bytes.Buffer)
+	placeholderBuf.WriteString("(")
 	buf.WriteString(" (")
-
-	placeholder := new(bytes.Buffer)
-	placeholder.WriteRune('(')
 	for i, col := range b.Column {
 		if i > 0 {
 			buf.WriteString(",")
-			placeholder.WriteString(",")
+			placeholderBuf.WriteString(",")
 		}
 		buf.WriteString(d.QuoteIdent(col))
-		placeholder.WriteString(d.Placeholder())
+		placeholderBuf.WriteString(placeholder)
 	}
-	placeholder.WriteString(")")
-	placeholderStr := placeholder.String()
-
 	buf.WriteString(") VALUES ")
+	placeholderBuf.WriteString(")")
+	placeholderStr := placeholderBuf.String()
 
 	for i, tuple := range b.Value {
 		if i > 0 {

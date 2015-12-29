@@ -46,7 +46,7 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 			// FIXME: no quote ident
 			buf.WriteString(col)
 		default:
-			buf.WriteString(d.Placeholder())
+			buf.WriteString(placeholder)
 			buf.WriteValue(col)
 		}
 	}
@@ -58,7 +58,7 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 			// FIXME: no quote ident
 			buf.WriteString(table)
 		default:
-			buf.WriteString(d.Placeholder())
+			buf.WriteString(placeholder)
 			buf.WriteValue(table)
 		}
 		if len(b.JoinTable) > 0 {
