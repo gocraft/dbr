@@ -10,20 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//
-// Test helpers
-//
-
-var (
-	currID int64 = 256
-)
-
-// create id
-func nextID() int64 {
-	currID++
-	return currID
-}
-
 const (
 	mysqlDSN    = "root@unix(/tmp/mysql.sock)/uservoice_test?charset=utf8"
 	postgresDSN = "postgres://postgres@localhost:5432/uservoice_test?sslmode=disable"
@@ -72,31 +58,23 @@ type nullTypedRecord struct {
 func reset(conn *Connection) {
 	// serial = BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE
 	// the following sql should work for both mysql and postgres
-	createPeopleTable := `
-		CREATE TABLE dbr_people (
+	for _, v := range []string{
+		`DROP TABLE IF EXISTS dbr_people`,
+		`CREATE TABLE dbr_people (
 			id serial PRIMARY KEY,
 			name varchar(255) NOT NULL,
 			email varchar(255)
-		)
-	`
+		)`,
 
-	createNullTypesTable := `
-		CREATE TABLE null_types (
+		`DROP TABLE IF EXISTS null_types`,
+		`CREATE TABLE null_types (
 			id serial PRIMARY KEY,
 			string_val varchar(255) NULL,
 			int64_val integer NULL,
 			float64_val float NULL,
 			time_val timestamp NULL ,
 			bool_val bool NULL
-		)
-	`
-
-	for _, v := range []string{
-		"DROP TABLE IF EXISTS dbr_people",
-		createPeopleTable,
-
-		"DROP TABLE IF EXISTS null_types",
-		createNullTypesTable,
+		)`,
 	} {
 		_, err := conn.Exec(v)
 		if err != nil {
@@ -115,18 +93,15 @@ func TestBasicCRUD(t *testing.T) {
 		Email: "zavorotni@jadius.com",
 	}
 	for _, sess := range []*Session{mysqlSession, postgresSession} {
-		if sess == postgresSession {
-			jonathan.Id = nextID()
-		}
 		// insert
-		result, err := sess.InsertInto("dbr_people").Columns("id", "name", "email").Record(&jonathan).Record(dmitri).Exec()
+		result, err := sess.InsertInto("dbr_people").Columns("name", "email").Record(&jonathan).Exec()
 		assert.NoError(t, err)
-
-		rowsAffected, err := result.RowsAffected()
-		assert.NoError(t, err)
-		assert.EqualValues(t, 2, rowsAffected)
-
 		assert.True(t, jonathan.Id > 0)
+
+		result, err = sess.InsertInto("dbr_people").Columns("name", "email").Record(&dmitri).Exec()
+		assert.NoError(t, err)
+		assert.True(t, dmitri.Id > 0)
+
 		// select
 		var people []dbrPerson
 		count, err := sess.Select("*").From("dbr_people").Where(Eq("id", jonathan.Id)).LoadStructs(&people)
@@ -136,13 +111,8 @@ func TestBasicCRUD(t *testing.T) {
 		assert.Equal(t, jonathan.Name, people[0].Name)
 		assert.Equal(t, jonathan.Email, people[0].Email)
 
-		// select id
-		ids, err := sess.Select("id").From("dbr_people").ReturnInt64s()
-		assert.NoError(t, err)
-		assert.Equal(t, 2, len(ids))
-
 		// select id limit
-		ids, err = sess.Select("id").From("dbr_people").Limit(1).ReturnInt64s()
+		ids, err := sess.Select("id").From("dbr_people").Limit(1).ReturnInt64s()
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(ids))
 
@@ -150,7 +120,7 @@ func TestBasicCRUD(t *testing.T) {
 		result, err = sess.Update("dbr_people").Where(Eq("id", jonathan.Id)).Set("name", "jonathan1").Exec()
 		assert.NoError(t, err)
 
-		rowsAffected, err = result.RowsAffected()
+		rowsAffected, err := result.RowsAffected()
 		assert.NoError(t, err)
 		assert.EqualValues(t, 1, rowsAffected)
 
@@ -165,10 +135,45 @@ func TestBasicCRUD(t *testing.T) {
 		rowsAffected, err = result.RowsAffected()
 		assert.NoError(t, err)
 		assert.EqualValues(t, 1, rowsAffected)
+	}
+}
 
-		// select id
-		ids, err = sess.Select("id").From("dbr_people").ReturnInt64s()
+func TestBatchInsert(t *testing.T) {
+	for _, sess := range []*Session{mysqlSession, postgresSession} {
+		result, err := sess.InsertInto("dbr_people").Columns("name").Values("A").Values("B").Exec()
 		assert.NoError(t, err)
-		assert.Equal(t, 1, len(ids))
+
+		rowsAffected, err := result.RowsAffected()
+		assert.NoError(t, err)
+		assert.EqualValues(t, 2, rowsAffected)
+	}
+}
+
+func TestInjectID(t *testing.T) {
+	for _, sess := range []*Session{mysqlSession, postgresSession} {
+		var person dbrPerson
+		result, err := sess.InsertInto("dbr_people").Columns("name").Record(&person).Exec()
+		assert.NoError(t, err)
+
+		rowsAffected, err := result.RowsAffected()
+		assert.NoError(t, err)
+		assert.EqualValues(t, 1, rowsAffected)
+
+		assert.True(t, person.Id > 0)
+	}
+}
+
+func TestNoInjectID(t *testing.T) {
+	for _, sess := range []*Session{mysqlSession, postgresSession} {
+		people := make([]dbrPerson, 2)
+		result, err := sess.InsertInto("dbr_people").Columns("name").Record(&people[0]).Record(&people[1]).Exec()
+		assert.NoError(t, err)
+
+		rowsAffected, err := result.RowsAffected()
+		assert.NoError(t, err)
+		assert.EqualValues(t, 2, rowsAffected)
+
+		assert.EqualValues(t, 0, people[0].Id)
+		assert.EqualValues(t, 0, people[1].Id)
 	}
 }
