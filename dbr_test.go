@@ -52,6 +52,9 @@ func createSession(driver, dsn string) *Session {
 var (
 	mysqlSession    = createSession("mysql", mysqlDSN)
 	postgresSession = createSession("postgres", postgresDSN)
+
+	// all test sessions should be here
+	testSession = []*Session{mysqlSession, postgresSession}
 )
 
 type dbrPerson struct {
@@ -72,31 +75,23 @@ type nullTypedRecord struct {
 func reset(conn *Connection) {
 	// serial = BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE
 	// the following sql should work for both mysql and postgres
-	createPeopleTable := `
-		CREATE TABLE dbr_people (
+	for _, v := range []string{
+		`DROP TABLE IF EXISTS dbr_people`,
+		`CREATE TABLE dbr_people (
 			id serial PRIMARY KEY,
 			name varchar(255) NOT NULL,
 			email varchar(255)
-		)
-	`
+		)`,
 
-	createNullTypesTable := `
-		CREATE TABLE null_types (
+		`DROP TABLE IF EXISTS null_types`,
+		`CREATE TABLE null_types (
 			id serial PRIMARY KEY,
 			string_val varchar(255) NULL,
 			int64_val integer NULL,
 			float64_val float NULL,
 			time_val timestamp NULL ,
 			bool_val bool NULL
-		)
-	`
-
-	for _, v := range []string{
-		"DROP TABLE IF EXISTS dbr_people",
-		createPeopleTable,
-
-		"DROP TABLE IF EXISTS null_types",
-		createNullTypesTable,
+		)`,
 	} {
 		_, err := conn.Exec(v)
 		if err != nil {
@@ -114,7 +109,7 @@ func TestBasicCRUD(t *testing.T) {
 		Name:  "dmitri",
 		Email: "zavorotni@jadius.com",
 	}
-	for _, sess := range []*Session{mysqlSession, postgresSession} {
+	for _, sess := range testSession {
 		if sess == postgresSession {
 			jonathan.Id = nextID()
 		}

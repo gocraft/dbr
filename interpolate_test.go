@@ -95,7 +95,7 @@ func TestInterpolateForDialect(t *testing.T) {
 // Attempts to test common SQL injection strings. See `InjectionAttempts` for
 // more information on the source and the strings themselves.
 func TestCommonSQLInjections(t *testing.T) {
-	for _, sess := range []*Session{mysqlSession, postgresSession} {
+	for _, sess := range testSession {
 		for _, injectionAttempt := range strings.Split(injectionAttempts, "\n") {
 			// Create a user with the attempted injection as the email address
 			_, err := sess.InsertInto("dbr_people").
