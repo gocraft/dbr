@@ -39,6 +39,10 @@ func NewConnection(db *sql.DB, log EventReceiver) *Connection {
 	return &Connection{DB: db, EventReceiver: log, Dialect: dialect.MySQL}
 }
 
+const (
+	placeholder = "?"
+)
+
 // Connection is a connection to the database with an EventReceiver
 // to send events, errors, and timings to
 type Connection struct {
@@ -93,7 +97,12 @@ type builder interface {
 
 func exec(runner runner, log EventReceiver, builder builder, d Dialect) (sql.Result, error) {
 	query, value := builder.ToSql()
-	query, err := InterpolateForDialect(query, value, d)
+	i := interpolator{
+		Buffer:       NewBuffer(),
+		Dialect:      d,
+		IgnoreBinary: true,
+	}
+	err := i.interpolate(query, value)
 	if err != nil {
 		return nil, log.EventErrKv("dbr.exec.interpolate", err, kvs{
 			"sql":  query,
@@ -108,7 +117,7 @@ func exec(runner runner, log EventReceiver, builder builder, d Dialect) (sql.Res
 		})
 	}()
 
-	result, err := runner.Exec(query)
+	result, err := runner.Exec(i.String(), i.Value()...)
 	if err != nil {
 		return result, log.EventErrKv("dbr.exec.exec", err, kvs{
 			"sql": query,

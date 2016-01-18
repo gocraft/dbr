@@ -25,7 +25,7 @@ func Join(t JoinType, table interface{}, on interface{}) Builder {
 		case string:
 			buf.WriteString(d.QuoteIdent(table))
 		default:
-			buf.WriteString(d.Placeholder())
+			buf.WriteString(placeholder)
 			buf.WriteValue(table)
 		}
 		buf.WriteString(" ON ")
@@ -33,7 +33,7 @@ func Join(t JoinType, table interface{}, on interface{}) Builder {
 		case string:
 			buf.WriteString(on)
 		case Condition:
-			buf.WriteString(d.Placeholder())
+			buf.WriteString(placeholder)
 			buf.WriteValue(on)
 		}
 		return nil

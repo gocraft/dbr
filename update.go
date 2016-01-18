@@ -35,7 +35,7 @@ func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
 		}
 		buf.WriteString(d.QuoteIdent(col))
 		buf.WriteString(" = ")
-		buf.WriteString(d.Placeholder())
+		buf.WriteString(placeholder)
 
 		buf.WriteValue(v)
 		i++
