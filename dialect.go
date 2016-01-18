@@ -11,5 +11,5 @@ type Dialect interface {
 	EncodeTime(t time.Time) string
 	EncodeBytes(b []byte) string
 
-	Placeholder() string
+	Placeholder(n int) string
 }

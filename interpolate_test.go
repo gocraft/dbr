@@ -9,6 +9,52 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestInterpolateIgnoreBinary(t *testing.T) {
+	for _, test := range []struct {
+		query     string
+		value     []interface{}
+		wantQuery string
+		wantValue []interface{}
+	}{
+		{
+			query:     "?",
+			value:     []interface{}{1},
+			wantQuery: "1",
+			wantValue: nil,
+		},
+		{
+			query:     "?",
+			value:     []interface{}{[]byte{1, 2, 3}},
+			wantQuery: "?",
+			wantValue: []interface{}{[]byte{1, 2, 3}},
+		},
+		{
+			query:     "? ?",
+			value:     []interface{}{[]byte{1}, []byte{2}},
+			wantQuery: "? ?",
+			wantValue: []interface{}{[]byte{1}, []byte{2}},
+		},
+		{
+			query:     "? ?",
+			value:     []interface{}{Expr("|?| ?", []byte{1}, Expr("|?|", []byte{2})), []byte{3}},
+			wantQuery: "|?| |?| ?",
+			wantValue: []interface{}{[]byte{1}, []byte{2}, []byte{3}},
+		},
+	} {
+		i := interpolator{
+			Buffer:       NewBuffer(),
+			Dialect:      dialect.MySQL,
+			IgnoreBinary: true,
+		}
+
+		err := i.interpolate(test.query, test.value)
+		assert.NoError(t, err)
+
+		assert.Equal(t, test.wantQuery, i.String())
+		assert.Equal(t, test.wantValue, i.Value())
+	}
+}
+
 func TestInterpolateForDialect(t *testing.T) {
 	for _, test := range []struct {
 		query string

@@ -40,7 +40,7 @@ func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 			placeholderBuf.WriteString(",")
 		}
 		buf.WriteString(d.QuoteIdent(col))
-		placeholderBuf.WriteString(d.Placeholder())
+		placeholderBuf.WriteString(placeholder)
 	}
 	buf.WriteString(") VALUES ")
 	placeholderBuf.WriteString(")")

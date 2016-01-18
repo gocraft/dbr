@@ -43,7 +43,7 @@ func buildCmp(d Dialect, buf Buffer, pred string, column string, value interface
 	buf.WriteString(" ")
 	buf.WriteString(pred)
 	buf.WriteString(" ")
-	buf.WriteString(d.Placeholder())
+	buf.WriteString(placeholder)
 
 	buf.WriteValue(value)
 	return nil
