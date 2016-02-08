@@ -32,7 +32,9 @@ func (u *union) Build(d Dialect, buf Buffer) error {
 				buf.WriteString("ALL ")
 			}
 		}
+		buf.WriteString("(")
 		buf.WriteString(d.Placeholder())
+		buf.WriteString(")")
 		buf.WriteValue(b)
 	}
 	return nil
