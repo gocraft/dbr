@@ -7,7 +7,7 @@ import (
 )
 
 func TestTransactionCommit(t *testing.T) {
-	for _, sess := range []*Session{mysqlSession, postgresSession} {
+	for _, sess := range testSession {
 		tx, err := sess.Begin()
 		assert.NoError(t, err)
 
@@ -30,7 +30,7 @@ func TestTransactionCommit(t *testing.T) {
 }
 
 func TestTransactionRollback(t *testing.T) {
-	for _, sess := range []*Session{mysqlSession, postgresSession} {
+	for _, sess := range testSession {
 		tx, err := sess.Begin()
 		assert.NoError(t, err)
 
