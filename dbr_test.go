@@ -7,6 +7,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,6 +28,7 @@ func nextID() int64 {
 const (
 	mysqlDSN    = "root@unix(/tmp/mysql.sock)/uservoice_test?charset=utf8"
 	postgresDSN = "postgres://postgres@localhost:5432/uservoice_test?sslmode=disable"
+	sqlite3DSN  = ":memory:"
 )
 
 func createSession(driver, dsn string) *Session {
@@ -36,6 +38,8 @@ func createSession(driver, dsn string) *Session {
 		testDSN = os.Getenv("DBR_TEST_MYSQL_DSN")
 	case "postgres":
 		testDSN = os.Getenv("DBR_TEST_POSTGRES_DSN")
+	case "sqlite3":
+		testDSN = os.Getenv("DBR_TEST_SQLITE3_DSN")
 	}
 	if testDSN != "" {
 		dsn = testDSN
@@ -52,6 +56,7 @@ func createSession(driver, dsn string) *Session {
 var (
 	mysqlSession    = createSession("mysql", mysqlDSN)
 	postgresSession = createSession("postgres", postgresDSN)
+	sqlite3Session  = createSession("sqlite3", sqlite3DSN)
 )
 
 type dbrPerson struct {
