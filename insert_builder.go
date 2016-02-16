@@ -3,6 +3,8 @@ package dbr
 import (
 	"database/sql"
 	"reflect"
+
+	"github.com/gocraft/dbr/dialect"
 )
 
 type InsertBuilder struct {
@@ -81,7 +83,11 @@ func (b *InsertBuilder) Exec() (sql.Result, error) {
 
 	if b.RecordID.IsValid() {
 		if id, err := result.LastInsertId(); err == nil {
-			b.RecordID.SetInt(id)
+			if b.Dialect == dialect.SQLite3 {
+				b.RecordID.SetInt(id - 1)
+			} else {
+				b.RecordID.SetInt(id)
+			}
 		}
 	}
 
