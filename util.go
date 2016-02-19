@@ -48,7 +48,7 @@ func structValue(m map[string]reflect.Value, value reflect.Value) {
 		t := value.Type()
 		for i := 0; i < t.NumField(); i++ {
 			field := t.Field(i)
-			if field.PkgPath != "" {
+			if field.PkgPath != "" && !field.Anonymous {
 				// unexported
 				continue
 			}
