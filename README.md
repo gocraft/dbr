@@ -6,7 +6,7 @@ gocraft/dbr provides additions to Go's database/sql for super fast performance a
 
 ```go
 // create a connection
-conn, _ := dbr.Open("postgress", "your_user:password@tcp(127.0.0.1:5432)/your_db", nil)
+conn, _ := dbr.Open("postgress", "user:password@tcp(127.0.0.1:5432)/database", nil)
 
 // create a session for each business unit of execution (e.g. a web request or goworkers job)
 sess := conn.NewSession(nil)
@@ -233,12 +233,7 @@ Here's an example web endpoint that makes a session:
 
 ### Simple Record CRUD
 
-See `TestBasicCRUD`.
-
-- (INSERT)[https://github.com/gocraft/dbr/blob/master/insert_test.go]
-- (SELECT)[https://github.com/gocraft/dbr/blob/master/select_test.go]
-- (UPDATE)[https://github.com/gocraft/dbr/blob/master/update_test.go]
-- (DELETE)[https://github.com/gocraft/dbr/blob/master/delete_test.go]
+See [TestBasicCRUD](https://github.com/gocraft/dbr/blob/db1b5f1c3ba6649e4ac5f4c8d9923e0f6a63fadc/dbr_test.go#L103) and other tests for examples.
 
 ### Overriding Column Names With Struct Tags
 
