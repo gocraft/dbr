@@ -135,7 +135,7 @@ func encodePlaceholder(value interface{}, d Dialect, w StringWriter) error {
 		return nil
 	case reflect.Struct:
 		if v.Type() == reflect.TypeOf(time.Time{}) {
-			w.WriteString(d.EncodeTime(v.Interface().(time.Time).UTC()))
+			w.WriteString(d.EncodeTime(v.Interface().(time.Time)))
 			return nil
 		}
 	case reflect.Slice:
