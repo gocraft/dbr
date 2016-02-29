@@ -5,7 +5,6 @@ import (
 
 	"github.com/gocraft/dbr/dialect"
 	"github.com/stretchr/testify/assert"
-	"fmt"
 )
 
 type insertTest struct {
@@ -28,7 +27,6 @@ func TestInsertStmt(t *testing.T) {
 func TestUpsertStmt(t *testing.T) {
 
 	setMap := map[string]interface{}{"b": "three"}
-	fmt.Println(setMap)
 
 	buf := NewBuffer()
 	builder := InsertInto("table").Columns("a", "b").Values(1, "one").Record(&insertTest{
