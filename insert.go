@@ -9,9 +9,10 @@ import (
 type InsertStmt struct {
 	raw
 
-	Table  string
-	Column []string
-	Value  [][]interface{}
+	Table       string
+	Column      []string
+	Value       [][]interface{}
+	UpsertValue map[string]interface{}
 }
 
 // Build builds `INSERT INTO ...` in dialect
@@ -57,6 +58,23 @@ func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 		buf.WriteValue(tuple...)
 	}
 
+	if len(b.UpsertValue) > 0 {
+		buf.WriteString(" ON DUPLICATE KEY UPDATE ")
+
+		i := 0
+		for col, v := range b.UpsertValue {
+			if i > 0 {
+				buf.WriteString(", ")
+			}
+			buf.WriteString(d.QuoteIdent(col))
+			buf.WriteString(" = ")
+			buf.WriteString(d.Placeholder())
+
+			buf.WriteValue(v)
+			i++
+		}
+	}
+
 	return nil
 }
 
@@ -64,6 +82,8 @@ func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 func InsertInto(table string) *InsertStmt {
 	return &InsertStmt{
 		Table: table,
+		UpsertValue: make(map[string]interface{}),
+
 	}
 }
 
@@ -73,6 +93,7 @@ func InsertBySql(query string, value ...interface{}) *InsertStmt {
 		raw: raw{
 			Query: query,
 			Value: value,
+			UpsertValue: make(map[string]interface{}),
 		},
 	}
 }
@@ -104,6 +125,20 @@ func (b *InsertStmt) Record(structValue interface{}) *InsertStmt {
 			}
 		}
 		b.Values(value...)
+	}
+	return b
+}
+
+func (b *InsertStmt) Set(column string, value interface{}) *InsertStmt {
+
+	b.UpsertValue[column] = value
+	return b
+}
+
+// SetMap specifies a list of key-value pair
+func (b *InsertStmt) OnDuplicateKeyUpdate(m map[string]interface{}) *InsertStmt {
+	for col, val := range m {
+		b.Set(col, val)
 	}
 	return b
 }
