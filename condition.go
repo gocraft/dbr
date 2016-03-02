@@ -2,26 +2,6 @@ package dbr
 
 import "reflect"
 
-type AndMap map[string]interface{}
-
-func (and AndMap) Build(d Dialect, buf Buffer) error {
-	var cond []Condition
-	for col, val := range and {
-		cond = append(cond, Eq(col, val))
-	}
-	return And(cond...).Build(d, buf)
-}
-
-type OrMap map[string]interface{}
-
-func (or OrMap) Build(d Dialect, buf Buffer) error {
-	var cond []Condition
-	for col, val := range or {
-		cond = append(cond, Eq(col, val))
-	}
-	return Or(cond...).Build(d, buf)
-}
-
 // Condition abstracts AND, OR and simple conditions like eq.
 type Condition interface {
 	Builder

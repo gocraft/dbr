@@ -91,6 +91,7 @@ Building arbitrary condition with:
 * Lte
 
 ```go
+// for demonstration
 dbr.And(
   dbr.Or(
     dbr.Gt("created_at", "2015-09-10"),
@@ -98,23 +99,6 @@ dbr.And(
   ),
   dbr.Eq("title", "hello world"),
 )
-```
-
-Building simple condition with:
-
-* AndMap (previously EqMap)
-* OrMap
-
-```go
-dbr.AndMap{
-  "label": "testing",
-  "age": 20,
-}
-
-dbr.OrMap{
-  "label": "testing",
-  "age": 20,
-}
 ```
 
 All these can be used where `Condition` is expected.
