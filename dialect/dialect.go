@@ -10,7 +10,7 @@ var (
 )
 
 const (
-	timeFormat = "2006-01-02 15:04:05"
+	timeFormat = "2006-01-02 15:04:05.000000"
 )
 
 func quoteIdent(s, quote string) string {
