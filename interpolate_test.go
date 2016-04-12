@@ -37,8 +37,8 @@ func TestInterpolateForDialect(t *testing.T) {
 		},
 		{
 			query: "?",
-			value: []interface{}{time.Date(2008, 9, 17, 20, 4, 26, 0, time.UTC)},
-			want:  "'2008-09-17 20:04:26'",
+			value: []interface{}{time.Date(2008, 9, 17, 20, 4, 26, 123456000, time.UTC)},
+			want:  "'2008-09-17 20:04:26.123456'",
 		},
 		{
 			query: "?",
