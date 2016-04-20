@@ -2,27 +2,21 @@ package dbr
 
 import "bytes"
 
-type StringWriter interface {
+type Buffer interface {
 	WriteString(s string) (n int, err error)
 	String() string
-}
-
-type Buffer interface {
-	StringWriter
 
 	WriteValue(v ...interface{}) (err error)
 	Value() []interface{}
 }
 
 type buffer struct {
-	StringWriter
+	bytes.Buffer
 	v []interface{}
 }
 
 func NewBuffer() Buffer {
-	return &buffer{
-		StringWriter: new(bytes.Buffer),
-	}
+	return &buffer{}
 }
 
 func (b *buffer) WriteValue(v ...interface{}) error {

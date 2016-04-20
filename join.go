@@ -1,23 +1,23 @@
 package dbr
 
-type JoinType uint8
+type joinType uint8
 
 const (
-	Inner JoinType = iota
-	Left
-	Right
-	Full
+	inner joinType = iota
+	left
+	right
+	full
 )
 
-func Join(t JoinType, table interface{}, on interface{}) Builder {
+func join(t joinType, table interface{}, on interface{}) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
 		buf.WriteString(" ")
 		switch t {
-		case Left:
+		case left:
 			buf.WriteString("LEFT ")
-		case Right:
+		case right:
 			buf.WriteString("RIGHT ")
-		case Full:
+		case full:
 			buf.WriteString("FULL ")
 		}
 		buf.WriteString("JOIN ")
