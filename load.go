@@ -46,9 +46,15 @@ func Load(rows *sql.Rows, value interface{}) (int, error) {
 	return count, nil
 }
 
+type dummyScanner struct{}
+
+func (dummyScanner) Scan(interface{}) error {
+	return nil
+}
+
 var (
-	dummyDest   interface{}
-	typeScanner = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
+	dummyDest   sql.Scanner = dummyScanner{}
+	typeScanner             = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
 )
 
 func findPtr(column []string, value reflect.Value) ([]interface{}, error) {
@@ -63,7 +69,7 @@ func findPtr(column []string, value reflect.Value) ([]interface{}, error) {
 			if val, ok := m[key]; ok {
 				ptr = append(ptr, val.Addr().Interface())
 			} else {
-				ptr = append(ptr, &dummyDest)
+				ptr = append(ptr, dummyDest)
 			}
 		}
 		return ptr, nil
