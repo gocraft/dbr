@@ -30,7 +30,6 @@ func Open(driver, dsn string, log EventReceiver) (*Connection, error) {
 	return &Connection{DB: conn, EventReceiver: log, Dialect: d}, nil
 }
 
-// Don't break the API
 // FIXME: This will be removed in the future
 func NewConnection(db *sql.DB, log EventReceiver) *Connection {
 	if log == nil {

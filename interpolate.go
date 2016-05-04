@@ -10,7 +10,6 @@ import (
 	"github.com/gocraft/dbr/dialect"
 )
 
-// Don't break the API
 // FIXME: This will be removed in the future
 func Interpolate(query string, value []interface{}) (string, error) {
 	return InterpolateForDialect(query, value, dialect.MySQL)
