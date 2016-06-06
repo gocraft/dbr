@@ -77,6 +77,7 @@ func CreateTableModel(path, table string, db *sql.DB, verbose bool) {
 	// get table columns info
 	q := fmt.Sprintf("SHOW COLUMNS FROM %s", table)
 	if rows, err := db.Query(q); err == nil {
+		defer rows.Close()
 		if verbose {
 			fmt.Println("\tfields:")
 		}

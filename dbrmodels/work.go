@@ -24,11 +24,11 @@ func DoWork(name string, verbose bool) {
 		fmt.Fprintf(os.Stderr, "connection error: %s\n", err)
 		return
 	}
-	defer db.Close()
 
 	var tabl string
 	var ty string
 	if rows, err := db.Query("SHOW FULL TABLES WHERE Table_Type != 'VIEW'"); err == nil {
+		defer rows.Close()
 		for rows.Next() {
 			rows.Scan(&tabl, &ty)
 			if verbose {
@@ -37,4 +37,5 @@ func DoWork(name string, verbose bool) {
 			CreateTableModel(p.Path, tabl, db, verbose)
 		}
 	}
+	defer db.Close()
 }
