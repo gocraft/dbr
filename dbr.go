@@ -112,16 +112,14 @@ func exec(runner runner, log EventReceiver, builder builder, d Dialect) (sql.Res
 	startTime := time.Now()
 	defer func() {
 		log.TimingKv("dbr.exec", time.Since(startTime).Nanoseconds(), kvs{
-			"sql":  query,
-			"args": fmt.Sprint(value),
+			"sql": query,
 		})
 	}()
 
 	result, err := runner.Exec(query, value...)
 	if err != nil {
 		return result, log.EventErrKv("dbr.exec.exec", err, kvs{
-			"sql":  query,
-			"args": fmt.Sprint(value),
+			"sql": query,
 		})
 	}
 	return result, nil
@@ -145,23 +143,20 @@ func query(runner runner, log EventReceiver, builder builder, d Dialect, v inter
 	startTime := time.Now()
 	defer func() {
 		log.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), kvs{
-			"sql":  query,
-			"args": fmt.Sprint(value),
+			"sql": query,
 		})
 	}()
 
 	rows, err := runner.Query(query, value...)
 	if err != nil {
 		return 0, log.EventErrKv("dbr.select.load.query", err, kvs{
-			"sql":  query,
-			"args": fmt.Sprint(value),
+			"sql": query,
 		})
 	}
 	count, err := Load(rows, v)
 	if err != nil {
 		return 0, log.EventErrKv("dbr.select.load.scan", err, kvs{
-			"sql":  query,
-			"args": fmt.Sprint(value),
+			"sql": query,
 		})
 	}
 	return count, nil

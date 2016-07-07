@@ -4,21 +4,23 @@ import "database/sql"
 
 // Tx is a transaction for the given Session
 type Tx struct {
-	*Session
+	EventReceiver
+	Dialect Dialect
 	*sql.Tx
 }
 
 // Begin creates a transaction for the given session
 func (sess *Session) Begin() (*Tx, error) {
-	tx, err := sess.DB.Begin()
+	tx, err := sess.Connection.Begin()
 	if err != nil {
 		return nil, sess.EventErr("dbr.begin.error", err)
 	}
 	sess.Event("dbr.begin")
 
 	return &Tx{
-		Session: sess,
-		Tx:      tx,
+		EventReceiver: sess,
+		Dialect:       sess.Dialect,
+		Tx:            tx,
 	}, nil
 }
 
