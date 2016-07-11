@@ -1,12 +1,15 @@
 package dbr
 
 import (
+	"database/sql"
+	"fmt"
 	"log"
 	"os"
 	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,6 +30,7 @@ func nextID() int64 {
 const (
 	mysqlDSN    = "root@unix(/tmp/mysql.sock)/uservoice_test?charset=utf8"
 	postgresDSN = "postgres://postgres@localhost:5432/uservoice_test?sslmode=disable"
+	sqlite3DSN  = ":memory:"
 )
 
 func createSession(driver, dsn string) *Session {
@@ -36,6 +40,8 @@ func createSession(driver, dsn string) *Session {
 		testDSN = os.Getenv("DBR_TEST_MYSQL_DSN")
 	case "postgres":
 		testDSN = os.Getenv("DBR_TEST_POSTGRES_DSN")
+	case "sqlite3":
+		testDSN = os.Getenv("DBR_TEST_SQLITE3_DSN")
 	}
 	if testDSN != "" {
 		dsn = testDSN
@@ -44,7 +50,7 @@ func createSession(driver, dsn string) *Session {
 	if err != nil {
 		log.Fatal(err)
 	}
-	reset(conn)
+	reset(conn, driver)
 	sess := conn.NewSession(nil)
 	return sess
 }
@@ -52,9 +58,10 @@ func createSession(driver, dsn string) *Session {
 var (
 	mysqlSession    = createSession("mysql", mysqlDSN)
 	postgresSession = createSession("postgres", postgresDSN)
+	sqlite3Session  = createSession("sqlite3", sqlite3DSN)
 
 	// all test sessions should be here
-	testSession = []*Session{mysqlSession, postgresSession}
+	testSession = []*Session{mysqlSession, postgresSession, sqlite3Session}
 )
 
 type dbrPerson struct {
@@ -72,26 +79,33 @@ type nullTypedRecord struct {
 	BoolVal    NullBool
 }
 
-func reset(conn *Connection) {
-	// serial = BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE
-	// the following sql should work for both mysql and postgres
+func reset(conn *Connection, driver string) {
+	var autoIncrementType string
+	switch driver {
+	case "mysql":
+		autoIncrementType = "serial PRIMARY KEY"
+	case "postgres":
+		autoIncrementType = "serial PRIMARY KEY"
+	case "sqlite3":
+		autoIncrementType = "INTEGER PRIMARY KEY"
+	}
 	for _, v := range []string{
 		`DROP TABLE IF EXISTS dbr_people`,
-		`CREATE TABLE dbr_people (
-			id serial PRIMARY KEY,
+		fmt.Sprintf(`CREATE TABLE dbr_people (
+			id %s,
 			name varchar(255) NOT NULL,
 			email varchar(255)
-		)`,
+		)`, autoIncrementType),
 
 		`DROP TABLE IF EXISTS null_types`,
-		`CREATE TABLE null_types (
-			id serial PRIMARY KEY,
+		fmt.Sprintf(`CREATE TABLE null_types (
+			id %s,
 			string_val varchar(255) NULL,
 			int64_val integer NULL,
 			float64_val float NULL,
 			time_val timestamp NULL ,
 			bool_val bool NULL
-		)`,
+		)`, autoIncrementType),
 	} {
 		_, err := conn.Exec(v)
 		if err != nil {
@@ -110,18 +124,29 @@ func TestBasicCRUD(t *testing.T) {
 		Email: "zavorotni@jadius.com",
 	}
 	for _, sess := range testSession {
+		var result sql.Result
+		var err error
 		if sess == postgresSession {
 			jonathan.Id = nextID()
 		}
 		// insert
-		result, err := sess.InsertInto("dbr_people").Columns("id", "name", "email").Record(&jonathan).Record(dmitri).Exec()
-		assert.NoError(t, err)
+		if sess == sqlite3Session {
+			result, err = sess.InsertInto("dbr_people").Columns("name", "email").Record(&jonathan).Record(dmitri).Exec()
+			assert.NoError(t, err)
+		} else {
+			result, err = sess.InsertInto("dbr_people").Columns("id", "name", "email").Record(&jonathan).Record(dmitri).Exec()
+			assert.NoError(t, err)
+		}
 
 		rowsAffected, err := result.RowsAffected()
 		assert.NoError(t, err)
 		assert.EqualValues(t, 2, rowsAffected)
 
-		assert.True(t, jonathan.Id > 0)
+		if sess == sqlite3Session { // sqlite3 counts from 0 up
+			assert.True(t, jonathan.Id >= 0)
+		} else {
+			assert.True(t, jonathan.Id > 0)
+		}
 		// select
 		var people []dbrPerson
 		count, err := sess.Select("*").From("dbr_people").Where(Eq("id", jonathan.Id)).LoadStructs(&people)
