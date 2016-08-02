@@ -55,6 +55,7 @@ func (tx *Tx) DeleteBySql(query string, value ...interface{}) *DeleteBuilder {
 	}
 }
 
+// FIXME: This will be removed in the future
 func (b *DeleteBuilder) ToSql() (string, []interface{}) {
 	buf := NewBuffer()
 	err := b.Build(b.Dialect, buf)

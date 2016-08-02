@@ -52,6 +52,7 @@ func (tx *Tx) SelectBySql(query string, value ...interface{}) *SelectBuilder {
 	}
 }
 
+// FIXME: This will be removed in the future
 func (b *SelectBuilder) ToSql() (string, []interface{}) {
 	buf := NewBuffer()
 	err := b.Build(b.Dialect, buf)

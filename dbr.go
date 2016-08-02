@@ -92,11 +92,7 @@ type runner interface {
 	Query(query string, args ...interface{}) (*sql.Rows, error)
 }
 
-type builder interface {
-	ToSql() (string, []interface{})
-}
-
-func exec(runner runner, log EventReceiver, builder builder, d Dialect) (sql.Result, error) {
+func exec(runner runner, log EventReceiver, builder interface{}, d Dialect) (sql.Result, error) {
 	i := interpolator{
 		Buffer:       NewBuffer(),
 		Dialect:      d,
@@ -127,7 +123,7 @@ func exec(runner runner, log EventReceiver, builder builder, d Dialect) (sql.Res
 	return result, nil
 }
 
-func query(runner runner, log EventReceiver, builder builder, d Dialect, v interface{}) (int, error) {
+func query(runner runner, log EventReceiver, builder interface{}, d Dialect, dest interface{}) (int, error) {
 	i := interpolator{
 		Buffer:       NewBuffer(),
 		Dialect:      d,
@@ -155,7 +151,7 @@ func query(runner runner, log EventReceiver, builder builder, d Dialect, v inter
 			"sql": query,
 		})
 	}
-	count, err := Load(rows, v)
+	count, err := Load(rows, dest)
 	if err != nil {
 		return 0, log.EventErrKv("dbr.select.load.scan", err, kvs{
 			"sql": query,
