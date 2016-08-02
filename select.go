@@ -46,7 +46,7 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 			// FIXME: no quote ident
 			buf.WriteString(col)
 		default:
-			buf.WriteString(d.Placeholder())
+			buf.WriteString(placeholder)
 			buf.WriteValue(col)
 		}
 	}
@@ -58,7 +58,7 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 			// FIXME: no quote ident
 			buf.WriteString(table)
 		default:
-			buf.WriteString(d.Placeholder())
+			buf.WriteString(placeholder)
 			buf.WriteValue(table)
 		}
 		if len(b.JoinTable) > 0 {
@@ -190,12 +190,12 @@ func (b *SelectStmt) GroupBy(col ...string) *SelectStmt {
 
 // OrderBy specifies columns for ordering
 func (b *SelectStmt) OrderAsc(col string) *SelectStmt {
-	b.Order = append(b.Order, Order(col, ASC))
+	b.Order = append(b.Order, order(col, asc))
 	return b
 }
 
 func (b *SelectStmt) OrderDesc(col string) *SelectStmt {
-	b.Order = append(b.Order, Order(col, DESC))
+	b.Order = append(b.Order, order(col, desc))
 	return b
 }
 
@@ -213,22 +213,22 @@ func (b *SelectStmt) Offset(n uint64) *SelectStmt {
 
 // Join joins table on condition
 func (b *SelectStmt) Join(table, on interface{}) *SelectStmt {
-	b.JoinTable = append(b.JoinTable, Join(Inner, table, on))
+	b.JoinTable = append(b.JoinTable, join(inner, table, on))
 	return b
 }
 
 func (b *SelectStmt) LeftJoin(table, on interface{}) *SelectStmt {
-	b.JoinTable = append(b.JoinTable, Join(Left, table, on))
+	b.JoinTable = append(b.JoinTable, join(left, table, on))
 	return b
 }
 
 func (b *SelectStmt) RightJoin(table, on interface{}) *SelectStmt {
-	b.JoinTable = append(b.JoinTable, Join(Right, table, on))
+	b.JoinTable = append(b.JoinTable, join(right, table, on))
 	return b
 }
 
 func (b *SelectStmt) FullJoin(table, on interface{}) *SelectStmt {
-	b.JoinTable = append(b.JoinTable, Join(Full, table, on))
+	b.JoinTable = append(b.JoinTable, join(full, table, on))
 	return b
 }
 

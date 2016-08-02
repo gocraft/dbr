@@ -10,6 +10,7 @@ func TestTransactionCommit(t *testing.T) {
 	for _, sess := range testSession {
 		tx, err := sess.Begin()
 		assert.NoError(t, err)
+		defer tx.RollbackUnlessCommitted()
 
 		id := nextID()
 
@@ -33,6 +34,7 @@ func TestTransactionRollback(t *testing.T) {
 	for _, sess := range testSession {
 		tx, err := sess.Begin()
 		assert.NoError(t, err)
+		defer tx.RollbackUnlessCommitted()
 
 		id := nextID()
 

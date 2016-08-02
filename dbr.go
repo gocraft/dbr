@@ -24,13 +24,14 @@ func Open(driver, dsn string, log EventReceiver) (*Connection, error) {
 		d = dialect.MySQL
 	case "postgres":
 		d = dialect.PostgreSQL
+	case "sqlite3":
+		d = dialect.SQLite3
 	default:
 		return nil, ErrNotSupported
 	}
 	return &Connection{DB: conn, EventReceiver: log, Dialect: d}, nil
 }
 
-// Don't break the API
 // FIXME: This will be removed in the future
 func NewConnection(db *sql.DB, log EventReceiver) *Connection {
 	if log == nil {
@@ -38,6 +39,10 @@ func NewConnection(db *sql.DB, log EventReceiver) *Connection {
 	}
 	return &Connection{DB: db, EventReceiver: log, Dialect: dialect.MySQL}
 }
+
+const (
+	placeholder = "?"
+)
 
 // Connection is a connection to the database with an EventReceiver
 // to send events, errors, and timings to
@@ -87,13 +92,14 @@ type runner interface {
 	Query(query string, args ...interface{}) (*sql.Rows, error)
 }
 
-type builder interface {
-	ToSql() (string, []interface{})
-}
-
-func exec(runner runner, log EventReceiver, builder builder, d Dialect) (sql.Result, error) {
-	query, value := builder.ToSql()
-	query, err := InterpolateForDialect(query, value, d)
+func exec(runner runner, log EventReceiver, builder interface{}, d Dialect) (sql.Result, error) {
+	i := interpolator{
+		Buffer:       NewBuffer(),
+		Dialect:      d,
+		IgnoreBinary: true,
+	}
+	err := i.interpolate(placeholder, []interface{}{builder})
+	query, value := i.String(), i.Value()
 	if err != nil {
 		return nil, log.EventErrKv("dbr.exec.interpolate", err, kvs{
 			"sql":  query,
@@ -108,7 +114,7 @@ func exec(runner runner, log EventReceiver, builder builder, d Dialect) (sql.Res
 		})
 	}()
 
-	result, err := runner.Exec(query)
+	result, err := runner.Exec(query, value...)
 	if err != nil {
 		return result, log.EventErrKv("dbr.exec.exec", err, kvs{
 			"sql": query,
@@ -117,9 +123,14 @@ func exec(runner runner, log EventReceiver, builder builder, d Dialect) (sql.Res
 	return result, nil
 }
 
-func query(runner runner, log EventReceiver, builder builder, d Dialect, v interface{}) (int, error) {
-	query, value := builder.ToSql()
-	query, err := InterpolateForDialect(query, value, d)
+func query(runner runner, log EventReceiver, builder interface{}, d Dialect, dest interface{}) (int, error) {
+	i := interpolator{
+		Buffer:       NewBuffer(),
+		Dialect:      d,
+		IgnoreBinary: true,
+	}
+	err := i.interpolate(placeholder, []interface{}{builder})
+	query, value := i.String(), i.Value()
 	if err != nil {
 		return 0, log.EventErrKv("dbr.select.interpolate", err, kvs{
 			"sql":  query,
@@ -134,13 +145,13 @@ func query(runner runner, log EventReceiver, builder builder, d Dialect, v inter
 		})
 	}()
 
-	rows, err := runner.Query(query)
+	rows, err := runner.Query(query, value...)
 	if err != nil {
 		return 0, log.EventErrKv("dbr.select.load.query", err, kvs{
 			"sql": query,
 		})
 	}
-	count, err := Load(rows, v)
+	count, err := Load(rows, dest)
 	if err != nil {
 		return 0, log.EventErrKv("dbr.select.load.scan", err, kvs{
 			"sql": query,

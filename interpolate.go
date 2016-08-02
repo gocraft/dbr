@@ -1,7 +1,6 @@
 package dbr
 
 import (
-	"bytes"
 	"database/sql/driver"
 	"reflect"
 	"strconv"
@@ -11,25 +10,32 @@ import (
 	"github.com/gocraft/dbr/dialect"
 )
 
-// Don't break the API
 // FIXME: This will be removed in the future
 func Interpolate(query string, value []interface{}) (string, error) {
 	return InterpolateForDialect(query, value, dialect.MySQL)
 }
 
+type interpolator struct {
+	Buffer
+	Dialect
+	IgnoreBinary bool
+	N            int
+}
+
 // InterpolateForDialect replaces placeholder in query with corresponding value in dialect
 func InterpolateForDialect(query string, value []interface{}, d Dialect) (string, error) {
-	buf := new(bytes.Buffer)
-	err := interpolate(query, value, d, buf)
+	i := interpolator{
+		Buffer:  NewBuffer(),
+		Dialect: d,
+	}
+	err := i.interpolate(query, value)
 	if err != nil {
 		return "", err
 	}
-	return buf.String(), nil
+	return i.String(), nil
 }
 
-func interpolate(query string, value []interface{}, d Dialect, w StringWriter) error {
-	placeholder := d.Placeholder()
-
+func (i *interpolator) interpolate(query string, value []interface{}) error {
 	if strings.Count(query, placeholder) != len(value) {
 		return ErrPlaceholderCount
 	}
@@ -41,27 +47,32 @@ func interpolate(query string, value []interface{}, d Dialect, w StringWriter) e
 		if index == -1 {
 			break
 		}
-		w.WriteString(query[:index])
-		query = query[index+len(placeholder):]
 
-		err := encodePlaceholder(value[valueIndex], d, w)
-		if err != nil {
-			return err
+		i.WriteString(query[:index])
+		if _, ok := value[valueIndex].([]byte); ok && i.IgnoreBinary {
+			i.WriteString(i.Placeholder(i.N))
+			i.N++
+			i.WriteValue(value[valueIndex])
+		} else {
+			err := i.encodePlaceholder(value[valueIndex])
+			if err != nil {
+				return err
+			}
 		}
-
+		query = query[index+len(placeholder):]
 		valueIndex++
 	}
 
 	// placeholder not found; write remaining query
-	w.WriteString(query)
+	i.WriteString(query)
 
 	return nil
 }
 
-func encodePlaceholder(value interface{}, d Dialect, w StringWriter) error {
+func (i *interpolator) encodePlaceholder(value interface{}) error {
 	if builder, ok := value.(Builder); ok {
-		buf := NewBuffer()
-		err := builder.Build(d, buf)
+		pbuf := NewBuffer()
+		err := builder.Build(i.Dialect, pbuf)
 		if err != nil {
 			return err
 		}
@@ -73,14 +84,14 @@ func encodePlaceholder(value interface{}, d Dialect, w StringWriter) error {
 			paren = false
 		}
 		if paren {
-			w.WriteString("(")
+			i.WriteString("(")
 		}
-		err = interpolate(buf.String(), buf.Value(), d, w)
+		err = i.interpolate(pbuf.String(), pbuf.Value())
 		if err != nil {
 			return err
 		}
 		if paren {
-			w.WriteString(")")
+			i.WriteString(")")
 		}
 		return nil
 	}
@@ -95,73 +106,55 @@ func encodePlaceholder(value interface{}, d Dialect, w StringWriter) error {
 	}
 
 	if value == nil {
-		w.WriteString("NULL")
+		i.WriteString("NULL")
 		return nil
 	}
 	v := reflect.ValueOf(value)
 	switch v.Kind() {
 	case reflect.String:
-		w.WriteString(d.EncodeString(v.String()))
+		i.WriteString(i.EncodeString(v.String()))
 		return nil
 	case reflect.Bool:
-		w.WriteString(d.EncodeBool(v.Bool()))
+		i.WriteString(i.EncodeBool(v.Bool()))
 		return nil
-	case reflect.Int:
-		fallthrough
-	case reflect.Int8:
-		fallthrough
-	case reflect.Int16:
-		fallthrough
-	case reflect.Int32:
-		fallthrough
-	case reflect.Int64:
-		w.WriteString(strconv.FormatInt(v.Int(), 10))
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		i.WriteString(strconv.FormatInt(v.Int(), 10))
 		return nil
-	case reflect.Uint:
-		fallthrough
-	case reflect.Uint8:
-		fallthrough
-	case reflect.Uint16:
-		fallthrough
-	case reflect.Uint32:
-		fallthrough
-	case reflect.Uint64:
-		w.WriteString(strconv.FormatUint(v.Uint(), 10))
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		i.WriteString(strconv.FormatUint(v.Uint(), 10))
 		return nil
-	case reflect.Float32:
-		fallthrough
-	case reflect.Float64:
-		w.WriteString(strconv.FormatFloat(v.Float(), 'f', -1, 64))
+	case reflect.Float32, reflect.Float64:
+		i.WriteString(strconv.FormatFloat(v.Float(), 'f', -1, 64))
 		return nil
 	case reflect.Struct:
 		if v.Type() == reflect.TypeOf(time.Time{}) {
-			w.WriteString(d.EncodeTime(v.Interface().(time.Time)))
+			i.WriteString(i.EncodeTime(v.Interface().(time.Time)))
 			return nil
 		}
 	case reflect.Slice:
 		if v.Type().Elem().Kind() == reflect.Uint8 {
 			// []byte
-			w.WriteString(d.EncodeBytes(v.Bytes()))
+			i.WriteString(i.EncodeBytes(v.Bytes()))
 			return nil
 		}
 		if v.Len() == 0 {
 			// FIXME: support zero-length slice
 			return ErrInvalidSliceLength
 		}
-		w.WriteString("(")
-		for i := 0; i < v.Len(); i++ {
-			if i > 0 {
-				w.WriteString(",")
+		i.WriteString("(")
+		for n := 0; n < v.Len(); n++ {
+			if n > 0 {
+				i.WriteString(",")
 			}
-			err := encodePlaceholder(v.Index(i).Interface(), d, w)
+			err := i.encodePlaceholder(v.Index(n).Interface())
 			if err != nil {
 				return err
 			}
 		}
-		w.WriteString(")")
+		i.WriteString(")")
 		return nil
 	case reflect.Ptr:
-		return encodePlaceholder(v.Elem().Interface(), d, w)
+		return i.encodePlaceholder(v.Elem().Interface())
 	}
 	return ErrNotSupported
 }

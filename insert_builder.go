@@ -51,6 +51,7 @@ func (tx *Tx) InsertBySql(query string, value ...interface{}) *InsertBuilder {
 	}
 }
 
+// FIXME: This will be removed in the future
 func (b *InsertBuilder) ToSql() (string, []interface{}) {
 	buf := NewBuffer()
 	err := b.Build(b.Dialect, buf)

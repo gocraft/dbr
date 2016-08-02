@@ -55,6 +55,7 @@ func (tx *Tx) UpdateBySql(query string, value ...interface{}) *UpdateBuilder {
 	}
 }
 
+// FIXME: This will be removed in the future
 func (b *UpdateBuilder) ToSql() (string, []interface{}) {
 	buf := NewBuffer()
 	err := b.Build(b.Dialect, buf)
