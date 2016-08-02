@@ -287,11 +287,14 @@ These packages were developed by the [engineering team](https://eng.uservoice.co
 
 ## Thanks & Authors
 Inspiration from these excellent libraries:
-*  [sqlx](https://github.com/jmoiron/sqlx) - various useful tools and utils for interacting with database/sql.
-*  [Squirrel](https://github.com/lann/squirrel) - simple fluent query builder.
+* [sqlx](https://github.com/jmoiron/sqlx) - various useful tools and utils for interacting with database/sql.
+* [Squirrel](https://github.com/lann/squirrel) - simple fluent query builder.
 
 Authors:
-*  Jonathan Novak -- [https://github.com/cypriss](https://github.com/cypriss)
-*  Tyler Smith -- [https://github.com/tyler-smith](https://github.com/tyler-smith)
-*  Tai-Lin Chu -- [https://github.com/taylorchu](https://github.com/taylorchu)
-*  Sponsored by [UserVoice](https://eng.uservoice.com)
+* Jonathan Novak -- [https://github.com/cypriss](https://github.com/cypriss)
+* Tyler Smith -- [https://github.com/tyler-smith](https://github.com/tyler-smith)
+* Tai-Lin Chu -- [https://github.com/taylorchu](https://github.com/taylorchu)
+* Sponsored by [UserVoice](https://eng.uservoice.com)
+
+Contributors:
+* Paul Bergeron -- [https://github.com/dinedal](https://github.com/dinedal) - SQLite dialect
