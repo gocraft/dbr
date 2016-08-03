@@ -92,7 +92,7 @@ type runner interface {
 	Query(query string, args ...interface{}) (*sql.Rows, error)
 }
 
-func exec(runner runner, log EventReceiver, builder interface{}, d Dialect) (sql.Result, error) {
+func exec(runner runner, log EventReceiver, builder Builder, d Dialect) (sql.Result, error) {
 	i := interpolator{
 		Buffer:       NewBuffer(),
 		Dialect:      d,
@@ -123,7 +123,7 @@ func exec(runner runner, log EventReceiver, builder interface{}, d Dialect) (sql
 	return result, nil
 }
 
-func query(runner runner, log EventReceiver, builder interface{}, d Dialect, dest interface{}) (int, error) {
+func query(runner runner, log EventReceiver, builder Builder, d Dialect, dest interface{}) (int, error) {
 	i := interpolator{
 		Buffer:       NewBuffer(),
 		Dialect:      d,
