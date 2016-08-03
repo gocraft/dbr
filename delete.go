@@ -6,7 +6,7 @@ type DeleteStmt struct {
 
 	Table string
 
-	WhereCond []Condition
+	WhereCond []Builder
 }
 
 // Build builds `DELETE ...` in dialect
@@ -54,7 +54,7 @@ func (b *DeleteStmt) Where(query interface{}, value ...interface{}) *DeleteStmt 
 	switch query := query.(type) {
 	case string:
 		b.WhereCond = append(b.WhereCond, Expr(query, value...))
-	case Condition:
+	case Builder:
 		b.WhereCond = append(b.WhereCond, query)
 	}
 	return b

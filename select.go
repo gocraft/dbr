@@ -12,9 +12,9 @@ type SelectStmt struct {
 	Table     interface{}
 	JoinTable []Builder
 
-	WhereCond  []Condition
+	WhereCond  []Builder
 	Group      []Builder
-	HavingCond []Condition
+	HavingCond []Builder
 	Order      []Builder
 
 	LimitCount  int64
@@ -163,7 +163,7 @@ func (b *SelectStmt) Where(query interface{}, value ...interface{}) *SelectStmt 
 	switch query := query.(type) {
 	case string:
 		b.WhereCond = append(b.WhereCond, Expr(query, value...))
-	case Condition:
+	case Builder:
 		b.WhereCond = append(b.WhereCond, query)
 	}
 	return b
@@ -174,7 +174,7 @@ func (b *SelectStmt) Having(query interface{}, value ...interface{}) *SelectStmt
 	switch query := query.(type) {
 	case string:
 		b.HavingCond = append(b.HavingCond, Expr(query, value...))
-	case Condition:
+	case Builder:
 		b.HavingCond = append(b.HavingCond, query)
 	}
 	return b

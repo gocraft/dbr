@@ -7,7 +7,7 @@ type UpdateStmt struct {
 	Table string
 	Value map[string]interface{}
 
-	WhereCond []Condition
+	WhereCond []Builder
 }
 
 // Build builds `UPDATE ...` in dialect
@@ -75,7 +75,7 @@ func (b *UpdateStmt) Where(query interface{}, value ...interface{}) *UpdateStmt 
 	switch query := query.(type) {
 	case string:
 		b.WhereCond = append(b.WhereCond, Expr(query, value...))
-	case Condition:
+	case Builder:
 		b.WhereCond = append(b.WhereCond, query)
 	}
 	return b

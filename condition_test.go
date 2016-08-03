@@ -9,7 +9,7 @@ import (
 
 func TestCondition(t *testing.T) {
 	for _, test := range []struct {
-		cond  Condition
+		cond  Builder
 		query string
 		value []interface{}
 	}{
