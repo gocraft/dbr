@@ -131,6 +131,11 @@ func TestInterpolateForDialect(t *testing.T) {
 			value: []interface{}{time.Month(7)},
 			want:  "7",
 		},
+		{
+			query: "?",
+			value: []interface{}{(*int64)(nil)},
+			want:  "NULL",
+		},
 	} {
 		s, err := InterpolateForDialect(test.query, test.value, dialect.MySQL)
 		assert.NoError(t, err)

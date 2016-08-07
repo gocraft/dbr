@@ -154,6 +154,10 @@ func (i *interpolator) encodePlaceholder(value interface{}) error {
 		i.WriteString(")")
 		return nil
 	case reflect.Ptr:
+		if v.IsNil() {
+			i.WriteString("NULL")
+			return nil
+		}
 		return i.encodePlaceholder(v.Elem().Interface())
 	}
 	return ErrNotSupported
