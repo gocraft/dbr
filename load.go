@@ -66,6 +66,7 @@ func findPtr(column []string, value reflect.Value) ([]interface{}, error) {
 		var ptr []interface{}
 		m := structMap(value)
 		for _, key := range column {
+			key = camelCaseToSnakeCase(key)
 			if val, ok := m[key]; ok {
 				ptr = append(ptr, val.Addr().Interface())
 			} else {
