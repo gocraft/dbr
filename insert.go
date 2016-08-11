@@ -9,9 +9,9 @@ import (
 type InsertStmt struct {
 	raw
 
-	Table  string
-	Column []string
-	Value  [][]interface{}
+	Table     string
+	Column    []string
+	Value     [][]interface{}
 	Returning []string
 }
 
