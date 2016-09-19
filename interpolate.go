@@ -6,14 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/gocraft/dbr/dialect"
 )
-
-// FIXME: This will be removed in the future
-func Interpolate(query string, value []interface{}) (string, error) {
-	return InterpolateForDialect(query, value, dialect.MySQL)
-}
 
 type interpolator struct {
 	Buffer

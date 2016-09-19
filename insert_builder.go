@@ -51,16 +51,6 @@ func (tx *Tx) InsertBySql(query string, value ...interface{}) *InsertBuilder {
 	}
 }
 
-// FIXME: This will be removed in the future
-func (b *InsertBuilder) ToSql() (string, []interface{}) {
-	buf := NewBuffer()
-	err := b.Build(b.Dialect, buf)
-	if err != nil {
-		panic(err)
-	}
-	return buf.String(), buf.Value()
-}
-
 func (b *InsertBuilder) Pair(column string, value interface{}) *InsertBuilder {
 	b.Column = append(b.Column, column)
 	switch len(b.Value) {
