@@ -32,6 +32,11 @@ func (d postgreSQL) EncodeBytes(b []byte) string {
 	return fmt.Sprintf(`E'\\x%x'`, b)
 }
 
+func (d postgreSQL) EncodeStrings(s []string) string {
+	// https://www.postgresql.org/docs/9.1/static/arrays.html
+	return fmt.Sprintf(`'{%s}'`, strings.Join(s, ","))
+}
+
 func (d postgreSQL) Placeholder(n int) string {
 	return fmt.Sprintf("$%d", n+1)
 }

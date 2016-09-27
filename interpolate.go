@@ -137,6 +137,11 @@ func (i *interpolator) encodePlaceholder(value interface{}) error {
 			i.WriteString(i.EncodeBytes(v.Bytes()))
 			return nil
 		}
+		// []string supported only for PostgreSQL
+		if v.Type().Elem().Kind() == reflect.String && dialect.PostgreSQL == i.Dialect {
+			i.WriteString(dialect.PostgreSQL.EncodeStrings(v.Interface().([]string)))
+			return nil
+		}
 		if v.Len() == 0 {
 			// FIXME: support zero-length slice
 			return ErrInvalidSliceLength
