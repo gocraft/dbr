@@ -55,7 +55,7 @@ func TestInterpolateIgnoreBinary(t *testing.T) {
 	}
 }
 
-func TestInterpolateForDialect(t *testing.T) {
+func TestInterpolateForMysqlDialect(t *testing.T) {
 	for _, test := range []struct {
 		query string
 		value []interface{}
@@ -138,6 +138,24 @@ func TestInterpolateForDialect(t *testing.T) {
 		},
 	} {
 		s, err := InterpolateForDialect(test.query, test.value, dialect.MySQL)
+		assert.NoError(t, err)
+		assert.Equal(t, test.want, s)
+	}
+}
+
+func TestInterpolateForPostgresDialect(t *testing.T) {
+	for _, test := range []struct {
+		query string
+		value []interface{}
+		want  string
+	}{
+		{
+			query: "?",
+			value: []interface{}{[]string{"a", "b"}},
+			want:  "'{a,b}'",
+		},
+	} {
+		s, err := InterpolateForDialect(test.query, test.value, dialect.PostgreSQL)
 		assert.NoError(t, err)
 		assert.Equal(t, test.want, s)
 	}
