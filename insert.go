@@ -3,15 +3,17 @@ package dbr
 import (
 	"bytes"
 	"reflect"
+	"strings"
 )
 
 // InsertStmt builds `INSERT INTO ...`
 type InsertStmt struct {
 	raw
 
-	Table  string
-	Column []string
-	Value  [][]interface{}
+	Table        string
+	Column       []string
+	Value        [][]interface{}
+	ReturnColumn []string // Postgres RETURNING
 }
 
 // Build builds `INSERT INTO ...` in dialect
@@ -55,6 +57,10 @@ func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 		buf.WriteValue(tuple...)
 	}
 
+	if len(b.ReturnColumn) > 0 {
+		buf.WriteString(" RETURNING " + strings.Join(b.ReturnColumn, ","))
+	}
+
 	return nil
 }
 
@@ -84,6 +90,12 @@ func (b *InsertStmt) Columns(column ...string) *InsertStmt {
 // Values adds a tuple for columns
 func (b *InsertStmt) Values(value ...interface{}) *InsertStmt {
 	b.Value = append(b.Value, value)
+	return b
+}
+
+// PostgresQL's RETURNING support, used along with Load (instead of Exec)
+func (b *InsertStmt) Returning(column ...string) *InsertStmt {
+	b.ReturnColumn = column
 	return b
 }
 

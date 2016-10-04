@@ -74,6 +74,12 @@ func (b *InsertBuilder) Pair(column string, value interface{}) *InsertBuilder {
 	return b
 }
 
+// execute the insertion as a query and load the returned row
+func (b *InsertBuilder) Load(value interface{}) error {
+	_, err := query(b.runner, b.EventReceiver, b, b.Dialect, value)
+	return err
+}
+
 func (b *InsertBuilder) Exec() (sql.Result, error) {
 	result, err := exec(b.runner, b.EventReceiver, b, b.Dialect)
 	if err != nil {
@@ -91,6 +97,11 @@ func (b *InsertBuilder) Exec() (sql.Result, error) {
 
 func (b *InsertBuilder) Columns(column ...string) *InsertBuilder {
 	b.InsertStmt.Columns(column...)
+	return b
+}
+
+func (b *InsertBuilder) Returning(column ...string) *InsertBuilder {
+	b.InsertStmt.Returning(column...)
 	return b
 }
 
