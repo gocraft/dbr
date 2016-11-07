@@ -1,5 +1,9 @@
 package dbr
 
+import (
+	"reflect"
+)
+
 // UpdateStmt builds `UPDATE ...`
 type UpdateStmt struct {
 	raw
@@ -83,7 +87,17 @@ func (b *UpdateStmt) Where(query interface{}, value ...interface{}) *UpdateStmt 
 
 // Set specifies a key-value pair
 func (b *UpdateStmt) Set(column string, value interface{}) *UpdateStmt {
-	b.Value[column] = value
+	v := reflect.ValueOf(value)
+	if v.Kind() == reflect.Ptr && !v.IsNil() {
+		v = v.Elem()
+	}
+	if v.Kind() == reflect.Struct {
+		m := structMap(v)
+		b.Value[column] = m[column].Interface()
+	} else {
+		b.Value[column] = value
+	}
+
 	return b
 }
 
