@@ -59,6 +59,26 @@ func TestCondition(t *testing.T) {
 			value: []interface{}{1},
 		},
 		{
+			cond:  Lk("col", 1),
+			query: "`col` LIKE ?",
+			value: []interface{}{1},
+		},
+		{
+			cond:  Lk("col", nil),
+			query: "",
+			value: nil,
+		},
+		{
+			cond:  Nlk("col", 1),
+			query: "`col` NOT LIKE ?",
+			value: []interface{}{1},
+		},
+		{
+			cond:  Nlk("col", nil),
+			query: "",
+			value: nil,
+		},
+		{
 			cond:  And(Lt("a", 1), Or(Gt("b", 2), Neq("c", 3))),
 			query: "(`a` < ?) AND ((`b` > ?) OR (`c` != ?))",
 			value: []interface{}{1, 2, 3},

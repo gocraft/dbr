@@ -117,3 +117,37 @@ func Lte(column string, value interface{}) Builder {
 		return buildCmp(d, buf, "<=", column, value)
 	})
 }
+
+// Lk is `LIKE`.
+// When value is nil, do nothing.
+// When value is a slice, do nothing.
+// Otherwise it will be translated to `LIKE`.
+func Lk(column string, value interface{}) Builder {
+	return BuildFunc(func(d Dialect, buf Buffer) error {
+		if value == nil {
+			return nil
+		}
+		v := reflect.ValueOf(value)
+		if v.Kind() == reflect.Slice {
+			return nil
+		}
+		return buildCmp(d, buf, "LIKE", column, value)
+	})
+}
+
+// Nlk is `NOT LIKE`.
+// When value is nil, do nothing.
+// When value is a slice, do nothing.
+// Otherwise it will be translated to `NOT LIKE`.
+func Nlk(column string, value interface{}) Builder {
+	return BuildFunc(func(d Dialect, buf Buffer) error {
+		if value == nil {
+			return nil
+		}
+		v := reflect.ValueOf(value)
+		if v.Kind() == reflect.Slice {
+			return nil
+		}
+		return buildCmp(d, buf, "NOT LIKE", column, value)
+	})
+}
