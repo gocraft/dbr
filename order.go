@@ -11,8 +11,7 @@ const (
 
 func order(column string, dir direction) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
-		// FIXME: no quote ident
-		buf.WriteString(column)
+		buf.WriteString(d.QuoteIdent(column))
 		switch dir {
 		case asc:
 			buf.WriteString(" ASC")
