@@ -1,6 +1,9 @@
 package dbr
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+)
 
 func buildCond(d Dialect, buf Buffer, pred string, cond ...Builder) error {
 	for i, c := range cond {
@@ -122,16 +125,26 @@ func Lte(column string, value interface{}) Builder {
 // When value is nil, do nothing.
 // When value is a slice, do nothing.
 // Otherwise it will be translated to `LIKE`.
-func Lk(column string, value interface{}) Builder {
+func Like(column string, value interface{}) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
 		if value == nil {
-			return nil
+			return fmt.Errorf("Column %s LIKE nil is Not Supported", column)
 		}
+
 		v := reflect.ValueOf(value)
-		if v.Kind() == reflect.Slice {
-			return nil
+		switch {
+		case v.Kind() == reflect.TypeOf([]rune{}).Kind() && v.Len() != 0:
+			return buildCmp(d, buf, "LIKE", column, string(value.([]rune)))
+
+		case v.Kind() == reflect.TypeOf([0]rune{}).Kind() && v.Len() != 0:
+			return buildCmp(d, buf, "LIKE", column, string(value.([]rune)[:]))
+
+		case v.Kind() == reflect.Slice || v.Kind() == reflect.Array:
+			return fmt.Errorf("Column %s LIKE Multiple Value is Not Supported", column)
+
+		default:
+			return buildCmp(d, buf, "LIKE", column, value)
 		}
-		return buildCmp(d, buf, "LIKE", column, value)
 	})
 }
 
@@ -139,15 +152,25 @@ func Lk(column string, value interface{}) Builder {
 // When value is nil, do nothing.
 // When value is a slice, do nothing.
 // Otherwise it will be translated to `NOT LIKE`.
-func Nlk(column string, value interface{}) Builder {
+func NotLike(column string, value interface{}) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
 		if value == nil {
-			return nil
+			return fmt.Errorf("Column %s NOT LIKE nil is Not Supported", column)
 		}
+
 		v := reflect.ValueOf(value)
-		if v.Kind() == reflect.Slice {
-			return nil
+		switch {
+		case v.Kind() == reflect.TypeOf([]rune{}).Kind() && v.Len() != 0:
+			return buildCmp(d, buf, "NOT LIKE", column, string(value.([]rune)))
+
+		case v.Kind() == reflect.TypeOf([0]rune{}).Kind() && v.Len() != 0:
+			return buildCmp(d, buf, "NOT LIKE", column, string(value.([]rune)[:]))
+
+		case v.Kind() == reflect.Slice || v.Kind() == reflect.Array:
+			return fmt.Errorf("Column %s NOT LIKE Multiple Value is Not Supported", column)
+
+		default:
+			return buildCmp(d, buf, "NOT LIKE", column, value)
 		}
-		return buildCmp(d, buf, "NOT LIKE", column, value)
 	})
 }
