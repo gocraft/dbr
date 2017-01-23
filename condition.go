@@ -128,14 +128,22 @@ func buildLikeCmp(d Dialect, buf Buffer, pred string, column string, value inter
 
 	v := reflect.ValueOf(value)
 	switch {
-	case v.Kind() == reflect.TypeOf([]rune{}).Kind() && v.Len() != 0:
+	case v.Type() == reflect.TypeOf([]rune{}):
 		return buildCmp(d, buf, pred, column, string(value.([]rune)))
 
-	case v.Kind() == reflect.TypeOf([0]rune{}).Kind() && v.Len() != 0:
-		return buildCmp(d, buf, pred, column, string(value.([]rune)[:]))
+	case v.Kind() == reflect.TypeOf([0]rune{}).Kind():
+		if v.Len() == 0 {
+			return buildCmp(d, buf, pred, column, "")
+		}
 
-	case v.Kind() == reflect.Slice || v.Kind() == reflect.Array:
-		return fmt.Errorf("Column %s %s Multiple Value is Not Supported", column, pred)
+		val := make([]rune, v.Len())
+		for i := 0; i < v.Len(); i++ {
+			val[i] = v.Index(i).Interface().(rune)
+		}
+		return buildCmp(d, buf, pred, column, string(val))
+
+	case v.Kind() == reflect.Slice || v.Kind() == reflect.Array || v.Kind() == reflect.Map || v.Kind() == reflect.Struct || v.Kind() == reflect.Func:
+		return fmt.Errorf("Column %s %s Invalid Value", column, pred)
 
 	default:
 		return buildCmp(d, buf, pred, column, value)
