@@ -70,9 +70,9 @@ func TestCondition(t *testing.T) {
 		},
 		{
 			cond:  Like("col", 1),
-			query: "`col` LIKE ?",
-			value: []interface{}{1},
-			isErr: false,
+			query: "",
+			value: nil,
+			isErr: true,
 		},
 		{
 			cond:  Like("col", "like"),
@@ -100,9 +100,9 @@ func TestCondition(t *testing.T) {
 		},
 		{
 			cond:  NotLike("col", 1),
-			query: "`col` NOT LIKE ?",
-			value: []interface{}{1},
-			isErr: false,
+			query: "",
+			value: nil,
+			isErr: true,
 		},
 		{
 			cond:  NotLike("col", "not like"),

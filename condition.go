@@ -127,26 +127,25 @@ func buildLikeCmp(d Dialect, buf Buffer, pred string, column string, value inter
 	}
 
 	v := reflect.ValueOf(value)
-	switch {
-	case v.Type() == reflect.TypeOf([]rune{}):
-		return buildCmp(d, buf, pred, column, string(value.([]rune)))
-
-	case v.Kind() == reflect.TypeOf([0]rune{}).Kind():
-		if v.Len() == 0 {
-			return buildCmp(d, buf, pred, column, "")
-		}
-
-		val := make([]rune, v.Len())
-		for i := 0; i < v.Len(); i++ {
-			val[i] = v.Index(i).Interface().(rune)
-		}
-		return buildCmp(d, buf, pred, column, string(val))
-
-	case v.Kind() == reflect.Slice || v.Kind() == reflect.Array || v.Kind() == reflect.Map || v.Kind() == reflect.Struct || v.Kind() == reflect.Func:
-		return fmt.Errorf("Column %s %s Invalid Value", column, pred)
-
-	default:
+	switch v.Kind() {
+	case reflect.String:
+		// pass as is
 		return buildCmp(d, buf, pred, column, value)
+	case reflect.Ptr, reflect.Interface: // pointer or interface
+		// for pointers & interfaces check
+		return buildLikeCmp(d, buf, pred, column, v.Elem().Interface())
+	case reflect.Slice:
+		switch v.Type().Elem().Kind() {
+		case reflect.Uint8: // bytes
+			// interpolator will handle this case
+			return buildCmp(d, buf, pred, column, value)
+		case reflect.Int32: // rune
+			// need to convert into string
+			return buildCmp(d, buf, pred, column, string(value.([]rune)))
+		}
+		fallthrough
+	default:
+		return fmt.Errorf("Column %s %s Invalid Value, string expected", column, pred)
 	}
 }
 
