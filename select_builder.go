@@ -1,5 +1,10 @@
 package dbr
 
+import (
+	"fmt"
+	"strings"
+)
+
 type SelectBuilder struct {
 	runner
 	EventReceiver
@@ -159,4 +164,23 @@ func (b *SelectBuilder) OrderBy(col string) *SelectBuilder {
 func (b *SelectBuilder) Where(query interface{}, value ...interface{}) *SelectBuilder {
 	b.SelectStmt.Where(query, value...)
 	return b
+}
+
+// ToSql return:
+// * sql query string with binded params
+// * empty string if error
+func (b *SelectBuilder) ToSql() string {
+	buf := NewBuffer()
+	err := b.Build(b.Dialect, buf)
+	if err != nil {
+		return ""
+	}
+
+	bindings := buf.Value()
+	sql := buf.String()
+	for _, val := range bindings {
+		sql = strings.Replace(sql, "?", fmt.Sprint(val), 1)
+	}
+
+	return sql
 }
