@@ -16,7 +16,23 @@ func TestMySQL(t *testing.T) {
 			want: "`table`.`col`",
 		},
 		{
+			in:   "`table`.col",
+			want: "`table`.`col`",
+		},
+		{
+			in:   "table.`col`",
+			want: "`table`.`col`",
+		},
+		{
+			in:   "`table`.`col`",
+			want: "`table`.`col`",
+		},
+		{
 			in:   "col",
+			want: "`col`",
+		},
+		{
+			in:   "`col`",
 			want: "`col`",
 		},
 	} {
@@ -34,7 +50,19 @@ func TestPostgreSQL(t *testing.T) {
 			want: `"table"."col"`,
 		},
 		{
+			in:   `"table".col`,
+			want: `"table"."col"`,
+		},
+		{
+			in:   `table."col"`,
+			want: `"table"."col"`,
+		},
+		{
 			in:   "col",
+			want: `"col"`,
+		},
+		{
+			in:   `"col"`,
 			want: `"col"`,
 		},
 	} {
@@ -52,7 +80,19 @@ func TestSQLite3(t *testing.T) {
 			want: `"table"."col"`,
 		},
 		{
+			in:   `"table".col`,
+			want: `"table"."col"`,
+		},
+		{
+			in:   `table."col"`,
+			want: `"table"."col"`,
+		},
+		{
 			in:   "col",
+			want: `"col"`,
+		},
+		{
+			in:   `"col"`,
 			want: `"col"`,
 		},
 	} {

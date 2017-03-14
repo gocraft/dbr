@@ -20,5 +20,8 @@ func quoteIdent(s, quote string) string {
 	if len(part) == 2 {
 		return quoteIdent(part[0], quote) + "." + quoteIdent(part[1], quote)
 	}
+	if len(s) > 1 && s[0:1] == quote && s[len(s)-1:] == quote {
+		return s
+	}
 	return quote + s + quote
 }
