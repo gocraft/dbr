@@ -93,6 +93,11 @@ func TestInterpolateForDialect(t *testing.T) {
 		},
 		{
 			query: "?",
+			value: []interface{}{map[string]bool{"one": true, "two": false}},
+			want:  "('one','two')",
+		},
+		{
+			query: "?",
 			value: []interface{}{[]byte{0x1, 0x2, 0x3}},
 			want:  "0x010203",
 		},
