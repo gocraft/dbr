@@ -188,7 +188,7 @@ func (b *SelectStmt) GroupBy(col ...string) *SelectStmt {
 	return b
 }
 
-// OrderBy specifies columns for ordering
+// OrderAsc specifies columns for ordering
 func (b *SelectStmt) OrderAsc(col string) *SelectStmt {
 	b.Order = append(b.Order, order(col, asc))
 	return b
