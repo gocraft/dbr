@@ -2,6 +2,7 @@ package dbr
 
 import (
 	"database/sql"
+	"fmt"
 	"reflect"
 )
 
@@ -59,11 +60,24 @@ func (dummyScanner) Scan(interface{}) error {
 	return nil
 }
 
+type keyValueMap map[string]interface{}
+
+type kvScanner struct {
+	column string
+	m      keyValueMap
+}
+
+func (kv *kvScanner) Scan(v interface{}) error {
+	kv.m[kv.column] = v
+	return nil
+}
+
 type pointersExtractor func(columns []string, value reflect.Value) []interface{}
 
 var (
-	dummyDest   sql.Scanner = dummyScanner{}
-	typeScanner             = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
+	dummyDest       sql.Scanner = dummyScanner{}
+	typeScanner                 = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
+	typeKeyValueMap             = reflect.TypeOf(keyValueMap(nil))
 )
 
 func getStructFieldsExtractor(t reflect.Type) pointersExtractor {
@@ -90,6 +104,18 @@ func getIndirectExtractor(extractor pointersExtractor) pointersExtractor {
 	}
 }
 
+func mapExtractor(columns []string, value reflect.Value) []interface{} {
+	if value.IsNil() {
+		value.Set(reflect.MakeMap(value.Type()))
+	}
+	m := value.Convert(typeKeyValueMap).Interface().(keyValueMap)
+	var ptr []interface{}
+	for _, c := range columns {
+		ptr = append(ptr, &kvScanner{column: c, m: m})
+	}
+	return ptr
+}
+
 func dummyExtractor(columns []string, value reflect.Value) []interface{} {
 	return []interface{}{value.Addr().Interface()}
 }
@@ -100,6 +126,11 @@ func findExtractor(t reflect.Type) (pointersExtractor, error) {
 	}
 
 	switch t.Kind() {
+	case reflect.Map:
+		if !t.ConvertibleTo(typeKeyValueMap) {
+			return nil, fmt.Errorf("expected %v, got %v", typeKeyValueMap, t)
+		}
+		return mapExtractor, nil
 	case reflect.Ptr:
 		if inner, err := findExtractor(t.Elem()); err != nil {
 			return nil, err

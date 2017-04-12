@@ -25,6 +25,9 @@ func TestLoad(t *testing.T) {
 		{[]string{"a"}, &testStruct{"a"}},
 		{[]string{"a"}, []testStruct{{"a"}}},
 		{[]string{"a"}, []*testStruct{{"a"}}},
+		{[]string{"a", "b"}, map[string]interface{}{"a": "a", "b": "b"}},
+		{[]string{"a", "b"}, &map[string]interface{}{"a": "a", "b": "b"}},
+		{[]string{"a", "b"}, []map[string]interface{}{{"a": "a", "b": "b"}}},
 	}
 
 	for _, tc := range testcases {
