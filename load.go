@@ -21,6 +21,16 @@ func Load(rows *sql.Rows, value interface{}) (int, error) {
 	v = v.Elem()
 	isSlice := v.Kind() == reflect.Slice && v.Type().Elem().Kind() != reflect.Uint8
 	count := 0
+	var elemType reflect.Type
+	if isSlice {
+		elemType = v.Type().Elem()
+	} else {
+		elemType = v.Type()
+	}
+	extractor, err := findExtractor(elemType)
+	if err != nil {
+		return count, err
+	}
 	for rows.Next() {
 		var elem reflect.Value
 		if isSlice {
@@ -28,13 +38,10 @@ func Load(rows *sql.Rows, value interface{}) (int, error) {
 		} else {
 			elem = v
 		}
-		ptr, err := findPtr(column, elem)
-		if err != nil {
-			return 0, err
-		}
+		ptr := extractor(column, elem)
 		err = rows.Scan(ptr...)
 		if err != nil {
-			return 0, err
+			return count, err
 		}
 		count++
 		if isSlice {
@@ -52,32 +59,55 @@ func (dummyScanner) Scan(interface{}) error {
 	return nil
 }
 
+type pointersExtractor func(columns []string, value reflect.Value) []interface{}
+
 var (
 	dummyDest   sql.Scanner = dummyScanner{}
 	typeScanner             = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
 )
 
-func findPtr(column []string, value reflect.Value) ([]interface{}, error) {
-	if value.Addr().Type().Implements(typeScanner) {
-		return []interface{}{value.Addr().Interface()}, nil
-	}
-	switch value.Kind() {
-	case reflect.Struct:
+func getStructFieldsExtractor(t reflect.Type) pointersExtractor {
+	mapping := structMap(t)
+	return func(columns []string, value reflect.Value) []interface{} {
 		var ptr []interface{}
-		m := structMap(value)
-		for _, key := range column {
-			if val, ok := m[key]; ok {
-				ptr = append(ptr, val.Addr().Interface())
+		for _, key := range columns {
+			if index, ok := mapping[key]; ok {
+				ptr = append(ptr, value.FieldByIndex(index).Addr().Interface())
 			} else {
 				ptr = append(ptr, dummyDest)
 			}
 		}
-		return ptr, nil
-	case reflect.Ptr:
+		return ptr
+	}
+}
+
+func getIndirectExtractor(extractor pointersExtractor) pointersExtractor {
+	return func(columns []string, value reflect.Value) []interface{} {
 		if value.IsNil() {
 			value.Set(reflect.New(value.Type().Elem()))
 		}
-		return findPtr(column, value.Elem())
+		return extractor(columns, value.Elem())
 	}
-	return []interface{}{value.Addr().Interface()}, nil
+}
+
+func dummyExtractor(columns []string, value reflect.Value) []interface{} {
+	return []interface{}{value.Addr().Interface()}
+}
+
+func findExtractor(t reflect.Type) (pointersExtractor, error) {
+	if reflect.PtrTo(t).Implements(typeScanner) {
+		return dummyExtractor, nil
+	}
+
+	switch t.Kind() {
+	case reflect.Ptr:
+		if inner, err := findExtractor(t.Elem()); err != nil {
+			return nil, err
+		} else {
+			return getIndirectExtractor(inner), nil
+		}
+	case reflect.Struct:
+		return getStructFieldsExtractor(t), nil
+	}
+	return dummyExtractor, nil
 }
