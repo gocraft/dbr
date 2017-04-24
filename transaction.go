@@ -1,17 +1,21 @@
 package dbr
 
-import "database/sql"
+import (
+	"context"
+	"database/sql"
+)
 
 // Tx is a transaction for the given Session
 type Tx struct {
 	EventReceiver
 	Dialect Dialect
 	*sql.Tx
+	ctx context.Context
 }
 
 // Begin creates a transaction for the given session
 func (sess *Session) Begin() (*Tx, error) {
-	tx, err := sess.Connection.Begin()
+	tx, err := sess.Connection.BeginTx(sess.ctx, nil)
 	if err != nil {
 		return nil, sess.EventErr("dbr.begin.error", err)
 	}
@@ -21,7 +25,20 @@ func (sess *Session) Begin() (*Tx, error) {
 		EventReceiver: sess,
 		Dialect:       sess.Dialect,
 		Tx:            tx,
+		ctx:           sess.ctx,
 	}, nil
+}
+
+// Exec executes a query without returning any rows.
+// The args are for any placeholder parameters in the query.
+func (tx *Tx) Exec(query string, args ...interface{}) (sql.Result, error) {
+	return tx.ExecContext(tx.ctx, query, args...)
+}
+
+// Query executes a query that returns rows, typically a SELECT.
+// The args are for any placeholder parameters in the query.
+func (tx *Tx) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	return tx.QueryContext(tx.ctx, query, args...)
 }
 
 // Commit finishes the transaction
