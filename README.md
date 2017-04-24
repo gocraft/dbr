@@ -54,10 +54,15 @@ Check out these [benchmarks](https://github.com/tyler-smith/golang-sql-benchmark
 
 ### IN queries that aren't horrible
 Traditionally, database/sql uses prepared statements, which means each argument in an IN clause needs its own question mark. gocraft/dbr, on the other hand, handles interpolation itself so that you can easily use a single question mark paired with a dynamically sized slice.
-
 ```go
 ids := []int64{1, 2, 3, 4, 5}
 builder.Where("id IN ?", ids) // `id` IN ?
+```
+map object can be used for IN queries as well.
+Note: interpolation map is slower than slice and it is preferable to use slice when it is possible.
+```go
+ids := map[int64]string{1: "one", 2: "two"}
+builder.Where("id IN ?", ids)  // `id` IN ?
 ```
 
 ### JSON Friendly

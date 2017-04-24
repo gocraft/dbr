@@ -29,6 +29,21 @@ func TestCondition(t *testing.T) {
 			value: nil,
 		},
 		{
+			cond:  Eq("col", map[int]int{}),
+			query: "0",
+			value: nil,
+		},
+		{
+			cond:  Eq("col", []int{1}),
+			query: "`col` IN ?",
+			value: []interface{}{[]int{1}},
+		},
+		{
+			cond:  Eq("col", map[int]int{1: 2}),
+			query: "`col` IN ?",
+			value: []interface{}{map[int]int{1: 2}},
+		},
+		{
 			cond:  Neq("col", 1),
 			query: "`col` != ?",
 			value: []interface{}{1},
@@ -37,6 +52,21 @@ func TestCondition(t *testing.T) {
 			cond:  Neq("col", nil),
 			query: "`col` IS NOT NULL",
 			value: nil,
+		},
+		{
+			cond:  Neq("col", []int{}),
+			query: "1",
+			value: nil,
+		},
+		{
+			cond:  Neq("col", []int{1}),
+			query: "`col` NOT IN ?",
+			value: []interface{}{[]int{1}},
+		},
+		{
+			cond:  Neq("col", map[int]int{1: 2}),
+			query: "`col` NOT IN ?",
+			value: []interface{}{map[int]int{1: 2}},
 		},
 		{
 			cond:  Gt("col", 1),

@@ -52,34 +52,32 @@ func TestSnakeCase(t *testing.T) {
 
 func TestStructMap(t *testing.T) {
 	for _, test := range []struct {
-		in  interface{}
-		ok  []string
-		bad []string
+		in       interface{}
+		expected map[string][]int
 	}{
 		{
 			in: struct {
 				CreatedAt time.Time
 			}{},
-			ok: []string{"created_at"},
+			expected: map[string][]int{"created_at": {0}},
 		},
 		{
 			in: struct {
 				intVal int
 			}{},
-			bad: []string{"int_val"},
+			expected: map[string][]int{},
 		},
 		{
 			in: struct {
 				IntVal int `db:"test"`
 			}{},
-			ok:  []string{"test"},
-			bad: []string{"int_val"},
+			expected: map[string][]int{"test": {0}},
 		},
 		{
 			in: struct {
 				IntVal int `db:"-"`
 			}{},
-			bad: []string{"int_val"},
+			expected: map[string][]int{},
 		},
 		{
 			in: struct {
@@ -87,17 +85,10 @@ func TestStructMap(t *testing.T) {
 					Test2 int
 				}
 			}{},
-			ok: []string{"test2"},
+			expected: map[string][]int{"test1": {0}, "test2": {0, 0}},
 		},
 	} {
-		m := structMap(reflect.ValueOf(test.in))
-		for _, c := range test.ok {
-			_, ok := m[c]
-			assert.True(t, ok)
-		}
-		for _, c := range test.bad {
-			_, ok := m[c]
-			assert.False(t, ok)
-		}
+		m := structMap(reflect.ValueOf(test.in).Type())
+		assert.Equal(t, test.expected, m)
 	}
 }
