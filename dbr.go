@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
@@ -48,14 +49,32 @@ type Connection struct {
 type Session struct {
 	*Connection
 	EventReceiver
+	ctx context.Context
 }
 
 // NewSession instantiates a Session for the Connection
 func (conn *Connection) NewSession(log EventReceiver) *Session {
+	return conn.NewSessionContext(context.Background(), log)
+}
+
+// NewSessionContext instantiates a Session with context for the Connection
+func (conn *Connection) NewSessionContext(ctx context.Context, log EventReceiver) *Session {
 	if log == nil {
 		log = conn.EventReceiver // Use parent instrumentation
 	}
-	return &Session{Connection: conn, EventReceiver: log}
+	return &Session{Connection: conn, EventReceiver: log, ctx: ctx}
+}
+
+// Exec executes a query without returning any rows.
+// The args are for any placeholder parameters in the query.
+func (sess *Session) Exec(query string, args ...interface{}) (sql.Result, error) {
+	return sess.ExecContext(sess.ctx, query, args...)
+}
+
+// Query executes a query that returns rows, typically a SELECT.
+// The args are for any placeholder parameters in the query.
+func (sess *Session) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	return sess.QueryContext(sess.ctx, query, args...)
 }
 
 // Ensure that tx and session are session runner
