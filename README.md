@@ -1,6 +1,6 @@
-# gocraft/dbr (database records) [![GoDoc](https://godoc.org/github.com/gocraft/web?status.png)](https://godoc.org/github.com/gocraft/dbr)
+dbr (fork of gocraft/dbr) provides additions to Go's database/sql for super fast performance and convenience.
 
-gocraft/dbr provides additions to Go's database/sql for super fast performance and convenience.
+[![Build Status](https://travis-ci.org/bgaifullin/dbr.svg?branch=master)](https://travis-ci.org/bgaifullin/dbr)
 
 ## Getting Started
 

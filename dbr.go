@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
@@ -48,14 +49,25 @@ type Connection struct {
 type Session struct {
 	*Connection
 	EventReceiver
+	ctx context.Context
 }
 
 // NewSession instantiates a Session for the Connection
 func (conn *Connection) NewSession(log EventReceiver) *Session {
+	return conn.NewSessionContext(context.Background(), log)
+}
+
+// NewSessionContext instantiates a Session with context for the Connection
+func (conn *Connection) NewSessionContext(ctx context.Context, log EventReceiver) *Session {
 	if log == nil {
 		log = conn.EventReceiver // Use parent instrumentation
 	}
-	return &Session{Connection: conn, EventReceiver: log}
+	return &Session{Connection: conn, EventReceiver: log, ctx: ctx}
+}
+
+// beginTx starts a transaction with context.
+func (conn *Connection) beginTx() (*sql.Tx, error) {
+	return conn.Begin()
 }
 
 // Ensure that tx and session are session runner

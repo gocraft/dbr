@@ -1,0 +1,25 @@
+language: go
+
+go:
+  - 1.7.x
+  - 1.8.x
+
+sudo: false
+
+services:
+  - mysql
+  - postgresql
+
+before_install:
+  - mysql -e 'CREATE DATABASE dbr_ci_test;'
+  - psql -c 'create database dbr_ci_test;' -U postgres
+  - go get -u github.com/golang/lint/golint
+
+before_script:
+  - export DBR_TEST_MYSQL_DSN="root:@tcp(127.0.0.1:3306)/dbr_ci_test?charset=utf8"
+  - export DBR_TEST_POSTGRES_DSN="postgres://postgres:@127.0.0.1:5432/dbr_ci_test?sslmode=disable"
+
+script:
+  - golint ./...
+  - go vet ./...
+  - go test -v ./...
