@@ -24,9 +24,10 @@ func camelCaseToSnakeCase(name string) string {
 	return buf.String()
 }
 
-func structMap(value reflect.Value) map[string]reflect.Value {
-	m := make(map[string]reflect.Value)
-	structValue(m, value)
+// structMap builds index to fast lookup fields in struct
+func structMap(t reflect.Type) map[string][]int {
+	m := make(map[string][]int)
+	structTraverse(m, t, nil)
 	return m
 }
 
@@ -34,18 +35,14 @@ var (
 	typeValuer = reflect.TypeOf((*driver.Valuer)(nil)).Elem()
 )
 
-func structValue(m map[string]reflect.Value, value reflect.Value) {
-	if value.Type().Implements(typeValuer) {
+func structTraverse(m map[string][]int, t reflect.Type, head []int) {
+	if t.Implements(typeValuer) {
 		return
 	}
-	switch value.Kind() {
+	switch t.Kind() {
 	case reflect.Ptr:
-		if value.IsNil() {
-			return
-		}
-		structValue(m, value.Elem())
+		structTraverse(m, t.Elem(), head)
 	case reflect.Struct:
-		t := value.Type()
 		for i := 0; i < t.NumField(); i++ {
 			field := t.Field(i)
 			if field.PkgPath != "" && !field.Anonymous {
@@ -61,11 +58,10 @@ func structValue(m map[string]reflect.Value, value reflect.Value) {
 				// no tag, but we can record the field name
 				tag = camelCaseToSnakeCase(field.Name)
 			}
-			fieldValue := value.Field(i)
 			if _, ok := m[tag]; !ok {
-				m[tag] = fieldValue
+				m[tag] = append(head, i)
 			}
-			structValue(m, fieldValue)
+			structTraverse(m, field.Type, append(head, i))
 		}
 	}
 }
