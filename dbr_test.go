@@ -109,6 +109,8 @@ func reset(sess *Session) {
 			time_val timestamp NULL ,
 			bool_val bool NULL
 		)`, autoIncrementType),
+		`DROP TABLE IF EXISTS dbr_keys`,
+		`CREATE TABLE dbr_keys (key_value varchar(255) PRIMARY KEY, val_value varchar(255))`,
 	} {
 		_, err := sess.Exec(v)
 		if err != nil {
@@ -208,5 +210,23 @@ func TestBasicCRUD(t *testing.T) {
 		ids, err = sess.Select("id").From("dbr_people").ReturnInt64s()
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(ids))
+	}
+}
+
+func TestOnConflict(t *testing.T) {
+	for _, sess := range testSession {
+		if sess.Dialect == dialect.SQLite3 {
+			continue
+		}
+		for i := 0; i < 2; i++ {
+			b := sess.InsertInto("dbr_keys").Columns("key_value", "val_value").Values("key", "value")
+			b.OnConflict("dbr_keys_pkey").Action("val_value", Expr("CONCAT(?, 2)", Proposed("val_value")))
+			_, err := b.Exec()
+			assert.NoError(t, err)
+		}
+		var value string
+		_, err := sess.SelectBySql("SELECT val_value FROM dbr_keys WHERE key_value=?", "key").Load(&value)
+		assert.NoError(t, err)
+		assert.Equal(t, "value2", value)
 	}
 }

@@ -105,3 +105,9 @@ func (b *InsertBuilder) Values(value ...interface{}) *InsertBuilder {
 	b.InsertStmt.Values(value...)
 	return b
 }
+
+// OnConflictMap allows to add actions for constraint violation, e.g UPSERT
+func (b *InsertBuilder) OnConflictMap(constraint string, actions map[string]interface{}) *InsertBuilder {
+	b.InsertStmt.OnConflictMap(constraint, actions)
+	return b
+}

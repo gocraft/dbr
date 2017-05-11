@@ -10,6 +10,7 @@ type Dialect interface {
 	EncodeBool(b bool) string
 	EncodeTime(t time.Time) string
 	EncodeBytes(b []byte) string
-
 	Placeholder(n int) string
+	OnConflict(constraint string) string
+	Proposed(column string) string
 }
