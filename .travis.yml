@@ -14,6 +14,8 @@ before_install:
   - mysql -e 'CREATE DATABASE dbr_ci_test;'
   - psql -c 'create database dbr_ci_test;' -U postgres
   - go get -u github.com/golang/lint/golint
+  - go get golang.org/x/tools/cmd/cover
+  - go get github.com/mattn/goveralls
 
 before_script:
   - export DBR_TEST_MYSQL_DSN="root:@tcp(127.0.0.1:3306)/dbr_ci_test?charset=utf8"
@@ -22,4 +24,6 @@ before_script:
 script:
   - golint ./...
   - go vet ./...
-  - go test -v ./...
+  - test -z "$(gofmt -d -s . | tee /dev/stderr)"
+  - go test -v -covermode=count -coverprofile=coverage.out
+  - $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci
