@@ -24,6 +24,27 @@ func TestInsertStmt(t *testing.T) {
 	assert.Equal(t, []interface{}{1, "one", 2, "two"}, buf.Value())
 }
 
+func TestInsertOnConflictStmt(t *testing.T) {
+	buf := NewBuffer()
+	exp := Expr("a + ?", 1)
+	builder := InsertInto("table").Columns("a", "b").Values(1, "one")
+	builder.OnConflict("").Action("a", exp).Action("b", "one")
+	err := builder.Build(dialect.MySQL, buf)
+	assert.NoError(t, err)
+	assert.Equal(t, "INSERT INTO `table` (`a`,`b`) VALUES (?,?) ON DUPLICATE KEY UPDATE `a`=?,`b`=?", buf.String())
+	assert.Equal(t, []interface{}{1, "one", exp, "one"}, buf.Value())
+}
+
+func TestInsertOnConflictMapStmt(t *testing.T) {
+	buf := NewBuffer()
+	exp := Expr("a + ?", 1)
+	builder := InsertInto("table").Columns("a", "b").Values(1, "one")
+	err := builder.OnConflictMap("", map[string]interface{}{"a": exp, "b": "one"}).Build(dialect.MySQL, buf)
+	assert.NoError(t, err)
+	assert.Equal(t, "INSERT INTO `table` (`a`,`b`) VALUES (?,?) ON DUPLICATE KEY UPDATE `a`=?,`b`=?", buf.String())
+	assert.Equal(t, []interface{}{1, "one", exp, "one"}, buf.Value())
+}
+
 func BenchmarkInsertValuesSQL(b *testing.B) {
 	buf := NewBuffer()
 	for i := 0; i < b.N; i++ {

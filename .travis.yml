@@ -7,18 +7,23 @@ go:
   - 1.7.x
   - 1.8.x
 
-sudo: false
+dist: trusty
+sudo: required
+
+addons:
+  postgresql: "9.5"
 
 services:
   - mysql
   - postgresql
 
 before_install:
-  - mysql -e 'CREATE DATABASE dbr_ci_test;'
+  - travis_retry go get -u github.com/golang/lint/golint
+  - travis_retry go get golang.org/x/tools/cmd/cover
+  - travis_retry go get github.com/mattn/goveralls
+
   - psql -c 'create database dbr_ci_test;' -U postgres
-  - go get -u github.com/golang/lint/golint
-  - go get golang.org/x/tools/cmd/cover
-  - go get github.com/mattn/goveralls
+  - mysql -e 'CREATE DATABASE dbr_ci_test;' -uroot
 
 before_script:
   - export DBR_TEST_MYSQL_DSN="root:@tcp(127.0.0.1:3306)/dbr_ci_test?charset=utf8"

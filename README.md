@@ -98,6 +98,14 @@ sess.InsertInto("suggestions").Columns("title", "body").
   Record(suggestion2)
 ```
 
+### Updating records on conflict
+
+```go
+stmt := sess.InsertInto("suggestions").Columns("title", "body").Record(suggestion1)
+stmt.OnConflict("suggestions_pkey").Action("body", dbr.Proposed("body"))
+```
+
+
 ### Updating records
 
 ```go
