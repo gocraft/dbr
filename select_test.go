@@ -8,7 +8,7 @@ import (
 )
 
 func TestSelectStmt(t *testing.T) {
-	buf := NewBuffer()
+	buf := newBuffer()
 	builder := Select("a", "b").
 		From(Select("a").From("table")).
 		LeftJoin("table2", "table.a1 = table.a2").
@@ -27,7 +27,7 @@ func TestSelectStmt(t *testing.T) {
 }
 
 func BenchmarkSelectSQL(b *testing.B) {
-	buf := NewBuffer()
+	buf := newBuffer()
 	for i := 0; i < b.N; i++ {
 		Select("a", "b").From("table").Where(Eq("c", 1)).OrderAsc("d").Build(dialect.MySQL, buf)
 	}

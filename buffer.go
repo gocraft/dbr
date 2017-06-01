@@ -2,6 +2,7 @@ package dbr
 
 import "bytes"
 
+// Buffer is an interface used by Builder to store intermediate results
 type Buffer interface {
 	WriteString(s string) (n int, err error)
 	String() string
@@ -10,13 +11,13 @@ type Buffer interface {
 	Value() []interface{}
 }
 
+func newBuffer() Buffer {
+	return &buffer{}
+}
+
 type buffer struct {
 	bytes.Buffer
 	v []interface{}
-}
-
-func NewBuffer() Buffer {
-	return &buffer{}
 }
 
 func (b *buffer) WriteValue(v ...interface{}) error {

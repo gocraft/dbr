@@ -8,7 +8,7 @@ import (
 )
 
 func TestUpdateStmt(t *testing.T) {
-	buf := NewBuffer()
+	buf := newBuffer()
 	builder := Update("table").Set("a", 1).Where(Eq("b", 2))
 	err := builder.Build(dialect.MySQL, buf)
 	assert.NoError(t, err)
@@ -18,14 +18,14 @@ func TestUpdateStmt(t *testing.T) {
 }
 
 func BenchmarkUpdateValuesSQL(b *testing.B) {
-	buf := NewBuffer()
+	buf := newBuffer()
 	for i := 0; i < b.N; i++ {
 		Update("table").Set("a", 1).Build(dialect.MySQL, buf)
 	}
 }
 
 func BenchmarkUpdateMapSQL(b *testing.B) {
-	buf := NewBuffer()
+	buf := newBuffer()
 	for i := 0; i < b.N; i++ {
 		Update("table").SetMap(map[string]interface{}{"a": 1, "b": 2}).Build(dialect.MySQL, buf)
 	}

@@ -13,7 +13,7 @@ type insertTest struct {
 }
 
 func TestInsertStmt(t *testing.T) {
-	buf := NewBuffer()
+	buf := newBuffer()
 	builder := InsertInto("table").Columns("a", "b").Values(1, "one").Record(&insertTest{
 		A: 2,
 		C: "two",
@@ -25,7 +25,7 @@ func TestInsertStmt(t *testing.T) {
 }
 
 func TestInsertOnConflictStmt(t *testing.T) {
-	buf := NewBuffer()
+	buf := newBuffer()
 	exp := Expr("a + ?", 1)
 	builder := InsertInto("table").Columns("a", "b").Values(1, "one")
 	builder.OnConflict("").Action("a", exp).Action("b", "one")
@@ -36,7 +36,7 @@ func TestInsertOnConflictStmt(t *testing.T) {
 }
 
 func TestInsertOnConflictMapStmt(t *testing.T) {
-	buf := NewBuffer()
+	buf := newBuffer()
 	exp := Expr("a + ?", 1)
 	builder := InsertInto("table").Columns("a", "b").Values(1, "one")
 	err := builder.OnConflictMap("", map[string]interface{}{"a": exp, "b": "one"}).Build(dialect.MySQL, buf)
@@ -46,14 +46,14 @@ func TestInsertOnConflictMapStmt(t *testing.T) {
 }
 
 func BenchmarkInsertValuesSQL(b *testing.B) {
-	buf := NewBuffer()
+	buf := newBuffer()
 	for i := 0; i < b.N; i++ {
 		InsertInto("table").Columns("a", "b").Values(1, "one").Build(dialect.MySQL, buf)
 	}
 }
 
 func BenchmarkInsertRecordSQL(b *testing.B) {
-	buf := NewBuffer()
+	buf := newBuffer()
 	for i := 0; i < b.N; i++ {
 		InsertInto("table").Columns("a", "b").Record(&insertTest{
 			A: 2,

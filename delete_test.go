@@ -8,7 +8,7 @@ import (
 )
 
 func TestDeleteStmt(t *testing.T) {
-	buf := NewBuffer()
+	buf := newBuffer()
 	builder := DeleteFrom("table").Where(Eq("a", 1))
 	err := builder.Build(dialect.MySQL, buf)
 	assert.NoError(t, err)
@@ -17,7 +17,7 @@ func TestDeleteStmt(t *testing.T) {
 }
 
 func BenchmarkDeleteSQL(b *testing.B) {
-	buf := NewBuffer()
+	buf := newBuffer()
 	for i := 0; i < b.N; i++ {
 		DeleteFrom("table").Where(Eq("a", 1)).Build(dialect.MySQL, buf)
 	}

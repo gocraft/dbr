@@ -20,7 +20,7 @@ type interpolator struct {
 // InterpolateForDialect replaces placeholder in query with corresponding value in dialect
 func InterpolateForDialect(query string, value []interface{}, d Dialect) (string, error) {
 	i := interpolator{
-		Buffer:  NewBuffer(),
+		Buffer:  newBuffer(),
 		Dialect: d,
 	}
 	err := i.interpolate(query, value)
@@ -66,7 +66,7 @@ func (i *interpolator) interpolate(query string, value []interface{}) error {
 
 func (i *interpolator) encodePlaceholder(value interface{}) error {
 	if builder, ok := value.(Builder); ok {
-		pbuf := NewBuffer()
+		pbuf := newBuffer()
 		err := builder.Build(i.Dialect, pbuf)
 		if err != nil {
 			return err
@@ -157,7 +157,7 @@ func (i *interpolator) encodePlaceholder(value interface{}) error {
 		// we need to sort keys, because in this case it is more chance
 		// for database cache hit because the query will be same for same values
 		// and this covers extra cost of sorting
-		keys := MapKeys(v.MapKeys())
+		keys := mapKeys(v.MapKeys())
 		sort.Sort(keys)
 		for n := 0; n < len(keys); n++ {
 			if n > 0 {
@@ -180,14 +180,13 @@ func (i *interpolator) encodePlaceholder(value interface{}) error {
 	return ErrNotSupported
 }
 
-// MapKeys uses to sort keys of map
-type MapKeys []reflect.Value
+type mapKeys []reflect.Value
 
-func (k MapKeys) Len() int {
+func (k mapKeys) Len() int {
 	return len(k)
 }
 
-func (k MapKeys) Less(i, j int) bool {
+func (k mapKeys) Less(i, j int) bool {
 	vi, vj := k[i], k[j]
 	switch vi.Kind() {
 	case reflect.Bool:
@@ -205,6 +204,6 @@ func (k MapKeys) Less(i, j int) bool {
 	}
 }
 
-func (k MapKeys) Swap(i, j int) {
+func (k mapKeys) Swap(i, j int) {
 	k[i], k[j] = k[j], k[i]
 }
