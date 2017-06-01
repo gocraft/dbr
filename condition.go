@@ -56,7 +56,7 @@ func Eq(column string, value interface{}) Builder {
 			return nil
 		}
 		v := reflect.ValueOf(value)
-		if v.Kind() == reflect.Slice {
+		if v.Kind() == reflect.Slice || v.Kind() == reflect.Map {
 			if v.Len() == 0 {
 				buf.WriteString(d.EncodeBool(false))
 				return nil
@@ -79,7 +79,7 @@ func Neq(column string, value interface{}) Builder {
 			return nil
 		}
 		v := reflect.ValueOf(value)
-		if v.Kind() == reflect.Slice {
+		if v.Kind() == reflect.Slice || v.Kind() == reflect.Map {
 			if v.Len() == 0 {
 				buf.WriteString(d.EncodeBool(true))
 				return nil

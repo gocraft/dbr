@@ -5,6 +5,7 @@ type union struct {
 	all     bool
 }
 
+// Union builds "UNION ..."
 func Union(builder ...Builder) interface {
 	Builder
 	As(string) Builder
@@ -14,6 +15,7 @@ func Union(builder ...Builder) interface {
 	}
 }
 
+// UnionAll builds "UNION ALL ..."
 func UnionAll(builder ...Builder) interface {
 	Builder
 	As(string) Builder

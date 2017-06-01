@@ -1,6 +1,7 @@
-# gocraft/dbr (database records) [![GoDoc](https://godoc.org/github.com/gocraft/web?status.png)](https://godoc.org/github.com/gocraft/dbr)
+dbr (fork of gocraft/dbr) provides additions to Go's database/sql for super fast performance and convenience.
 
-gocraft/dbr provides additions to Go's database/sql for super fast performance and convenience.
+[![Build Status](https://travis-ci.org/mailru/dbr.svg?branch=master)](https://travis-ci.org/mailru/dbr)
+[![Coverage Status](https://coveralls.io/repos/github/mailru/dbr/badge.svg?branch=master)](https://coveralls.io/github/mailru/dbr?branch=master)
 
 ## Getting Started
 
@@ -23,7 +24,7 @@ json.Marshal(&suggestion)
 
 ### Use a Sweet Query Builder or use Plain SQL
 
-gocraft/dbr supports both.
+mailru/dbr supports both.
 
 Sweet Query Builder:
 ```go
@@ -41,23 +42,28 @@ builder := dbr.SelectBySql("SELECT `title`, `body` FROM `suggestions` ORDER BY `
 
 ### Amazing instrumentation with session
 
-All queries in gocraft/dbr are made in the context of a session. This is because when instrumenting your app, it's important to understand which business action the query took place in. See gocraft/health for more detail.
+All queries in mailru/dbr are made in the context of a session. This is because when instrumenting your app, it's important to understand which business action the query took place in.
 
-Writing instrumented code is a first-class concern for gocraft/dbr. We instrument each query to emit to a gocraft/health-compatible EventReceiver interface.
+Writing instrumented code is a first-class concern for mailru/dbr. We instrument each query to emit to a EventReceiver interface.
 
 ### Faster performance than using database/sql directly
 Every time you call database/sql's db.Query("SELECT ...") method, under the hood, the mysql driver will create a prepared statement, execute it, and then throw it away. This has a big performance cost.
 
-gocraft/dbr doesn't use prepared statements. We ported mysql's query escape functionality directly into our package, which means we interpolate all of those question marks with their arguments before they get to MySQL. The result of this is that it's way faster, and just as secure.
+mailru/dbr doesn't use prepared statements. We ported mysql's query escape functionality directly into our package, which means we interpolate all of those question marks with their arguments before they get to MySQL. The result of this is that it's way faster, and just as secure.
 
 Check out these [benchmarks](https://github.com/tyler-smith/golang-sql-benchmark).
 
 ### IN queries that aren't horrible
-Traditionally, database/sql uses prepared statements, which means each argument in an IN clause needs its own question mark. gocraft/dbr, on the other hand, handles interpolation itself so that you can easily use a single question mark paired with a dynamically sized slice.
-
+Traditionally, database/sql uses prepared statements, which means each argument in an IN clause needs its own question mark. mailru/dbr, on the other hand, handles interpolation itself so that you can easily use a single question mark paired with a dynamically sized slice.
 ```go
 ids := []int64{1, 2, 3, 4, 5}
 builder.Where("id IN ?", ids) // `id` IN ?
+```
+map object can be used for IN queries as well.
+Note: interpolation map is slower than slice and it is preferable to use slice when it is possible.
+```go
+ids := map[int64]string{1: "one", 2: "two"}
+builder.Where("id IN ?", ids)  // `id` IN ?
 ```
 
 ### JSON Friendly
@@ -75,7 +81,7 @@ Every try to JSON-encode a sql.NullString? You get:
 }
 ```
 
-Not quite what you want. gocraft/dbr has dbr.NullString (and the rest of the Null* types) that encode correctly, giving you:
+Not quite what you want. mailru/dbr has dbr.NullString (and the rest of the Null* types) that encode correctly, giving you:
 
 ```json
 {
@@ -91,6 +97,14 @@ sess.InsertInto("suggestions").Columns("title", "body").
   Record(suggestion1).
   Record(suggestion2)
 ```
+
+### Updating records on conflict
+
+```go
+stmt := sess.InsertInto("suggestions").Columns("title", "body").Record(suggestion1)
+stmt.OnConflict("suggestions_pkey").Action("body", dbr.Proposed("body"))
+```
+
 
 ### Updating records
 
@@ -117,7 +131,7 @@ return tx.Commit()
 
 ### Load database values to variables
 
-Querying is the heart of gocraft/dbr.
+Querying is the heart of mailru/dbr.
 
 * Load(&any): load everything!
 * LoadStruct(&oneStruct): load struct
@@ -274,15 +288,6 @@ type Builder interface {
 * MySQL
 * PostgreSQL
 * SQLite3
-
-## gocraft
-
-gocraft offers a toolkit for building web apps. Currently these packages are available:
-
-* [gocraft/web](https://github.com/gocraft/web) - Go Router + Middleware. Your Contexts.
-* [gocraft/dbr](https://github.com/gocraft/dbr) - Additions to Go's database/sql for super fast performance and convenience.
-* [gocraft/health](https://github.com/gocraft/health) -  Instrument your web apps with logging and metrics.
-* [gocraft/work](https://github.com/gocraft/work) - Process background jobs in Go.
 
 These packages were developed by the [engineering team](https://eng.uservoice.com) at [UserVoice](https://www.uservoice.com) and currently power much of its infrastructure and tech stack.
 

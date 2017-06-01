@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gocraft/dbr/dialect"
+	"github.com/mailru/dbr/dialect"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,7 +42,7 @@ func TestInterpolateIgnoreBinary(t *testing.T) {
 		},
 	} {
 		i := interpolator{
-			Buffer:       NewBuffer(),
+			Buffer:       newBuffer(),
 			Dialect:      dialect.MySQL,
 			IgnoreBinary: true,
 		}
@@ -89,6 +89,11 @@ func TestInterpolateForDialect(t *testing.T) {
 		{
 			query: "?",
 			value: []interface{}{[]string{"one", "two"}},
+			want:  "('one','two')",
+		},
+		{
+			query: "?",
+			value: []interface{}{map[string]bool{"one": true, "two": false}},
 			want:  "('one','two')",
 		},
 		{

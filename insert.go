@@ -2,16 +2,32 @@ package dbr
 
 import (
 	"bytes"
+	"fmt"
 	"reflect"
 )
+
+// ConflictStmt is ` ON CONFLICT ...` part of InsertStmt
+type ConflictStmt struct {
+	constraint string
+	actions    map[string]interface{}
+}
 
 // InsertStmt builds `INSERT INTO ...`
 type InsertStmt struct {
 	raw
 
-	Table  string
-	Column []string
-	Value  [][]interface{}
+	Table    string
+	Column   []string
+	Value    [][]interface{}
+	Conflict *ConflictStmt
+}
+
+// Proposed is reference to proposed value in on conflict clause
+func Proposed(column string) Builder {
+	return BuildFunc(func(d Dialect, b Buffer) error {
+		_, err := b.WriteString(d.Proposed(column))
+		return err
+	})
 }
 
 // Build builds `INSERT INTO ...` in dialect
@@ -54,6 +70,28 @@ func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 
 		buf.WriteValue(tuple...)
 	}
+	if b.Conflict != nil && len(b.Conflict.actions) > 0 {
+		keyword := d.OnConflict(b.Conflict.constraint)
+		if len(keyword) == 0 {
+			return fmt.Errorf("Dialect %s does not support OnConflict", d)
+		}
+		buf.WriteString(" ")
+		buf.WriteString(keyword)
+		buf.WriteString(" ")
+		needComma := false
+		for _, column := range b.Column {
+			if v, ok := b.Conflict.actions[column]; ok {
+				if needComma {
+					buf.WriteString(",")
+				}
+				buf.WriteString(d.QuoteIdent(column))
+				buf.WriteString("=")
+				buf.WriteString(placeholder)
+				buf.WriteValue(v)
+				needComma = true
+			}
+		}
+	}
 
 	return nil
 }
@@ -93,15 +131,32 @@ func (b *InsertStmt) Record(structValue interface{}) *InsertStmt {
 
 	if v.Kind() == reflect.Struct {
 		var value []interface{}
-		m := structMap(v)
+		m := structMap(v.Type())
 		for _, key := range b.Column {
-			if val, ok := m[key]; ok {
-				value = append(value, val.Interface())
+			if index, ok := m[key]; ok {
+				value = append(value, v.FieldByIndex(index).Interface())
 			} else {
 				value = append(value, nil)
 			}
 		}
 		b.Values(value...)
 	}
+	return b
+}
+
+// OnConflictMap allows to add actions for constraint violation, e.g UPSERT
+func (b *InsertStmt) OnConflictMap(constraint string, actions map[string]interface{}) *InsertStmt {
+	b.Conflict = &ConflictStmt{constraint: constraint, actions: actions}
+	return b
+}
+
+// OnConflict creates an empty OnConflict section fo insert statement , e.g UPSERT
+func (b *InsertStmt) OnConflict(constraint string) *ConflictStmt {
+	return b.OnConflictMap(constraint, make(map[string]interface{})).Conflict
+}
+
+// Action adds action for column which will do if conflict happens
+func (b *ConflictStmt) Action(column string, action interface{}) *ConflictStmt {
+	b.actions[column] = action
 	return b
 }

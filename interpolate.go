@@ -3,9 +3,11 @@ package dbr
 import (
 	"database/sql/driver"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
+	_ "unsafe" // needs for reflect.UnsafeAddr
 )
 
 type interpolator struct {
@@ -18,7 +20,7 @@ type interpolator struct {
 // InterpolateForDialect replaces placeholder in query with corresponding value in dialect
 func InterpolateForDialect(query string, value []interface{}, d Dialect) (string, error) {
 	i := interpolator{
-		Buffer:  NewBuffer(),
+		Buffer:  newBuffer(),
 		Dialect: d,
 	}
 	err := i.interpolate(query, value)
@@ -64,7 +66,7 @@ func (i *interpolator) interpolate(query string, value []interface{}) error {
 
 func (i *interpolator) encodePlaceholder(value interface{}) error {
 	if builder, ok := value.(Builder); ok {
-		pbuf := NewBuffer()
+		pbuf := newBuffer()
 		err := builder.Build(i.Dialect, pbuf)
 		if err != nil {
 			return err
@@ -146,6 +148,28 @@ func (i *interpolator) encodePlaceholder(value interface{}) error {
 		}
 		i.WriteString(")")
 		return nil
+	case reflect.Map:
+		if v.Len() == 0 {
+			// FIXME: support zero-length slice
+			return ErrInvalidSliceLength
+		}
+		i.WriteString("(")
+		// we need to sort keys, because in this case it is more chance
+		// for database cache hit because the query will be same for same values
+		// and this covers extra cost of sorting
+		keys := mapKeys(v.MapKeys())
+		sort.Sort(keys)
+		for n := 0; n < len(keys); n++ {
+			if n > 0 {
+				i.WriteString(",")
+			}
+			err := i.encodePlaceholder(keys[n].Interface())
+			if err != nil {
+				return err
+			}
+		}
+		i.WriteString(")")
+		return nil
 	case reflect.Ptr:
 		if v.IsNil() {
 			i.WriteString("NULL")
@@ -154,4 +178,32 @@ func (i *interpolator) encodePlaceholder(value interface{}) error {
 		return i.encodePlaceholder(v.Elem().Interface())
 	}
 	return ErrNotSupported
+}
+
+type mapKeys []reflect.Value
+
+func (k mapKeys) Len() int {
+	return len(k)
+}
+
+func (k mapKeys) Less(i, j int) bool {
+	vi, vj := k[i], k[j]
+	switch vi.Kind() {
+	case reflect.Bool:
+		return !vi.Bool() && vj.Bool()
+	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
+		return vi.Int() < vj.Int()
+	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint, reflect.Uintptr:
+		return vi.Uint() < vj.Uint()
+	case reflect.Float32, reflect.Float64:
+		return vi.Float() < vj.Float()
+	case reflect.String:
+		return strings.Compare(vi.String(), vj.String()) < 0
+	default:
+		return vi.UnsafeAddr() < vj.UnsafeAddr()
+	}
+}
+
+func (k mapKeys) Swap(i, j int) {
+	k[i], k[j] = k[j], k[i]
 }

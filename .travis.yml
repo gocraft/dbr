@@ -1,0 +1,37 @@
+language: go
+
+notifications:
+  email: false
+
+go:
+  - 1.7.x
+  - 1.8.x
+
+dist: trusty
+sudo: required
+
+addons:
+  postgresql: "9.5"
+
+services:
+  - mysql
+  - postgresql
+
+before_install:
+  - travis_retry go get -u github.com/golang/lint/golint
+  - travis_retry go get golang.org/x/tools/cmd/cover
+  - travis_retry go get github.com/mattn/goveralls
+
+  - psql -c 'create database dbr_ci_test;' -U postgres
+  - mysql -e 'CREATE DATABASE dbr_ci_test;' -uroot
+
+before_script:
+  - export DBR_TEST_MYSQL_DSN="root:@tcp(127.0.0.1:3306)/dbr_ci_test?charset=utf8"
+  - export DBR_TEST_POSTGRES_DSN="postgres://postgres:@127.0.0.1:5432/dbr_ci_test?sslmode=disable"
+
+script:
+  - golint ./...
+  - go vet ./...
+  - test -z "$(gofmt -d -s . | tee /dev/stderr)"
+  - go test -v -covermode=count -coverprofile=coverage.out
+  - $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci

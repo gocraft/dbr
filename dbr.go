@@ -1,11 +1,12 @@
 package dbr
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
 
-	"github.com/gocraft/dbr/dialect"
+	"github.com/mailru/dbr/dialect"
 )
 
 // Open instantiates a Connection for a given database/sql connection
@@ -48,21 +49,26 @@ type Connection struct {
 type Session struct {
 	*Connection
 	EventReceiver
+	ctx context.Context
 }
 
 // NewSession instantiates a Session for the Connection
 func (conn *Connection) NewSession(log EventReceiver) *Session {
+	return conn.NewSessionContext(context.Background(), log)
+}
+
+// NewSessionContext instantiates a Session with context for the Connection
+func (conn *Connection) NewSessionContext(ctx context.Context, log EventReceiver) *Session {
 	if log == nil {
 		log = conn.EventReceiver // Use parent instrumentation
 	}
-	return &Session{Connection: conn, EventReceiver: log}
+	return &Session{Connection: conn, EventReceiver: log, ctx: ctx}
 }
 
-// Ensure that tx and session are session runner
-var (
-	_ SessionRunner = (*Tx)(nil)
-	_ SessionRunner = (*Session)(nil)
-)
+// beginTx starts a transaction with context.
+func (conn *Connection) beginTx() (*sql.Tx, error) {
+	return conn.Begin()
+}
 
 // SessionRunner can do anything that a Session can except start a transaction.
 type SessionRunner interface {
@@ -86,7 +92,7 @@ type runner interface {
 
 func exec(runner runner, log EventReceiver, builder Builder, d Dialect) (sql.Result, error) {
 	i := interpolator{
-		Buffer:       NewBuffer(),
+		Buffer:       newBuffer(),
 		Dialect:      d,
 		IgnoreBinary: true,
 	}
@@ -117,7 +123,7 @@ func exec(runner runner, log EventReceiver, builder Builder, d Dialect) (sql.Res
 
 func query(runner runner, log EventReceiver, builder Builder, d Dialect, dest interface{}) (int, error) {
 	i := interpolator{
-		Buffer:       NewBuffer(),
+		Buffer:       newBuffer(),
 		Dialect:      d,
 		IgnoreBinary: true,
 	}

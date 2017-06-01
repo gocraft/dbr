@@ -3,7 +3,7 @@ package dbr
 import (
 	"testing"
 
-	"github.com/gocraft/dbr/dialect"
+	"github.com/mailru/dbr/dialect"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,6 +29,21 @@ func TestCondition(t *testing.T) {
 			value: nil,
 		},
 		{
+			cond:  Eq("col", map[int]int{}),
+			query: "0",
+			value: nil,
+		},
+		{
+			cond:  Eq("col", []int{1}),
+			query: "`col` IN ?",
+			value: []interface{}{[]int{1}},
+		},
+		{
+			cond:  Eq("col", map[int]int{1: 2}),
+			query: "`col` IN ?",
+			value: []interface{}{map[int]int{1: 2}},
+		},
+		{
 			cond:  Neq("col", 1),
 			query: "`col` != ?",
 			value: []interface{}{1},
@@ -37,6 +52,21 @@ func TestCondition(t *testing.T) {
 			cond:  Neq("col", nil),
 			query: "`col` IS NOT NULL",
 			value: nil,
+		},
+		{
+			cond:  Neq("col", []int{}),
+			query: "1",
+			value: nil,
+		},
+		{
+			cond:  Neq("col", []int{1}),
+			query: "`col` NOT IN ?",
+			value: []interface{}{[]int{1}},
+		},
+		{
+			cond:  Neq("col", map[int]int{1: 2}),
+			query: "`col` NOT IN ?",
+			value: []interface{}{map[int]int{1: 2}},
 		},
 		{
 			cond:  Gt("col", 1),
@@ -64,7 +94,7 @@ func TestCondition(t *testing.T) {
 			value: []interface{}{1, 2, 3},
 		},
 	} {
-		buf := NewBuffer()
+		buf := newBuffer()
 		err := test.cond.Build(dialect.MySQL, buf)
 		assert.NoError(t, err)
 		assert.Equal(t, test.query, buf.String())

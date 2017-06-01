@@ -1,8 +1,9 @@
 package dbr
 
-// identifier is a type of string
+// I is a identifier, which always will be quoted
 type I string
 
+// Build escapes identifier in Dialect
 func (i I) Build(d Dialect, buf Buffer) error {
 	buf.WriteString(d.QuoteIdent(string(i)))
 	return nil
