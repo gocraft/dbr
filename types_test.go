@@ -29,12 +29,12 @@ func TestNullTypesScanning(t *testing.T) {
 		},
 	} {
 		for _, sess := range testSession {
-			test.in.Id = nextID()
+			test.in.ID = nextID()
 			_, err := sess.InsertInto("null_types").Columns("id", "string_val", "int64_val", "float64_val", "time_val", "bool_val").Record(test.in).Exec()
 			assert.NoError(t, err)
 
 			var record nullTypedRecord
-			err = sess.Select("*").From("null_types").Where(Eq("id", test.in.Id)).LoadStruct(&record)
+			err = sess.Select("*").From("null_types").Where(Eq("id", test.in.ID)).LoadStruct(&record)
 			assert.NoError(t, err)
 			if sess.Dialect == dialect.PostgreSQL {
 				// TODO: https://github.com/lib/pq/issues/329

@@ -24,7 +24,7 @@ func TestTransactionCommit(t *testing.T) {
 		err = tx.Commit()
 		assert.NoError(t, err)
 
-		var person dbrPerson
+		var person person
 		err = tx.Select("*").From("dbr_people").Where(Eq("id", id)).LoadStruct(&person)
 		assert.Error(t, err)
 	}
@@ -48,7 +48,7 @@ func TestTransactionRollback(t *testing.T) {
 		err = tx.Rollback()
 		assert.NoError(t, err)
 
-		var person dbrPerson
+		var person person
 		err = tx.Select("*").From("dbr_people").Where(Eq("id", id)).LoadStruct(&person)
 		assert.Error(t, err)
 	}

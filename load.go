@@ -132,11 +132,11 @@ func findExtractor(t reflect.Type) (pointersExtractor, error) {
 		}
 		return mapExtractor, nil
 	case reflect.Ptr:
-		if inner, err := findExtractor(t.Elem()); err != nil {
+		inner, err := findExtractor(t.Elem())
+		if err != nil {
 			return nil, err
-		} else {
-			return getIndirectExtractor(inner), nil
 		}
+		return getIndirectExtractor(inner), nil
 	case reflect.Struct:
 		return getStructFieldsExtractor(t), nil
 	}

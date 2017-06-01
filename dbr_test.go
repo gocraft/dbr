@@ -15,15 +15,17 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-//
-// Test helpers
-//
+// Ensure that tx and session are session runner
+var (
+	_ SessionRunner = (*Tx)(nil)
+	_ SessionRunner = (*Session)(nil)
+)
 
 var (
 	currID int64 = 256
 )
 
-// create id
+// nextID returns next pseudo unique id
 func nextID() int64 {
 	currID++
 	return currID
@@ -67,14 +69,14 @@ var (
 	testSession = []*Session{mysqlSession, postgresSession, sqlite3Session}
 )
 
-type dbrPerson struct {
-	Id    int64
+type person struct {
+	ID    int64
 	Name  string
 	Email string
 }
 
 type nullTypedRecord struct {
-	Id         int64
+	ID         int64
 	StringVal  NullString
 	Int64Val   NullInt64
 	Float64Val NullFloat64
@@ -148,13 +150,13 @@ func benchmarkBytea(b *testing.B, sess *Session) {
 
 func TestBasicCRUD(t *testing.T) {
 	for _, sess := range testSession {
-		jonathan := dbrPerson{
+		jonathan := person{
 			Name:  "jonathan",
 			Email: "jonathan@uservoice.com",
 		}
 		insertColumns := []string{"name", "email"}
 		if sess.Dialect == dialect.PostgreSQL {
-			jonathan.Id = nextID()
+			jonathan.ID = nextID()
 			insertColumns = []string{"id", "name", "email"}
 		}
 		// insert
@@ -165,13 +167,13 @@ func TestBasicCRUD(t *testing.T) {
 		assert.NoError(t, err)
 		assert.EqualValues(t, 1, rowsAffected)
 
-		assert.True(t, jonathan.Id > 0)
+		assert.True(t, jonathan.ID > 0)
 		// select
-		var people []dbrPerson
-		count, err := sess.Select("*").From("dbr_people").Where(Eq("id", jonathan.Id)).LoadStructs(&people)
+		var people []person
+		count, err := sess.Select("*").From("dbr_people").Where(Eq("id", jonathan.ID)).LoadStructs(&people)
 		assert.NoError(t, err)
 		if assert.Equal(t, 1, count) {
-			assert.Equal(t, jonathan.Id, people[0].Id)
+			assert.Equal(t, jonathan.ID, people[0].ID)
 			assert.Equal(t, jonathan.Name, people[0].Name)
 			assert.Equal(t, jonathan.Email, people[0].Email)
 		}
@@ -187,7 +189,7 @@ func TestBasicCRUD(t *testing.T) {
 		assert.Equal(t, 1, len(ids))
 
 		// update
-		result, err = sess.Update("dbr_people").Where(Eq("id", jonathan.Id)).Set("name", "jonathan1").Exec()
+		result, err = sess.Update("dbr_people").Where(Eq("id", jonathan.ID)).Set("name", "jonathan1").Exec()
 		assert.NoError(t, err)
 
 		rowsAffected, err = result.RowsAffected()
@@ -199,7 +201,7 @@ func TestBasicCRUD(t *testing.T) {
 		assert.EqualValues(t, 1, n.Int64)
 
 		// delete
-		result, err = sess.DeleteFrom("dbr_people").Where(Eq("id", jonathan.Id)).Exec()
+		result, err = sess.DeleteFrom("dbr_people").Where(Eq("id", jonathan.ID)).Exec()
 		assert.NoError(t, err)
 
 		rowsAffected, err = result.RowsAffected()

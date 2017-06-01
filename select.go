@@ -43,7 +43,6 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		}
 		switch col := col.(type) {
 		case string:
-			// FIXME: no quote ident
 			buf.WriteString(col)
 		default:
 			buf.WriteString(placeholder)
@@ -55,7 +54,6 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		buf.WriteString(" FROM ")
 		switch table := b.Table.(type) {
 		case string:
-			// FIXME: no quote ident
 			buf.WriteString(table)
 		default:
 			buf.WriteString(placeholder)
@@ -188,24 +186,25 @@ func (b *SelectStmt) GroupBy(col ...string) *SelectStmt {
 	return b
 }
 
-// OrderAsc specifies columns for ordering
+// OrderAsc specifies columns for ordering in asc direction
 func (b *SelectStmt) OrderAsc(col string) *SelectStmt {
 	b.Order = append(b.Order, order(col, asc))
 	return b
 }
 
+// OrderDesc specifies columns for ordering in desc direction
 func (b *SelectStmt) OrderDesc(col string) *SelectStmt {
 	b.Order = append(b.Order, order(col, desc))
 	return b
 }
 
-// Limit adds limit
+// Limit adds LIMIT
 func (b *SelectStmt) Limit(n uint64) *SelectStmt {
 	b.LimitCount = int64(n)
 	return b
 }
 
-// Offset adds offset
+// Offset adds OFFSET
 func (b *SelectStmt) Offset(n uint64) *SelectStmt {
 	b.OffsetCount = int64(n)
 	return b
@@ -217,16 +216,19 @@ func (b *SelectStmt) Join(table, on interface{}) *SelectStmt {
 	return b
 }
 
+// LeftJoin joins table on condition via LEFT JOIN
 func (b *SelectStmt) LeftJoin(table, on interface{}) *SelectStmt {
 	b.JoinTable = append(b.JoinTable, join(left, table, on))
 	return b
 }
 
+// RightJoin joins table on condition via RIGHT JOIN
 func (b *SelectStmt) RightJoin(table, on interface{}) *SelectStmt {
 	b.JoinTable = append(b.JoinTable, join(right, table, on))
 	return b
 }
 
+// FullJoin joins table on condition via FULL JOIN
 func (b *SelectStmt) FullJoin(table, on interface{}) *SelectStmt {
 	b.JoinTable = append(b.JoinTable, join(full, table, on))
 	return b

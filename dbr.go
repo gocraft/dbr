@@ -70,12 +70,6 @@ func (conn *Connection) beginTx() (*sql.Tx, error) {
 	return conn.Begin()
 }
 
-// Ensure that tx and session are session runner
-var (
-	_ SessionRunner = (*Tx)(nil)
-	_ SessionRunner = (*Session)(nil)
-)
-
 // SessionRunner can do anything that a Session can except start a transaction.
 type SessionRunner interface {
 	Select(column ...string) *SelectBuilder

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	_ "unsafe"
+	_ "unsafe" // needs for reflect.UnsafeAddr
 )
 
 type interpolator struct {
@@ -180,7 +180,7 @@ func (i *interpolator) encodePlaceholder(value interface{}) error {
 	return ErrNotSupported
 }
 
-// used to sort keys of map
+// MapKeys uses to sort keys of map
 type MapKeys []reflect.Value
 
 func (k MapKeys) Len() int {
