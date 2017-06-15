@@ -34,6 +34,25 @@ var (
 	typeValuer = reflect.TypeOf((*driver.Valuer)(nil)).Elem()
 )
 
+var nilablesIndex map[int]bool
+var nilables = map[string]reflect.Type {
+	"uint":      reflect.TypeOf(*new(NullInt64)),
+	"uint8":     reflect.TypeOf(*new(NullInt64)),
+	"uint16":    reflect.TypeOf(*new(NullInt64)),
+	"uint32":    reflect.TypeOf(*new(NullInt64)),
+	"uint64":    reflect.TypeOf(*new(NullInt64)),
+	"int":       reflect.TypeOf(*new(NullInt64)),
+	"int8":      reflect.TypeOf(*new(NullInt64)),
+	"int16":     reflect.TypeOf(*new(NullInt64)),
+	"int32":     reflect.TypeOf(*new(NullInt64)),
+	"int64":     reflect.TypeOf(*new(NullInt64)),
+	"float32":   reflect.TypeOf(*new(NullFloat64)),
+	"float64":   reflect.TypeOf(*new(NullFloat64)),
+	"string":    reflect.TypeOf(*new(NullString)),
+	"time.Time": reflect.TypeOf(*new(NullTime)),
+	"bool":      reflect.TypeOf(*new(NullBool)),
+}
+
 func structValue(m map[string]reflect.Value, value reflect.Value) {
 	if value.Type().Implements(typeValuer) {
 		return
@@ -57,13 +76,24 @@ func structValue(m map[string]reflect.Value, value reflect.Value) {
 				// ignore
 				continue
 			}
+			nilable := false
+			if tag == "!" {
+				nilable = true
+				tag = ""
+			}
 			if tag == "" {
 				// no tag, but we can record the field name
 				tag = camelCaseToSnakeCase(field.Name)
 			}
 			fieldValue := value.Field(i)
 			if _, ok := m[tag]; !ok {
-				m[tag] = fieldValue
+				_, supportedNilable := nilables[field.Type.String()]
+				if nilable && supportedNilable {
+						m[tag] = reflect.New(nilables[field.Type.String()]).Elem()
+						nilablesIndex[len(m) - 1] = true
+				} else {
+					m[tag] = fieldValue
+				}
 			}
 			structValue(m, fieldValue)
 		}
