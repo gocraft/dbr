@@ -52,16 +52,6 @@ func (tx *Tx) SelectBySql(query string, value ...interface{}) *SelectBuilder {
 	}
 }
 
-// FIXME: This will be removed in the future
-func (b *SelectBuilder) ToSql() (string, []interface{}) {
-	buf := NewBuffer()
-	err := b.Build(b.Dialect, buf)
-	if err != nil {
-		panic(err)
-	}
-	return buf.String(), buf.Value()
-}
-
 func (b *SelectBuilder) Load(value interface{}) (int, error) {
 	return query(b.runner, b.EventReceiver, b, b.Dialect, value)
 }
