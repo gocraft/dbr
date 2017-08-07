@@ -105,3 +105,8 @@ func (b *InsertBuilder) Values(value ...interface{}) *InsertBuilder {
 	b.InsertStmt.Values(value...)
 	return b
 }
+
+func (b *InsertBuilder) OnDuplicateKeyUpdate(m map[string]interface{}) *InsertBuilder {
+	b.InsertStmt.OnDuplicateKeyUpdate(m)
+	return b
+}
