@@ -9,9 +9,10 @@ import (
 type InsertStmt struct {
 	raw
 
-	Table  string
-	Column []string
-	Value  [][]interface{}
+	Table     string
+	Column    []string
+	Value     [][]interface{}
+	Returning []string
 }
 
 // Build builds `INSERT INTO ...` in dialect
@@ -53,6 +54,16 @@ func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 		buf.WriteString(placeholderStr)
 
 		buf.WriteValue(tuple...)
+	}
+
+	if len(b.Returning) > 0 {
+		buf.WriteString(" RETURNING ")
+		for i, col := range b.Returning {
+			if i > 0 {
+				buf.WriteString(",")
+			}
+			buf.WriteString(d.QuoteIdent(col))
+		}
 	}
 
 	return nil
@@ -104,4 +115,8 @@ func (b *InsertStmt) Record(structValue interface{}) *InsertStmt {
 		b.Values(value...)
 	}
 	return b
+}
+
+func (b *InsertStmt) Return(columns ...string) {
+	b.Returning = columns
 }

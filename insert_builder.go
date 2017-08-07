@@ -105,3 +105,42 @@ func (b *InsertBuilder) Values(value ...interface{}) *InsertBuilder {
 	b.InsertStmt.Values(value...)
 	return b
 }
+
+func (b *InsertBuilder) Return(columns ...string) *InsertBuilder {
+	b.InsertStmt.Return(columns...)
+	return b
+}
+
+func (b *InsertBuilder) Load(value interface{}) (int, error) {
+	return query(b.runner, b.EventReceiver, b, b.Dialect, value)
+}
+
+func (b *InsertBuilder) LoadStruct(value interface{}) error {
+	count, err := query(b.runner, b.EventReceiver, b, b.Dialect, value)
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (b *InsertBuilder) LoadStructs(value interface{}) (int, error) {
+	return query(b.runner, b.EventReceiver, b, b.Dialect, value)
+}
+
+func (b *InsertBuilder) LoadValue(value interface{}) error {
+	count, err := query(b.runner, b.EventReceiver, b, b.Dialect, value)
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (b *InsertBuilder) LoadValues(value interface{}) (int, error) {
+	return query(b.runner, b.EventReceiver, b, b.Dialect, value)
+}
