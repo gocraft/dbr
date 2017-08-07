@@ -12,7 +12,7 @@ import (
 var (
 	filledRecord = nullTypedRecord{
 		StringVal:  NewNullString("wow"),
-		Int64Val:   NewNullInt64(42),
+		Int64Val:   NewNullInt64(1483272000),
 		Float64Val: NewNullFloat64(1.618),
 		TimeVal:    NewNullTime(time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC)),
 		BoolVal:    NewNullBool(true),
@@ -70,7 +70,7 @@ func TestNullTypesJSON(t *testing.T) {
 			in:   &filledRecord.Int64Val,
 			in2:  filledRecord.Int64Val,
 			out:  new(NullInt64),
-			want: "42",
+			want: "1483272000",
 		},
 		{
 			in:   &filledRecord.StringVal,
