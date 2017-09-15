@@ -245,6 +245,8 @@ One common reason to use this is to prevent string concatenation in a loop.
 * Gte
 * Lt
 * Lte
+* Like
+* NotLike
 
 ```go
 dbr.And(
