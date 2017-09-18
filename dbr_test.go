@@ -209,3 +209,12 @@ func TestBasicCRUD(t *testing.T) {
 		assert.Equal(t, 0, len(ids))
 	}
 }
+
+func TestPostgresReturning(t *testing.T) {
+	sess := postgresSession
+	var person dbrPerson
+	err := sess.InsertInto("dbr_people").Columns("name").Record(&person).
+		Returning("id").Load(&person.Id)
+	assert.NoError(t, err)
+	assert.True(t, person.Id > 0)
+}
