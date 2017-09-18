@@ -79,6 +79,11 @@ func (b *InsertBuilder) Exec() (sql.Result, error) {
 	return result, nil
 }
 
+func (b *InsertBuilder) Returning(destination interface{}, columns ...string) (int, error) {
+	b.InsertStmt.Returning = columns
+	return query(b.runner, b.EventReceiver, b, b.Dialect, destination)
+}
+
 func (b *InsertBuilder) Columns(column ...string) *InsertBuilder {
 	b.InsertStmt.Columns(column...)
 	return b
