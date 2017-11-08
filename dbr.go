@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
@@ -48,6 +49,11 @@ type Connection struct {
 type Session struct {
 	*Connection
 	EventReceiver
+	Timeout time.Duration
+}
+
+func (s *Session) GetTimeout() time.Duration {
+	return s.Timeout
 }
 
 // NewSession instantiates a Session for the Connection
@@ -80,11 +86,19 @@ type SessionRunner interface {
 }
 
 type runner interface {
-	Exec(query string, args ...interface{}) (sql.Result, error)
-	Query(query string, args ...interface{}) (*sql.Rows, error)
+	GetTimeout() time.Duration
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
-func exec(runner runner, log EventReceiver, builder Builder, d Dialect) (sql.Result, error) {
+func exec(ctx context.Context, runner runner, log EventReceiver, builder Builder, d Dialect) (sql.Result, error) {
+	timeout := runner.GetTimeout()
+	if timeout > 0 {
+		var cancel func()
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+
 	i := interpolator{
 		Buffer:       NewBuffer(),
 		Dialect:      d,
@@ -106,7 +120,7 @@ func exec(runner runner, log EventReceiver, builder Builder, d Dialect) (sql.Res
 		})
 	}()
 
-	result, err := runner.Exec(query, value...)
+	result, err := runner.ExecContext(ctx, query, value...)
 	if err != nil {
 		return result, log.EventErrKv("dbr.exec.exec", err, kvs{
 			"sql": query,
@@ -115,7 +129,14 @@ func exec(runner runner, log EventReceiver, builder Builder, d Dialect) (sql.Res
 	return result, nil
 }
 
-func query(runner runner, log EventReceiver, builder Builder, d Dialect, dest interface{}) (int, error) {
+func query(ctx context.Context, runner runner, log EventReceiver, builder Builder, d Dialect, dest interface{}) (int, error) {
+	timeout := runner.GetTimeout()
+	if timeout > 0 {
+		var cancel func()
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+
 	i := interpolator{
 		Buffer:       NewBuffer(),
 		Dialect:      d,
@@ -137,7 +158,7 @@ func query(runner runner, log EventReceiver, builder Builder, d Dialect, dest in
 		})
 	}()
 
-	rows, err := runner.Query(query, value...)
+	rows, err := runner.QueryContext(ctx, query, value...)
 	if err != nil {
 		return 0, log.EventErrKv("dbr.select.load.query", err, kvs{
 			"sql": query,

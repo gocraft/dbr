@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 )
@@ -56,7 +57,11 @@ func (tx *Tx) UpdateBySql(query string, value ...interface{}) *UpdateBuilder {
 }
 
 func (b *UpdateBuilder) Exec() (sql.Result, error) {
-	return exec(b.runner, b.EventReceiver, b, b.Dialect)
+	return b.ExecContext(context.Background())
+}
+
+func (b *UpdateBuilder) ExecContext(ctx context.Context) (sql.Result, error) {
+	return exec(ctx, b.runner, b.EventReceiver, b, b.Dialect)
 }
 
 func (b *UpdateBuilder) Set(column string, value interface{}) *UpdateBuilder {

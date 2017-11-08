@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 )
@@ -56,7 +57,11 @@ func (tx *Tx) DeleteBySql(query string, value ...interface{}) *DeleteBuilder {
 }
 
 func (b *DeleteBuilder) Exec() (sql.Result, error) {
-	return exec(b.runner, b.EventReceiver, b, b.Dialect)
+	return b.ExecContext(context.Background())
+}
+
+func (b *DeleteBuilder) ExecContext(ctx context.Context) (sql.Result, error) {
+	return exec(ctx, b.runner, b.EventReceiver, b, b.Dialect)
 }
 
 func (b *DeleteBuilder) Where(query interface{}, value ...interface{}) *DeleteBuilder {

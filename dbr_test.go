@@ -2,10 +2,12 @@ package dbr
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gocraft/dbr/dialect"
@@ -217,4 +219,17 @@ func TestPostgresReturning(t *testing.T) {
 		Returning("id").Load(&person.Id)
 	assert.NoError(t, err)
 	assert.True(t, person.Id > 0)
+}
+
+func TestTimeout(t *testing.T) {
+	for _, sess := range []*Session{
+		createSession("mysql", mysqlDSN),
+		createSession("postgres", postgresDSN),
+		createSession("sqlite3", sqlite3DSN),
+	} {
+		sess.Timeout = time.Nanosecond
+		var people []dbrPerson
+		_, err := sess.Select("*").From("dbr_people").Load(&people)
+		assert.EqualValues(t, context.DeadlineExceeded, err)
+	}
 }

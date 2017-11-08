@@ -1,5 +1,7 @@
 package dbr
 
+import "context"
+
 type SelectBuilder struct {
 	runner
 	EventReceiver
@@ -52,27 +54,28 @@ func (tx *Tx) SelectBySql(query string, value ...interface{}) *SelectBuilder {
 	}
 }
 
-func (b *SelectBuilder) Load(value interface{}) (int, error) {
-	return query(b.runner, b.EventReceiver, b, b.Dialect, value)
-}
-
+// DEPRECATED: use LoadOne instead
 func (b *SelectBuilder) LoadStruct(value interface{}) error {
-	count, err := query(b.runner, b.EventReceiver, b, b.Dialect, value)
-	if err != nil {
-		return err
-	}
-	if count == 0 {
-		return ErrNotFound
-	}
-	return nil
+	return b.LoadOne(value)
 }
 
+// DEPRECATED: use Load instead
 func (b *SelectBuilder) LoadStructs(value interface{}) (int, error) {
-	return query(b.runner, b.EventReceiver, b, b.Dialect, value)
+	return b.Load(value)
 }
 
+// DEPRECATED: use LoadOne instead
 func (b *SelectBuilder) LoadValue(value interface{}) error {
-	count, err := query(b.runner, b.EventReceiver, b, b.Dialect, value)
+	return b.LoadOne(value)
+}
+
+// DEPRECATED: use Load instead
+func (b *SelectBuilder) LoadValues(value interface{}) (int, error) {
+	return b.Load(value)
+}
+
+func (b *SelectBuilder) LoadOneContext(ctx context.Context, value interface{}) error {
+	count, err := query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value)
 	if err != nil {
 		return err
 	}
@@ -82,8 +85,16 @@ func (b *SelectBuilder) LoadValue(value interface{}) error {
 	return nil
 }
 
-func (b *SelectBuilder) LoadValues(value interface{}) (int, error) {
-	return query(b.runner, b.EventReceiver, b, b.Dialect, value)
+func (b *SelectBuilder) LoadOne(value interface{}) error {
+	return b.LoadOneContext(context.Background(), value)
+}
+
+func (b *SelectBuilder) LoadContext(ctx context.Context, value interface{}) (int, error) {
+	return query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value)
+}
+
+func (b *SelectBuilder) Load(value interface{}) (int, error) {
+	return b.LoadContext(context.Background(), value)
 }
 
 func (b *SelectBuilder) Join(table, on interface{}) *SelectBuilder {
