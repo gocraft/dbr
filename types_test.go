@@ -101,3 +101,21 @@ func TestNullTypesJSON(t *testing.T) {
 		assert.Equal(t, test.in, test.out)
 	}
 }
+
+func TestNullTypesActuallyNullJSON(t *testing.T) {
+	var out struct {
+		Bool   NullBool    `json:"b"`
+		Float  NullFloat64 `json:"f"`
+		String NullString  `json:"s"`
+		Time   NullTime    `json:"t"`
+		Int    NullInt64   `json:"i"`
+	}
+	jsonBs := []byte(`{"b":null,"f":null,"s":null,"t":null,"i":null}`)
+	err := json.Unmarshal(jsonBs, &out)
+	assert.NoError(t, err)
+	assert.False(t, out.Bool.Valid)
+	assert.False(t, out.Float.Valid)
+	assert.False(t, out.String.Valid)
+	assert.False(t, out.Time.Valid)
+	assert.False(t, out.Int.Valid)
+}
