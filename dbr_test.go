@@ -2,10 +2,13 @@ package dbr
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gocraft/dbr/dialect"
@@ -217,4 +220,59 @@ func TestPostgresReturning(t *testing.T) {
 		Returning("id").Load(&person.Id)
 	assert.NoError(t, err)
 	assert.True(t, person.Id > 0)
+}
+
+func TestTimeout(t *testing.T) {
+	for _, sess := range []*Session{
+		createSession("mysql", mysqlDSN),
+		createSession("postgres", postgresDSN),
+		createSession("sqlite3", sqlite3DSN),
+	} {
+		// session op timeout
+		sess.Timeout = time.Nanosecond
+		var people []dbrPerson
+		_, err := sess.Select("*").From("dbr_people").Load(&people)
+		assert.EqualValues(t, context.DeadlineExceeded, err)
+
+		_, err = sess.InsertInto("dbr_people").Columns("name", "email").Values("test", "test@test.com").Exec()
+		assert.EqualValues(t, context.DeadlineExceeded, err)
+
+		_, err = sess.Update("dbr_people").Set("name", "test1").Exec()
+		assert.EqualValues(t, context.DeadlineExceeded, err)
+
+		_, err = sess.DeleteFrom("dbr_people").Exec()
+		assert.EqualValues(t, context.DeadlineExceeded, err)
+
+		// tx timeout
+		_, err = sess.Begin()
+		assert.EqualValues(t, context.DeadlineExceeded, err)
+
+		// tx op timeout
+		sess.Timeout = 0
+		tx, err := sess.Begin()
+		assert.NoError(t, err)
+		defer tx.RollbackUnlessCommitted()
+		tx.Timeout = time.Nanosecond
+
+		_, err = tx.Select("*").From("dbr_people").Load(&people)
+		assert.EqualValues(t, context.DeadlineExceeded, err)
+
+		_, err = tx.InsertInto("dbr_people").Columns("name", "email").Values("test", "test@test.com").Exec()
+		assert.EqualValues(t, context.DeadlineExceeded, err)
+
+		_, err = tx.Update("dbr_people").Set("name", "test1").Exec()
+		assert.EqualValues(t, context.DeadlineExceeded, err)
+
+		_, err = tx.DeleteFrom("dbr_people").Exec()
+		assert.EqualValues(t, context.DeadlineExceeded, err)
+
+		// tx commit timeout
+		sess.Timeout = time.Second
+		tx, err = sess.Begin()
+		assert.NoError(t, err)
+		defer tx.RollbackUnlessCommitted()
+		time.Sleep(2 * time.Second)
+		err = tx.Commit()
+		assert.EqualValues(t, sql.ErrTxDone, err)
+	}
 }

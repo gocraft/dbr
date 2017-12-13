@@ -47,6 +47,15 @@ func TestNullTypesScanning(t *testing.T) {
 	}
 }
 
+func TestNullInt64Unmarshal(t *testing.T) {
+	var test struct {
+		Num NullInt64
+	}
+	err := json.Unmarshal([]byte(`{"num":null}`), &test)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), test.Num.Int64)
+}
+
 func TestNullTypesJSON(t *testing.T) {
 	for _, test := range []struct {
 		in   interface{}

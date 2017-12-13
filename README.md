@@ -13,7 +13,7 @@ sess := conn.NewSession(nil)
 
 // get a record
 var suggestion Suggestion
-sess.Select("id", "title").From("suggestions").Where("id = ?", 1).Load(&suggestion)
+sess.Select("id", "title").From("suggestions").Where("id = ?", 1).LoadOne(&suggestion)
 
 // JSON-ready, with dbr.Null* types serialized like you want
 json.Marshal(&suggestion)
@@ -120,10 +120,7 @@ return tx.Commit()
 Querying is the heart of gocraft/dbr.
 
 * Load(&any): load everything!
-* LoadStruct(&oneStruct): load struct
-* LoadStructs(&manyStructs): load a slice of structs
-* LoadValue(&oneValue): load basic type
-* LoadValues(&manyValues): load a slice of basic types
+* LoadOne(&one): load one struct or value
 
 ```go
 // columns are mapped by tag then by field

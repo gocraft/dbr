@@ -103,6 +103,9 @@ func (n *NullInt64) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
+	if s == "" {
+		return n.Scan(nil)
+	}
 	return n.Scan(s)
 }
 

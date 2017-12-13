@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"context"
 	"database/sql"
 	"reflect"
 )
@@ -65,7 +66,11 @@ func (b *InsertBuilder) Pair(column string, value interface{}) *InsertBuilder {
 }
 
 func (b *InsertBuilder) Exec() (sql.Result, error) {
-	result, err := exec(b.runner, b.EventReceiver, b, b.Dialect)
+	return b.ExecContext(context.Background())
+}
+
+func (b *InsertBuilder) ExecContext(ctx context.Context) (sql.Result, error) {
+	result, err := exec(ctx, b.runner, b.EventReceiver, b, b.Dialect)
 	if err != nil {
 		return nil, err
 	}
@@ -79,9 +84,13 @@ func (b *InsertBuilder) Exec() (sql.Result, error) {
 	return result, nil
 }
 
-func (b *InsertBuilder) Load(value interface{}) error {
-	_, err := query(b.runner, b.EventReceiver, b, b.Dialect, value)
+func (b *InsertBuilder) LoadContext(ctx context.Context, value interface{}) error {
+	_, err := query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value)
 	return err
+}
+
+func (b *InsertBuilder) Load(value interface{}) error {
+	return b.LoadContext(context.Background(), value)
 }
 
 func (b *InsertBuilder) Columns(column ...string) *InsertBuilder {
