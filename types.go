@@ -99,6 +99,10 @@ func (n *NullString) UnmarshalJSON(b []byte) error {
 
 // UnmarshalJSON correctly deserializes a NullInt64 from JSON
 func (n *NullInt64) UnmarshalJSON(b []byte) error {
+	if bytes.Equal(b, nullString) {
+		return n.Scan(nil)
+	}
+
 	var s json.Number
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
