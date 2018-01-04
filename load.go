@@ -19,7 +19,8 @@ func Load(rows *sql.Rows, value interface{}) (int, error) {
 		return 0, ErrInvalidPointer
 	}
 	v = v.Elem()
-	isSlice := v.Kind() == reflect.Slice && v.Type().Elem().Kind() != reflect.Uint8
+	isScanner := v.Addr().Type().Implements(typeScanner)
+	isSlice := v.Kind() == reflect.Slice && v.Type().Elem().Kind() != reflect.Uint8 && !isScanner
 	count := 0
 	for rows.Next() {
 		var elem reflect.Value
