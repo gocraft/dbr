@@ -276,3 +276,41 @@ func TestTimeout(t *testing.T) {
 		assert.EqualValues(t, sql.ErrTxDone, err)
 	}
 }
+
+type stringSliceWithSqlScanner []string
+
+func (ss *stringSliceWithSqlScanner) Scan(src interface{}) error {
+	*ss = append(*ss, "called")
+	return nil
+}
+
+func TestSliceWithSQLScannerSelect(t *testing.T) {
+	for _, sess := range []*Session{
+		createSession("mysql", mysqlDSN),
+		createSession("postgres", postgresDSN),
+		createSession("sqlite3", sqlite3DSN),
+	} {
+		_, err := sess.InsertInto("dbr_people").
+			Columns("name", "email").
+			Values("test1", "test1@test.com").
+			Values("test2", "test2@test.com").
+			Values("test3", "test3@test.com").
+			Exec()
+
+		//plain string slice (original behavour)
+		var stringSlice []string
+		cnt, err := sess.Select("name").From("dbr_people").Load(&stringSlice)
+
+		assert.NoError(t, err)
+		assert.Equal(t, cnt, 3)
+		assert.Len(t, stringSlice, 3)
+
+		//string slice with sql.Scanner implemented, should act as a single record
+		var sliceScanner stringSliceWithSqlScanner
+		cnt, err = sess.Select("name").From("dbr_people").Load(&sliceScanner)
+
+		assert.NoError(t, err)
+		assert.Equal(t, cnt, 1)
+		assert.Len(t, sliceScanner, 1)
+	}
+}
