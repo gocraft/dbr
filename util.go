@@ -34,8 +34,8 @@ var (
 	typeValuer = reflect.TypeOf((*driver.Valuer)(nil)).Elem()
 )
 
-var nilablesIndex map[int]bool
-var nilables = map[string]reflect.Type {
+var nilablesIndex = make(map[int]bool)
+var nilables = map[string]reflect.Type{
 	"uint":      reflect.TypeOf(*new(NullInt64)),
 	"uint8":     reflect.TypeOf(*new(NullInt64)),
 	"uint16":    reflect.TypeOf(*new(NullInt64)),
@@ -89,8 +89,8 @@ func structValue(m map[string]reflect.Value, value reflect.Value) {
 			if _, ok := m[tag]; !ok {
 				_, supportedNilable := nilables[field.Type.String()]
 				if nilable && supportedNilable {
-						m[tag] = reflect.New(nilables[field.Type.String()]).Elem()
-						nilablesIndex[len(m) - 1] = true
+					m[tag] = reflect.New(nilables[field.Type.String()]).Elem()
+					nilablesIndex[len(m)-1] = true
 				} else {
 					m[tag] = fieldValue
 				}
