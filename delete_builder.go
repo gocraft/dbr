@@ -73,6 +73,10 @@ func (b *DeleteBuilder) Limit(n uint64) *DeleteBuilder {
 	b.LimitCount = int64(n)
 	return b
 }
+func (b *DeleteBuilder) Join(table, on interface{}) *DeleteBuilder {
+	b.DeleteStmt.Join(table, on)
+	return b
+}
 
 func (b *DeleteBuilder) Build(d Dialect, buf Buffer) error {
 	err := b.DeleteStmt.Build(b.Dialect, buf)

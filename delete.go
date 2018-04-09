@@ -7,6 +7,7 @@ type DeleteStmt struct {
 	Table string
 
 	WhereCond []Builder
+	JoinTable []Builder
 }
 
 // Build builds `DELETE ...` in dialect
@@ -21,6 +22,15 @@ func (b *DeleteStmt) Build(d Dialect, buf Buffer) error {
 
 	buf.WriteString("DELETE FROM ")
 	buf.WriteString(d.QuoteIdent(b.Table))
+
+	if len(b.JoinTable) > 0 {
+		for _, join := range b.JoinTable {
+			err := join.Build(d, buf)
+			if err != nil {
+				return err
+			}
+		}
+	}
 
 	if len(b.WhereCond) > 0 {
 		buf.WriteString(" WHERE ")
@@ -57,5 +67,11 @@ func (b *DeleteStmt) Where(query interface{}, value ...interface{}) *DeleteStmt 
 	case Builder:
 		b.WhereCond = append(b.WhereCond, query)
 	}
+	return b
+}
+
+// Join joins table on condition
+func (b *DeleteStmt) Join(table, on interface{}) *DeleteStmt {
+	b.JoinTable = append(b.JoinTable, join(inner, table, on))
 	return b
 }

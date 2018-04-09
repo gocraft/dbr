@@ -16,6 +16,15 @@ func TestDeleteStmt(t *testing.T) {
 	assert.Equal(t, []interface{}{1}, buf.Value())
 }
 
+func TestDeleteStmtWithJoin(t *testing.T) {
+	buf := NewBuffer()
+	builder := DeleteFrom("table").Join("other_table", "other_table.table_id=table.id").Where(Eq("b", 1))
+	err := builder.Build(dialect.MySQL, buf)
+	assert.NoError(t, err)
+	assert.Equal(t, "DELETE FROM `table` JOIN `other_table` ON other_table.table_id=table.id WHERE (`b` = ?)", buf.String())
+	assert.Equal(t, []interface{}{1}, buf.Value())
+}
+
 func BenchmarkDeleteSQL(b *testing.B) {
 	buf := NewBuffer()
 	for i := 0; i < b.N; i++ {

@@ -8,6 +8,7 @@ type UpdateStmt struct {
 	Value map[string]interface{}
 
 	WhereCond []Builder
+	JoinTable []Builder
 }
 
 // Build builds `UPDATE ...` in dialect
@@ -26,6 +27,15 @@ func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
 
 	buf.WriteString("UPDATE ")
 	buf.WriteString(d.QuoteIdent(b.Table))
+
+	if len(b.JoinTable) > 0 {
+		for _, join := range b.JoinTable {
+			err := join.Build(d, buf)
+			if err != nil {
+				return err
+			}
+		}
+	}
 	buf.WriteString(" SET ")
 
 	i := 0
@@ -92,5 +102,11 @@ func (b *UpdateStmt) SetMap(m map[string]interface{}) *UpdateStmt {
 	for col, val := range m {
 		b.Set(col, val)
 	}
+	return b
+}
+
+// Join joins table on condition
+func (b *UpdateStmt) Join(table, on interface{}) *UpdateStmt {
+	b.JoinTable = append(b.JoinTable, join(inner, table, on))
 	return b
 }

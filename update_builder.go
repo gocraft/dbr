@@ -79,6 +79,11 @@ func (b *UpdateBuilder) Where(query interface{}, value ...interface{}) *UpdateBu
 	return b
 }
 
+func (b *UpdateBuilder) Join(table, on interface{}) *UpdateBuilder {
+	b.UpdateStmt.Join(table, on)
+	return b
+}
+
 func (b *UpdateBuilder) Limit(n uint64) *UpdateBuilder {
 	b.LimitCount = int64(n)
 	return b
