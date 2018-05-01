@@ -21,25 +21,60 @@ func Load(rows *sql.Rows, value interface{}) (int, error) {
 	v = v.Elem()
 	isScanner := v.Addr().Type().Implements(typeScanner)
 	isSlice := v.Kind() == reflect.Slice && v.Type().Elem().Kind() != reflect.Uint8 && !isScanner
+	isMap := v.Kind() == reflect.Map && !isScanner
+	isMapOfSlices := isMap && v.Type().Elem().Kind() == reflect.Slice && v.Type().Elem().Elem().Kind() != reflect.Uint8
+	if isMap {
+		v.Set(reflect.MakeMap(v.Type()))
+	}
 	count := 0
 	for rows.Next() {
-		var elem reflect.Value
-		if isSlice {
+		var elem, keyElem reflect.Value
+		var ptr []interface{}
+		var err error
+
+		if isMapOfSlices {
+			elem = reflect.New(v.Type().Elem().Elem()).Elem()
+		} else if isSlice || isMap {
 			elem = reflect.New(v.Type().Elem()).Elem()
 		} else {
 			elem = v
 		}
-		ptr, err := findPtr(column, elem)
-		if err != nil {
-			return 0, err
+
+		if isMap {
+			ptr, err = findPtr(column[1:], elem)
+			if err != nil {
+				return 0, err
+			}
+			keyElem = reflect.New(v.Type().Key()).Elem()
+			keyPtr, err := findPtr(column[0:1], keyElem)
+			if err != nil {
+				return 0, err
+			}
+			ptr = append(keyPtr, ptr...)
+		} else {
+			ptr, err = findPtr(column, elem)
+			if err != nil {
+				return 0, err
+			}
 		}
+
 		err = rows.Scan(ptr...)
 		if err != nil {
 			return 0, err
 		}
+
 		count++
+
 		if isSlice {
 			v.Set(reflect.Append(v, elem))
+		} else if isMapOfSlices {
+			s := v.MapIndex(keyElem)
+			if !s.IsValid() {
+				s = reflect.Zero(v.Type().Elem())
+			}
+			v.SetMapIndex(keyElem, reflect.Append(s, elem))
+		} else if isMap {
+			v.SetMapIndex(keyElem, elem)
 		} else {
 			break
 		}
