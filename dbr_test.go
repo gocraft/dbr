@@ -314,3 +314,51 @@ func TestSliceWithSQLScannerSelect(t *testing.T) {
 		assert.Len(t, sliceScanner, 1)
 	}
 }
+
+func TestMaps(t *testing.T) {
+	for _, sess := range []*Session{
+		createSession("mysql", mysqlDSN),
+		createSession("postgres", postgresDSN),
+		createSession("sqlite3", sqlite3DSN),
+	} {
+		_, err := sess.InsertInto("dbr_people").
+			Columns("name", "email").
+			Values("test1", "test1@test.com").
+			Values("test2", "test2@test.com").
+			Values("test2", "test3@test.com").
+			Exec()
+
+		var m map[string]string
+		cnt, err := sess.Select("email, name").From("dbr_people").Load(&m)
+		assert.NoError(t, err)
+		assert.Equal(t, cnt, 3)
+		assert.Len(t, m, 3)
+		assert.Equal(t, m["test1@test.com"], "test1")
+
+		var m2 map[int64]*dbrPerson
+		cnt, err = sess.Select("id, name, email").From("dbr_people").Load(&m2)
+		assert.NoError(t, err)
+		assert.Equal(t, cnt, 3)
+		assert.Len(t, m2, 3)
+		assert.Equal(t, m2[1].Email, "test1@test.com")
+		assert.Equal(t, m2[1].Name, "test1")
+		// the id value is used as the map key, so it is not hydrated in the struct
+		assert.EqualValues(t, m2[1].Id, 0)
+
+		var m3 map[string][]string
+		cnt, err = sess.Select("name, email").From("dbr_people").OrderDir("id", true).Load(&m3)
+		assert.NoError(t, err)
+		assert.Equal(t, cnt, 3)
+		assert.Len(t, m3, 2)
+		assert.Equal(t, m3["test1"], []string{"test1@test.com"})
+		assert.Equal(t, m3["test2"], []string{"test2@test.com", "test3@test.com"})
+
+		var set map[string]struct{}
+		cnt, err = sess.Select("name").From("dbr_people").Load(&set)
+		assert.NoError(t, err)
+		assert.Equal(t, cnt, 3)
+		assert.Len(t, set, 2)
+		_, ok := set["test1"]
+		assert.True(t, ok)
+	}
+}
