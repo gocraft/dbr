@@ -2,8 +2,9 @@ package dbr
 
 import "bytes"
 
+// Buffer collects strings, and values that are ready to be interpolated.
 type Buffer interface {
-	WriteString(s string) (n int, err error)
+	WriteString(string) (int, error)
 	String() string
 
 	WriteValue(v ...interface{}) (err error)
@@ -15,6 +16,7 @@ type buffer struct {
 	v []interface{}
 }
 
+// NewBuffer creates a new Buffer.
 func NewBuffer() Buffer {
 	return &buffer{}
 }

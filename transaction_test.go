@@ -8,11 +8,13 @@ import (
 
 func TestTransactionCommit(t *testing.T) {
 	for _, sess := range testSession {
+		reset(t, sess)
+
 		tx, err := sess.Begin()
 		assert.NoError(t, err)
 		defer tx.RollbackUnlessCommitted()
 
-		id := nextID()
+		id := 1
 
 		result, err := tx.InsertInto("dbr_people").Columns("id", "name", "email").Values(id, "Barack", "obama@whitehouse.gov").Exec()
 		assert.NoError(t, err)
@@ -32,11 +34,13 @@ func TestTransactionCommit(t *testing.T) {
 
 func TestTransactionRollback(t *testing.T) {
 	for _, sess := range testSession {
+		reset(t, sess)
+
 		tx, err := sess.Begin()
 		assert.NoError(t, err)
 		defer tx.RollbackUnlessCommitted()
 
-		id := nextID()
+		id := 1
 
 		result, err := tx.InsertInto("dbr_people").Columns("id", "name", "email").Values(id, "Barack", "obama@whitehouse.gov").Exec()
 		assert.NoError(t, err)

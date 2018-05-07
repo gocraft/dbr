@@ -29,7 +29,9 @@ func TestNullTypesScanning(t *testing.T) {
 		},
 	} {
 		for _, sess := range testSession {
-			test.in.Id = nextID()
+			reset(t, sess)
+
+			test.in.Id = 1
 			_, err := sess.InsertInto("null_types").Columns("id", "string_val", "int64_val", "float64_val", "time_val", "bool_val").Record(test.in).Exec()
 			assert.NoError(t, err)
 
