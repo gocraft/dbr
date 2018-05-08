@@ -47,7 +47,7 @@ func TestInterpolateIgnoreBinary(t *testing.T) {
 			IgnoreBinary: true,
 		}
 
-		err := i.interpolate(test.query, test.value)
+		err := i.interpolate(test.query, test.value, true)
 		assert.NoError(t, err)
 
 		assert.Equal(t, test.wantQuery, i.String())
@@ -104,7 +104,7 @@ func TestInterpolateForDialect(t *testing.T) {
 		{
 			query: "?",
 			value: []interface{}{Select("a").From("table")},
-			want:  "(SELECT a FROM table)",
+			want:  "SELECT a FROM table",
 		},
 		{
 			query: "?",
