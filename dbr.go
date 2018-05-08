@@ -52,6 +52,7 @@ type Session struct {
 	Timeout time.Duration
 }
 
+// GetTimeout returns current timeout enforced in session.
 func (s *Session) GetTimeout() time.Duration {
 	return s.Timeout
 }

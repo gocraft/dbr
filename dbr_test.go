@@ -1,11 +1,9 @@
 package dbr
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 	"testing"
 	"time"
@@ -22,41 +20,17 @@ import (
 //
 
 var (
-	currID int64 = 256
-)
-
-// create id
-func nextID() int64 {
-	currID++
-	return currID
-}
-
-const (
-	mysqlDSN    = "root@unix(/tmp/mysql.sock)/uservoice_test?charset=utf8"
-	postgresDSN = "postgres://postgres@localhost:5432/uservoice_test?sslmode=disable"
+	mysqlDSN    = os.Getenv("DBR_TEST_MYSQL_DSN")
+	postgresDSN = os.Getenv("DBR_TEST_POSTGRES_DSN")
 	sqlite3DSN  = ":memory:"
 )
 
 func createSession(driver, dsn string) *Session {
-	var testDSN string
-	switch driver {
-	case "mysql":
-		testDSN = os.Getenv("DBR_TEST_MYSQL_DSN")
-	case "postgres":
-		testDSN = os.Getenv("DBR_TEST_POSTGRES_DSN")
-	case "sqlite3":
-		testDSN = os.Getenv("DBR_TEST_SQLITE3_DSN")
-	}
-	if testDSN != "" {
-		dsn = testDSN
-	}
 	conn, err := Open(driver, dsn, nil)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	sess := conn.NewSession(nil)
-	reset(sess)
-	return sess
+	return conn.NewSession(nil)
 }
 
 var (
@@ -84,7 +58,7 @@ type nullTypedRecord struct {
 	BoolVal    NullBool
 }
 
-func reset(sess *Session) {
+func reset(t *testing.T, sess *Session) {
 	var autoIncrementType string
 	switch sess.Dialect {
 	case dialect.MySQL:
@@ -113,48 +87,21 @@ func reset(sess *Session) {
 		)`, autoIncrementType),
 	} {
 		_, err := sess.Exec(v)
-		if err != nil {
-			log.Fatalf("Failed to execute statement: %s, Got error: %s", v, err)
-		}
-	}
-}
-
-func BenchmarkByteaNoBinaryEncode(b *testing.B) {
-	benchmarkBytea(b, postgresSession)
-}
-
-func BenchmarkByteaBinaryEncode(b *testing.B) {
-	benchmarkBytea(b, postgresBinarySession)
-}
-
-func benchmarkBytea(b *testing.B, sess *Session) {
-	data := bytes.Repeat([]byte("0123456789"), 1000)
-	for _, v := range []string{
-		`DROP TABLE IF EXISTS bytea_table`,
-		`CREATE TABLE bytea_table (
-			val bytea
-		)`,
-	} {
-		_, err := sess.Exec(v)
-		assert.NoError(b, err)
-	}
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		_, err := sess.InsertInto("bytea_table").Pair("val", data).Exec()
-		assert.NoError(b, err)
+		assert.NoError(t, err)
 	}
 }
 
 func TestBasicCRUD(t *testing.T) {
 	for _, sess := range testSession {
+		reset(t, sess)
+
 		jonathan := dbrPerson{
 			Name:  "jonathan",
 			Email: "jonathan@uservoice.com",
 		}
 		insertColumns := []string{"name", "email"}
 		if sess.Dialect == dialect.PostgreSQL {
-			jonathan.Id = nextID()
+			jonathan.Id = 1
 			insertColumns = []string{"id", "name", "email"}
 		}
 		// insert
@@ -223,11 +170,9 @@ func TestPostgresReturning(t *testing.T) {
 }
 
 func TestTimeout(t *testing.T) {
-	for _, sess := range []*Session{
-		createSession("mysql", mysqlDSN),
-		createSession("postgres", postgresDSN),
-		createSession("sqlite3", sqlite3DSN),
-	} {
+	for _, sess := range testSession {
+		reset(t, sess)
+
 		// session op timeout
 		sess.Timeout = time.Nanosecond
 		var people []dbrPerson
@@ -277,19 +222,17 @@ func TestTimeout(t *testing.T) {
 	}
 }
 
-type stringSliceWithSqlScanner []string
+type stringSliceWithSQLScanner []string
 
-func (ss *stringSliceWithSqlScanner) Scan(src interface{}) error {
+func (ss *stringSliceWithSQLScanner) Scan(src interface{}) error {
 	*ss = append(*ss, "called")
 	return nil
 }
 
 func TestSliceWithSQLScannerSelect(t *testing.T) {
-	for _, sess := range []*Session{
-		createSession("mysql", mysqlDSN),
-		createSession("postgres", postgresDSN),
-		createSession("sqlite3", sqlite3DSN),
-	} {
+	for _, sess := range testSession {
+		reset(t, sess)
+
 		_, err := sess.InsertInto("dbr_people").
 			Columns("name", "email").
 			Values("test1", "test1@test.com").
@@ -306,7 +249,7 @@ func TestSliceWithSQLScannerSelect(t *testing.T) {
 		assert.Len(t, stringSlice, 3)
 
 		//string slice with sql.Scanner implemented, should act as a single record
-		var sliceScanner stringSliceWithSqlScanner
+		var sliceScanner stringSliceWithSQLScanner
 		cnt, err = sess.Select("name").From("dbr_people").Load(&sliceScanner)
 
 		assert.NoError(t, err)
@@ -316,11 +259,9 @@ func TestSliceWithSQLScannerSelect(t *testing.T) {
 }
 
 func TestMaps(t *testing.T) {
-	for _, sess := range []*Session{
-		createSession("mysql", mysqlDSN),
-		createSession("postgres", postgresDSN),
-		createSession("sqlite3", sqlite3DSN),
-	} {
+	for _, sess := range testSession {
+		reset(t, sess)
+
 		_, err := sess.InsertInto("dbr_people").
 			Columns("name", "email").
 			Values("test1", "test1@test.com").
