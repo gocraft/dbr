@@ -152,7 +152,7 @@ func prepareSelect(a []string) []interface{} {
 }
 
 func (sess *Session) Select(column ...string) *SelectStmt {
-	b := Select(prepareSelect(column))
+	b := Select(prepareSelect(column)...)
 	b.runner = sess
 	b.EventReceiver = sess
 	b.Dialect = sess.Dialect
@@ -160,7 +160,7 @@ func (sess *Session) Select(column ...string) *SelectStmt {
 }
 
 func (tx *Tx) Select(column ...string) *SelectStmt {
-	b := Select(prepareSelect(column))
+	b := Select(prepareSelect(column)...)
 	b.runner = tx
 	b.EventReceiver = tx
 	b.Dialect = tx.Dialect
