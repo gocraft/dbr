@@ -272,6 +272,16 @@ func (b *SelectStmt) Paginate(page, perPage uint64) *SelectStmt {
 	return b
 }
 
+// OrderDir is a helper for OrderAsc and OrderDesc.
+func (b *SelectStmt) OrderDir(col string, isAsc bool) *SelectStmt {
+	if isAsc {
+		b.OrderAsc(col)
+	} else {
+		b.OrderDesc(col)
+	}
+	return b
+}
+
 // Join joins table on condition
 func (b *SelectStmt) Join(table, on interface{}) *SelectStmt {
 	b.JoinTable = append(b.JoinTable, join(inner, table, on))
