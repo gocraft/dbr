@@ -2,18 +2,27 @@ package dbr
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"reflect"
 )
 
 // InsertStmt builds `INSERT INTO ...`
 type InsertStmt struct {
+	runner
+	EventReceiver
+	Dialect
+
 	raw
 
 	Table        string
 	Column       []string
 	Value        [][]interface{}
 	ReturnColumn []string
+	RecordID     reflect.Value
 }
+
+type InsertBuilder = InsertStmt
 
 // Build builds `INSERT INTO ...` in dialect
 func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
@@ -76,6 +85,22 @@ func InsertInto(table string) *InsertStmt {
 	}
 }
 
+func (sess *Session) InsertInto(table string) *InsertStmt {
+	b := InsertInto(table)
+	b.runner = sess
+	b.EventReceiver = sess
+	b.Dialect = sess.Dialect
+	return b
+}
+
+func (tx *Tx) InsertInto(table string) *InsertStmt {
+	b := InsertInto(table)
+	b.runner = tx
+	b.EventReceiver = tx
+	b.Dialect = tx.Dialect
+	return b
+}
+
 // InsertBySql creates an InsertStmt from raw query
 func InsertBySql(query string, value ...interface{}) *InsertStmt {
 	return &InsertStmt{
@@ -84,6 +109,22 @@ func InsertBySql(query string, value ...interface{}) *InsertStmt {
 			Value: value,
 		},
 	}
+}
+
+func (sess *Session) InsertBySql(query string, value ...interface{}) *InsertStmt {
+	b := InsertBySql(query, value...)
+	b.runner = sess
+	b.EventReceiver = sess
+	b.Dialect = sess.Dialect
+	return b
+}
+
+func (tx *Tx) InsertBySql(query string, value ...interface{}) *InsertStmt {
+	b := InsertBySql(query, value...)
+	b.runner = tx
+	b.EventReceiver = tx
+	b.Dialect = tx.Dialect
+	return b
 }
 
 // Columns adds columns
@@ -103,6 +144,17 @@ func (b *InsertStmt) Record(structValue interface{}) *InsertStmt {
 	v := reflect.Indirect(reflect.ValueOf(structValue))
 
 	if v.Kind() == reflect.Struct {
+		if v.CanSet() {
+			// ID is recommended by golint here
+			for _, name := range []string{"Id", "ID"} {
+				field := v.FieldByName(name)
+				if field.IsValid() && field.Kind() == reflect.Int64 {
+					b.RecordID = field
+					break
+				}
+			}
+		}
+
 		var value []interface{}
 		m := structMap(v)
 		for _, key := range b.Column {
@@ -120,4 +172,45 @@ func (b *InsertStmt) Record(structValue interface{}) *InsertStmt {
 func (b *InsertStmt) Returning(column ...string) *InsertStmt {
 	b.ReturnColumn = column
 	return b
+}
+
+func (b *InsertStmt) Pair(column string, value interface{}) *InsertStmt {
+	b.Column = append(b.Column, column)
+	switch len(b.Value) {
+	case 0:
+		b.Values(value)
+	case 1:
+		b.Value[0] = append(b.Value[0], value)
+	default:
+		panic("pair only allows one record to insert")
+	}
+	return b
+}
+
+func (b *InsertStmt) Exec() (sql.Result, error) {
+	return b.ExecContext(context.Background())
+}
+
+func (b *InsertStmt) ExecContext(ctx context.Context) (sql.Result, error) {
+	result, err := exec(ctx, b.runner, b.EventReceiver, b, b.Dialect)
+	if err != nil {
+		return nil, err
+	}
+
+	if b.RecordID.IsValid() {
+		if id, err := result.LastInsertId(); err == nil {
+			b.RecordID.SetInt(id)
+		}
+	}
+
+	return result, nil
+}
+
+func (b *InsertStmt) LoadContext(ctx context.Context, value interface{}) error {
+	_, err := query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value)
+	return err
+}
+
+func (b *InsertStmt) Load(value interface{}) error {
+	return b.LoadContext(context.Background(), value)
 }

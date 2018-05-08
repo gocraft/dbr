@@ -1,9 +1,16 @@
 package dbr
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // SelectStmt builds `SELECT ...`
 type SelectStmt struct {
+	runner
+	EventReceiver
+	Dialect
+
 	raw
 
 	IsDistinct bool
@@ -20,6 +27,8 @@ type SelectStmt struct {
 	LimitCount  int64
 	OffsetCount int64
 }
+
+type SelectBuilder = SelectStmt
 
 // Build builds `SELECT ...` in dialect
 func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
@@ -134,9 +143,27 @@ func Select(column ...interface{}) *SelectStmt {
 	}
 }
 
-// From specifies table
-func (b *SelectStmt) From(table interface{}) *SelectStmt {
-	b.Table = table
+func prepareSelect(a []string) []interface{} {
+	b := make([]interface{}, len(a))
+	for i := range a {
+		b[i] = a[i]
+	}
+	return b
+}
+
+func (sess *Session) Select(column ...string) *SelectStmt {
+	b := Select(prepareSelect(column))
+	b.runner = sess
+	b.EventReceiver = sess
+	b.Dialect = sess.Dialect
+	return b
+}
+
+func (tx *Tx) Select(column ...string) *SelectStmt {
+	b := Select(prepareSelect(column))
+	b.runner = tx
+	b.EventReceiver = tx
+	b.Dialect = tx.Dialect
 	return b
 }
 
@@ -150,6 +177,28 @@ func SelectBySql(query string, value ...interface{}) *SelectStmt {
 		LimitCount:  -1,
 		OffsetCount: -1,
 	}
+}
+
+func (sess *Session) SelectBySql(query string, value ...interface{}) *SelectStmt {
+	b := SelectBySql(query, value...)
+	b.runner = sess
+	b.EventReceiver = sess
+	b.Dialect = sess.Dialect
+	return b
+}
+
+func (tx *Tx) SelectBySql(query string, value ...interface{}) *SelectStmt {
+	b := SelectBySql(query, value...)
+	b.runner = tx
+	b.EventReceiver = tx
+	b.Dialect = tx.Dialect
+	return b
+}
+
+// From specifies table
+func (b *SelectStmt) From(table interface{}) *SelectStmt {
+	b.Table = table
+	return b
 }
 
 // Distinct adds `DISTINCT`
@@ -235,4 +284,27 @@ func (b *SelectStmt) FullJoin(table, on interface{}) *SelectStmt {
 // As creates alias for select statement
 func (b *SelectStmt) As(alias string) Builder {
 	return as(b, alias)
+}
+
+func (b *SelectStmt) LoadOneContext(ctx context.Context, value interface{}) error {
+	count, err := query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value)
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (b *SelectStmt) LoadOne(value interface{}) error {
+	return b.LoadOneContext(context.Background(), value)
+}
+
+func (b *SelectStmt) LoadContext(ctx context.Context, value interface{}) (int, error) {
+	return query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value)
+}
+
+func (b *SelectStmt) Load(value interface{}) (int, error) {
+	return b.LoadContext(context.Background(), value)
 }

@@ -1,14 +1,26 @@
 package dbr
 
+import (
+	"context"
+	"database/sql"
+	"fmt"
+)
+
 // UpdateStmt builds `UPDATE ...`
 type UpdateStmt struct {
+	runner
+	EventReceiver
+	Dialect
+
 	raw
 
-	Table string
-	Value map[string]interface{}
-
-	WhereCond []Builder
+	Table      string
+	Value      map[string]interface{}
+	WhereCond  []Builder
+	LimitCount int64
 }
+
+type UpdateBuilder = UpdateStmt
 
 // Build builds `UPDATE ...` in dialect
 func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
@@ -48,15 +60,38 @@ func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
 			return err
 		}
 	}
+
+	if b.LimitCount >= 0 {
+		buf.WriteString(" LIMIT ")
+		buf.WriteString(fmt.Sprint(b.LimitCount))
+	}
+
 	return nil
 }
 
 // Update creates an UpdateStmt
 func Update(table string) *UpdateStmt {
 	return &UpdateStmt{
-		Table: table,
-		Value: make(map[string]interface{}),
+		Table:      table,
+		Value:      make(map[string]interface{}),
+		LimitCount: -1,
 	}
+}
+
+func (sess *Session) Update(table string) *UpdateStmt {
+	b := Update(table)
+	b.runner = sess
+	b.EventReceiver = sess
+	b.Dialect = sess.Dialect
+	return b
+}
+
+func (tx *Tx) Update(table string) *UpdateStmt {
+	b := Update(table)
+	b.runner = tx
+	b.EventReceiver = tx
+	b.Dialect = tx.Dialect
+	return b
 }
 
 // UpdateBySql creates an UpdateStmt with raw query
@@ -66,8 +101,25 @@ func UpdateBySql(query string, value ...interface{}) *UpdateStmt {
 			Query: query,
 			Value: value,
 		},
-		Value: make(map[string]interface{}),
+		Value:      make(map[string]interface{}),
+		LimitCount: -1,
 	}
+}
+
+func (sess *Session) UpdateBySql(query string, value ...interface{}) *UpdateStmt {
+	b := UpdateBySql(query, value...)
+	b.runner = sess
+	b.EventReceiver = sess
+	b.Dialect = sess.Dialect
+	return b
+}
+
+func (tx *Tx) UpdateBySql(query string, value ...interface{}) *UpdateStmt {
+	b := UpdateBySql(query, value...)
+	b.runner = tx
+	b.EventReceiver = tx
+	b.Dialect = tx.Dialect
+	return b
 }
 
 // Where adds a where condition
@@ -93,4 +145,17 @@ func (b *UpdateStmt) SetMap(m map[string]interface{}) *UpdateStmt {
 		b.Set(col, val)
 	}
 	return b
+}
+
+func (b *UpdateStmt) Limit(n uint64) *UpdateStmt {
+	b.LimitCount = int64(n)
+	return b
+}
+
+func (b *UpdateStmt) Exec() (sql.Result, error) {
+	return b.ExecContext(context.Background())
+}
+
+func (b *UpdateStmt) ExecContext(ctx context.Context) (sql.Result, error) {
+	return exec(ctx, b.runner, b.EventReceiver, b, b.Dialect)
 }
