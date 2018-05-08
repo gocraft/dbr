@@ -19,7 +19,7 @@ type InsertStmt struct {
 	Column       []string
 	Value        [][]interface{}
 	ReturnColumn []string
-	RecordID     reflect.Value
+	RecordID     *int64
 }
 
 type InsertBuilder = InsertStmt
@@ -149,7 +149,7 @@ func (b *InsertStmt) Record(structValue interface{}) *InsertStmt {
 			for _, name := range []string{"Id", "ID"} {
 				field := v.FieldByName(name)
 				if field.IsValid() && field.Kind() == reflect.Int64 {
-					b.RecordID = field
+					b.RecordID = field.Addr().Interface().(*int64)
 					break
 				}
 			}
@@ -197,10 +197,11 @@ func (b *InsertStmt) ExecContext(ctx context.Context) (sql.Result, error) {
 		return nil, err
 	}
 
-	if b.RecordID.IsValid() {
+	if b.RecordID != nil {
 		if id, err := result.LastInsertId(); err == nil {
-			b.RecordID.SetInt(id)
+			*b.RecordID = id
 		}
+		b.RecordID = nil
 	}
 
 	return result, nil
