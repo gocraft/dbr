@@ -19,10 +19,12 @@ type Tx struct {
 	Cancel func()
 }
 
+// GetTimeout returns timeout enforced in Tx
 func (tx *Tx) GetTimeout() time.Duration {
 	return tx.Timeout
 }
 
+// BeginTx creates a transaction with TxOptions
 func (sess *Session) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 	tx, err := sess.Connection.BeginTx(ctx, opts)
 	if err != nil {
