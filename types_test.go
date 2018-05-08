@@ -36,7 +36,7 @@ func TestNullTypesScanning(t *testing.T) {
 			assert.NoError(t, err)
 
 			var record nullTypedRecord
-			err = sess.Select("*").From("null_types").Where(Eq("id", test.in.Id)).LoadStruct(&record)
+			err = sess.Select("*").From("null_types").Where(Eq("id", test.in.Id)).LoadOne(&record)
 			assert.NoError(t, err)
 			if sess.Dialect == dialect.PostgreSQL {
 				// TODO: https://github.com/lib/pq/issues/329

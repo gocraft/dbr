@@ -141,26 +141,31 @@ func (n *NullBool) UnmarshalJSON(b []byte) error {
 	return n.Scan(s)
 }
 
+// NewNullInt64 creates a NullInt64 with Scan()
 func NewNullInt64(v interface{}) (n NullInt64) {
 	n.Scan(v)
 	return
 }
 
+// NewNullFloat64 creates a NullFloat64 with Scan()
 func NewNullFloat64(v interface{}) (n NullFloat64) {
 	n.Scan(v)
 	return
 }
 
+// NewNullString creates a NullString with Scan()
 func NewNullString(v interface{}) (n NullString) {
 	n.Scan(v)
 	return
 }
 
+// NewNullTime creates a NullTime with Scan()
 func NewNullTime(v interface{}) (n NullTime) {
 	n.Scan(v)
 	return
 }
 
+// NewNullBool creates a NullBool with Scan()
 func NewNullBool(v interface{}) (n NullBool) {
 	n.Scan(v)
 	return

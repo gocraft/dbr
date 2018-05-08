@@ -115,7 +115,7 @@ func TestBasicCRUD(t *testing.T) {
 		assert.True(t, jonathan.Id > 0)
 		// select
 		var people []dbrPerson
-		count, err := sess.Select("*").From("dbr_people").Where(Eq("id", jonathan.Id)).LoadStructs(&people)
+		count, err := sess.Select("*").From("dbr_people").Where(Eq("id", jonathan.Id)).Load(&people)
 		assert.NoError(t, err)
 		if assert.Equal(t, 1, count) {
 			assert.Equal(t, jonathan.Id, people[0].Id)
@@ -142,7 +142,7 @@ func TestBasicCRUD(t *testing.T) {
 		assert.EqualValues(t, 1, rowsAffected)
 
 		var n NullInt64
-		sess.Select("count(*)").From("dbr_people").Where("name = ?", "jonathan1").LoadValue(&n)
+		sess.Select("count(*)").From("dbr_people").Where("name = ?", "jonathan1").LoadOne(&n)
 		assert.EqualValues(t, 1, n.Int64)
 
 		// delete
@@ -287,7 +287,7 @@ func TestMaps(t *testing.T) {
 		assert.EqualValues(t, m2[1].Id, 0)
 
 		var m3 map[string][]string
-		cnt, err = sess.Select("name, email").From("dbr_people").OrderDir("id", true).Load(&m3)
+		cnt, err = sess.Select("name, email").From("dbr_people").OrderAsc("id").Load(&m3)
 		assert.NoError(t, err)
 		assert.Equal(t, cnt, 3)
 		assert.Len(t, m3, 2)

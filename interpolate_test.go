@@ -47,7 +47,7 @@ func TestInterpolateIgnoreBinary(t *testing.T) {
 			IgnoreBinary: true,
 		}
 
-		err := i.interpolate(test.query, test.value)
+		err := i.interpolate(test.query, test.value, true)
 		assert.NoError(t, err)
 
 		assert.Equal(t, test.wantQuery, i.String())
@@ -104,7 +104,7 @@ func TestInterpolateForDialect(t *testing.T) {
 		{
 			query: "?",
 			value: []interface{}{Select("a").From("table")},
-			want:  "(SELECT a FROM table)",
+			want:  "SELECT a FROM table",
 		},
 		{
 			query: "?",
@@ -156,7 +156,7 @@ func TestCommonSQLInjections(t *testing.T) {
 
 			// SELECT the name back and ensure it's equal to the injection attempt
 			var name string
-			err = sess.Select("name").From("dbr_people").OrderDir("id", false).Limit(1).LoadValue(&name)
+			err = sess.Select("name").From("dbr_people").OrderDesc("id").Limit(1).LoadOne(&name)
 			assert.Equal(t, injectionAttempt, name)
 		}
 	}

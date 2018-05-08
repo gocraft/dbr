@@ -1,8 +1,9 @@
 package dbr
 
-// identifier is a type of string
+// I is quoted identifier
 type I string
 
+// Build quotes string with dialect.
 func (i I) Build(d Dialect, buf Buffer) error {
 	buf.WriteString(d.QuoteIdent(string(i)))
 	return nil

@@ -21,14 +21,14 @@ func InterpolateForDialect(query string, value []interface{}, d Dialect) (string
 		Buffer:  NewBuffer(),
 		Dialect: d,
 	}
-	err := i.interpolate(query, value)
+	err := i.interpolate(query, value, true)
 	if err != nil {
 		return "", err
 	}
 	return i.String(), nil
 }
 
-func (i *interpolator) interpolate(query string, value []interface{}) error {
+func (i *interpolator) interpolate(query string, value []interface{}, topLevel bool) error {
 	if strings.Count(query, placeholder) != len(value) {
 		return ErrPlaceholderCount
 	}
@@ -47,7 +47,7 @@ func (i *interpolator) interpolate(query string, value []interface{}) error {
 			i.N++
 			i.WriteValue(value[valueIndex])
 		} else {
-			err := i.encodePlaceholder(value[valueIndex])
+			err := i.encodePlaceholder(value[valueIndex], topLevel)
 			if err != nil {
 				return err
 			}
@@ -62,24 +62,24 @@ func (i *interpolator) interpolate(query string, value []interface{}) error {
 	return nil
 }
 
-func (i *interpolator) encodePlaceholder(value interface{}) error {
+func (i *interpolator) encodePlaceholder(value interface{}, topLevel bool) error {
 	if builder, ok := value.(Builder); ok {
 		pbuf := NewBuffer()
 		err := builder.Build(i.Dialect, pbuf)
 		if err != nil {
 			return err
 		}
-		paren := true
+		paren := false
 		switch value.(type) {
 		case *SelectStmt:
+			paren = !topLevel
 		case *union:
-		default:
-			paren = false
+			paren = true
 		}
 		if paren {
 			i.WriteString("(")
 		}
-		err = i.interpolate(pbuf.String(), pbuf.Value())
+		err = i.interpolate(pbuf.String(), pbuf.Value(), false)
 		if err != nil {
 			return err
 		}
@@ -139,7 +139,7 @@ func (i *interpolator) encodePlaceholder(value interface{}) error {
 			if n > 0 {
 				i.WriteString(",")
 			}
-			err := i.encodePlaceholder(v.Index(n).Interface())
+			err := i.encodePlaceholder(v.Index(n).Interface(), topLevel)
 			if err != nil {
 				return err
 			}
@@ -151,7 +151,7 @@ func (i *interpolator) encodePlaceholder(value interface{}) error {
 			i.WriteString("NULL")
 			return nil
 		}
-		return i.encodePlaceholder(v.Elem().Interface())
+		return i.encodePlaceholder(v.Elem().Interface(), topLevel)
 	}
 	return ErrNotSupported
 }

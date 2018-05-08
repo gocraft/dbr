@@ -1,6 +1,5 @@
 package dbr
 
-// XxxBuilders all support raw query
 type raw struct {
 	Query string
 	Value []interface{}
