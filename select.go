@@ -265,6 +265,13 @@ func (b *SelectStmt) Offset(n uint64) *SelectStmt {
 	return b
 }
 
+// Paginate fetches a page in a naive way for a small set of data.
+func (b *SelectStmt) Paginate(page, perPage uint64) *SelectStmt {
+	b.Limit(perPage)
+	b.Offset((page - 1) * perPage)
+	return b
+}
+
 // Join joins table on condition
 func (b *SelectStmt) Join(table, on interface{}) *SelectStmt {
 	b.JoinTable = append(b.JoinTable, join(inner, table, on))
