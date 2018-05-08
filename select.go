@@ -248,6 +248,11 @@ func (b *SelectStmt) OrderDesc(col string) *SelectStmt {
 	return b
 }
 
+func (b *SelectStmt) OrderBy(col string) *SelectStmt {
+	b.Order = append(b.Order, Expr(col))
+	return b
+}
+
 // Limit adds limit
 func (b *SelectStmt) Limit(n uint64) *SelectStmt {
 	b.LimitCount = int64(n)
