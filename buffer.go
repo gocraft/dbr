@@ -1,6 +1,6 @@
 package dbr
 
-import "bytes"
+import "strings"
 
 // Buffer collects strings, and values that are ready to be interpolated.
 type Buffer interface {
@@ -12,7 +12,7 @@ type Buffer interface {
 }
 
 type buffer struct {
-	bytes.Buffer
+	strings.Builder
 	v []interface{}
 }
 
