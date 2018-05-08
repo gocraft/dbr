@@ -69,12 +69,14 @@ func (i *interpolator) encodePlaceholder(value interface{}) error {
 		if err != nil {
 			return err
 		}
-		paren := true
-		switch value.(type) {
+		paren := false
+		switch b := value.(type) {
 		case *SelectStmt:
+			if b.runner == nil {
+				paren = true
+			}
 		case *union:
-		default:
-			paren = false
+			paren = true
 		}
 		if paren {
 			i.WriteString("(")
