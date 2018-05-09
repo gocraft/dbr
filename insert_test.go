@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/gocraft/dbr/dialect"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type insertTest struct {
@@ -19,18 +19,20 @@ func TestInsertStmt(t *testing.T) {
 		C: "two",
 	})
 	err := builder.Build(dialect.MySQL, buf)
-	assert.NoError(t, err)
-	assert.Equal(t, "INSERT INTO `table` (`a`,`b`) VALUES (?,?), (?,?)", buf.String())
-	assert.Equal(t, []interface{}{1, "one", 2, "two"}, buf.Value())
+	require.NoError(t, err)
+	require.Equal(t, "INSERT INTO `table` (`a`,`b`) VALUES (?,?), (?,?)", buf.String())
+	require.Equal(t, []interface{}{1, "one", 2, "two"}, buf.Value())
 }
 
 func TestPostgresReturning(t *testing.T) {
 	sess := postgresSession
+	reset(t, sess)
+
 	var person dbrPerson
 	err := sess.InsertInto("dbr_people").Columns("name").Record(&person).
 		Returning("id").Load(&person.Id)
-	assert.NoError(t, err)
-	assert.True(t, person.Id > 0)
+	require.NoError(t, err)
+	require.True(t, person.Id > 0)
 }
 
 func BenchmarkInsertValuesSQL(b *testing.B) {

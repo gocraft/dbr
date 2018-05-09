@@ -3,7 +3,7 @@ package dbr
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type stringSliceWithSQLScanner []string
@@ -28,17 +28,17 @@ func TestSliceWithSQLScannerSelect(t *testing.T) {
 		var stringSlice []string
 		cnt, err := sess.Select("name").From("dbr_people").Load(&stringSlice)
 
-		assert.NoError(t, err)
-		assert.Equal(t, cnt, 3)
-		assert.Len(t, stringSlice, 3)
+		require.NoError(t, err)
+		require.Equal(t, 3, cnt)
+		require.Len(t, stringSlice, 3)
 
 		//string slice with sql.Scanner implemented, should act as a single record
 		var sliceScanner stringSliceWithSQLScanner
 		cnt, err = sess.Select("name").From("dbr_people").Load(&sliceScanner)
 
-		assert.NoError(t, err)
-		assert.Equal(t, cnt, 1)
-		assert.Len(t, sliceScanner, 1)
+		require.NoError(t, err)
+		require.Equal(t, 1, cnt)
+		require.Len(t, sliceScanner, 1)
 	}
 }
 
@@ -55,35 +55,35 @@ func TestMaps(t *testing.T) {
 
 		var m map[string]string
 		cnt, err := sess.Select("email, name").From("dbr_people").Load(&m)
-		assert.NoError(t, err)
-		assert.Equal(t, cnt, 3)
-		assert.Len(t, m, 3)
-		assert.Equal(t, m["test1@test.com"], "test1")
+		require.NoError(t, err)
+		require.Equal(t, 3, cnt)
+		require.Len(t, m, 3)
+		require.Equal(t, "test1", m["test1@test.com"])
 
 		var m2 map[int64]*dbrPerson
 		cnt, err = sess.Select("id, name, email").From("dbr_people").Load(&m2)
-		assert.NoError(t, err)
-		assert.Equal(t, cnt, 3)
-		assert.Len(t, m2, 3)
-		assert.Equal(t, m2[1].Email, "test1@test.com")
-		assert.Equal(t, m2[1].Name, "test1")
+		require.NoError(t, err)
+		require.Equal(t, 3, cnt)
+		require.Len(t, m2, 3)
+		require.Equal(t, "test1@test.com", m2[1].Email)
+		require.Equal(t, "test1", m2[1].Name)
 		// the id value is used as the map key, so it is not hydrated in the struct
-		assert.EqualValues(t, m2[1].Id, 0)
+		require.Equal(t, int64(0), m2[1].Id)
 
 		var m3 map[string][]string
 		cnt, err = sess.Select("name, email").From("dbr_people").OrderAsc("id").Load(&m3)
-		assert.NoError(t, err)
-		assert.Equal(t, cnt, 3)
-		assert.Len(t, m3, 2)
-		assert.Equal(t, m3["test1"], []string{"test1@test.com"})
-		assert.Equal(t, m3["test2"], []string{"test2@test.com", "test3@test.com"})
+		require.NoError(t, err)
+		require.Equal(t, 3, cnt)
+		require.Len(t, m3, 2)
+		require.Equal(t, []string{"test1@test.com"}, m3["test1"])
+		require.Equal(t, []string{"test2@test.com", "test3@test.com"}, m3["test2"])
 
 		var set map[string]struct{}
 		cnt, err = sess.Select("name").From("dbr_people").Load(&set)
-		assert.NoError(t, err)
-		assert.Equal(t, cnt, 3)
-		assert.Len(t, set, 2)
+		require.NoError(t, err)
+		require.Equal(t, 3, cnt)
+		require.Len(t, set, 2)
 		_, ok := set["test1"]
-		assert.True(t, ok)
+		require.True(t, ok)
 	}
 }

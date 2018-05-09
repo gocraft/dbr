@@ -41,7 +41,7 @@ const (
 // to send events, errors, and timings to
 type Connection struct {
 	*sql.DB
-	Dialect Dialect
+	Dialect
 	EventReceiver
 }
 

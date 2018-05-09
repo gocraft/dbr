@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func BenchmarkByteaNoBinaryEncode(b *testing.B) {
@@ -24,12 +24,12 @@ func benchmarkBytea(b *testing.B, sess *Session) {
 		)`,
 	} {
 		_, err := sess.Exec(v)
-		assert.NoError(b, err)
+		require.NoError(b, err)
 	}
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		_, err := sess.InsertInto("bytea_table").Pair("val", data).Exec()
-		assert.NoError(b, err)
+		require.NoError(b, err)
 	}
 }
