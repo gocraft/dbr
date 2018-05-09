@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+var NameMapping = camelCaseToSnakeCase
+
 func isUpper(b byte) bool {
 	return 'A' <= b && b <= 'Z'
 }
@@ -76,7 +78,7 @@ func structValue(m map[string]reflect.Value, value reflect.Value) {
 			}
 			if tag == "" {
 				// no tag, but we can record the field name
-				tag = camelCaseToSnakeCase(field.Name)
+				tag = NameMapping(field.Name)
 			}
 			fieldValue := value.Field(i)
 			if _, ok := m[tag]; !ok {
