@@ -1,10 +1,10 @@
 package dbr
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"reflect"
+	"strings"
 )
 
 // InsertStmt builds `INSERT INTO ...`
@@ -41,7 +41,7 @@ func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 	buf.WriteString("INSERT INTO ")
 	buf.WriteString(d.QuoteIdent(b.Table))
 
-	placeholderBuf := new(bytes.Buffer)
+	var placeholderBuf strings.Builder
 	placeholderBuf.WriteString("(")
 	buf.WriteString(" (")
 	for i, col := range b.Column {
