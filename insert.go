@@ -1,10 +1,10 @@
 package dbr
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"reflect"
+	"strings"
 )
 
 // InsertStmt builds `INSERT INTO ...`
@@ -41,7 +41,7 @@ func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 	buf.WriteString("INSERT INTO ")
 	buf.WriteString(d.QuoteIdent(b.Table))
 
-	placeholderBuf := new(bytes.Buffer)
+	var placeholderBuf strings.Builder
 	placeholderBuf.WriteString("(")
 	buf.WriteString(" (")
 	for i, col := range b.Column {
@@ -144,19 +144,15 @@ func (b *InsertStmt) Record(structValue interface{}) *InsertStmt {
 	v := reflect.Indirect(reflect.ValueOf(structValue))
 
 	if v.Kind() == reflect.Struct {
+		m := structMap(v)
 		if v.CanSet() {
 			// ID is recommended by golint here
-			for _, name := range []string{"Id", "ID"} {
-				field := v.FieldByName(name)
-				if field.IsValid() && field.Kind() == reflect.Int64 {
-					b.RecordID = field.Addr().Interface().(*int64)
-					break
-				}
+			if field, ok := m["id"]; ok && field.Kind() == reflect.Int64 {
+				b.RecordID = field.Addr().Interface().(*int64)
 			}
 		}
 
 		var value []interface{}
-		m := structMap(v)
 		for _, key := range b.Column {
 			if val, ok := m[key]; ok {
 				value = append(value, val.Interface())

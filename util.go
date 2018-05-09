@@ -1,23 +1,40 @@
 package dbr
 
 import (
-	"bytes"
 	"database/sql/driver"
 	"reflect"
-	"unicode"
+	"strings"
 )
 
+func isUpper(b byte) bool {
+	return 'A' <= b && b <= 'Z'
+}
+
+func isLower(b byte) bool {
+	return 'a' <= b && b <= 'z'
+}
+
+func isDigit(b byte) bool {
+	return '0' <= b && b <= '9'
+}
+
+func toLower(b byte) byte {
+	if isUpper(b) {
+		return b - 'A' + 'a'
+	}
+	return b
+}
+
 func camelCaseToSnakeCase(name string) string {
-	buf := new(bytes.Buffer)
+	var buf strings.Builder
+	buf.Grow(len(name) * 2)
 
-	runes := []rune(name)
-
-	for i := 0; i < len(runes); i++ {
-		buf.WriteRune(unicode.ToLower(runes[i]))
-		if i != len(runes)-1 && unicode.IsUpper(runes[i+1]) &&
-			(unicode.IsLower(runes[i]) || unicode.IsDigit(runes[i]) ||
-				(i != len(runes)-2 && unicode.IsLower(runes[i+2]))) {
-			buf.WriteRune('_')
+	for i := 0; i < len(name); i++ {
+		buf.WriteByte(toLower(name[i]))
+		if i != len(name)-1 && isUpper(name[i+1]) &&
+			(isLower(name[i]) || isDigit(name[i]) ||
+				(i != len(name)-2 && isLower(name[i+2]))) {
+			buf.WriteByte('_')
 		}
 	}
 

@@ -50,6 +50,12 @@ func TestSnakeCase(t *testing.T) {
 	}
 }
 
+func BenchmarkCamelCaseToSnakeCase(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		camelCaseToSnakeCase("getHTTPResponseCode")
+	}
+}
+
 func TestStructMap(t *testing.T) {
 	for _, test := range []struct {
 		in  interface{}

@@ -3,7 +3,7 @@ package dbr
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	"strconv"
 )
 
 // UpdateStmt builds `UPDATE ...`
@@ -63,7 +63,7 @@ func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
 
 	if b.LimitCount >= 0 {
 		buf.WriteString(" LIMIT ")
-		buf.WriteString(fmt.Sprint(b.LimitCount))
+		buf.WriteString(strconv.FormatInt(b.LimitCount, 10))
 	}
 
 	return nil

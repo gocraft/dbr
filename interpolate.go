@@ -62,6 +62,10 @@ func (i *interpolator) interpolate(query string, value []interface{}, topLevel b
 	return nil
 }
 
+var (
+	typeTime = reflect.TypeOf(time.Time{})
+)
+
 func (i *interpolator) encodePlaceholder(value interface{}, topLevel bool) error {
 	if builder, ok := value.(Builder); ok {
 		pbuf := NewBuffer()
@@ -120,7 +124,7 @@ func (i *interpolator) encodePlaceholder(value interface{}, topLevel bool) error
 		i.WriteString(strconv.FormatFloat(v.Float(), 'f', -1, 64))
 		return nil
 	case reflect.Struct:
-		if v.Type() == reflect.TypeOf(time.Time{}) {
+		if v.Type() == typeTime {
 			i.WriteString(i.EncodeTime(v.Interface().(time.Time)))
 			return nil
 		}
