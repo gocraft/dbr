@@ -1,4 +1,5 @@
 # gocraft/dbr (database records) [![GoDoc](https://godoc.org/github.com/gocraft/web?status.png)](https://godoc.org/github.com/gocraft/dbr)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fgocraft%2Fdbr.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fgocraft%2Fdbr?ref=badge_shield)
 
 gocraft/dbr provides additions to Go's database/sql for super fast performance and convenience.
 
@@ -295,3 +296,7 @@ Authors:
 
 Contributors:
 * Paul Bergeron -- [https://github.com/dinedal](https://github.com/dinedal) - SQLite dialect
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fgocraft%2Fdbr.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fgocraft%2Fdbr?ref=badge_large)
