@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-// DeleteStmt builds `DELETE ...`
+// DeleteStmt builds `DELETE ...`.
 type DeleteStmt struct {
 	runner
 	EventReceiver
@@ -21,7 +21,6 @@ type DeleteStmt struct {
 
 type DeleteBuilder = DeleteStmt
 
-// Build builds `DELETE ...` in dialect
 func (b *DeleteStmt) Build(d Dialect, buf Buffer) error {
 	if b.raw.Query != "" {
 		return b.raw.Build(d, buf)
@@ -48,7 +47,7 @@ func (b *DeleteStmt) Build(d Dialect, buf Buffer) error {
 	return nil
 }
 
-// DeleteFrom creates a DeleteStmt
+// DeleteFrom creates a DeleteStmt.
 func DeleteFrom(table string) *DeleteStmt {
 	return &DeleteStmt{
 		Table:      table,
@@ -56,6 +55,7 @@ func DeleteFrom(table string) *DeleteStmt {
 	}
 }
 
+// DeleteFrom creates a DeleteStmt.
 func (sess *Session) DeleteFrom(table string) *DeleteStmt {
 	b := DeleteFrom(table)
 	b.runner = sess
@@ -64,6 +64,7 @@ func (sess *Session) DeleteFrom(table string) *DeleteStmt {
 	return b
 }
 
+// DeleteFrom creates a DeleteStmt.
 func (tx *Tx) DeleteFrom(table string) *DeleteStmt {
 	b := DeleteFrom(table)
 	b.runner = tx
@@ -72,7 +73,7 @@ func (tx *Tx) DeleteFrom(table string) *DeleteStmt {
 	return b
 }
 
-// DeleteBySql creates a DeleteStmt from raw query
+// DeleteBySql creates a DeleteStmt from raw query.
 func DeleteBySql(query string, value ...interface{}) *DeleteStmt {
 	return &DeleteStmt{
 		raw: raw{
@@ -83,6 +84,7 @@ func DeleteBySql(query string, value ...interface{}) *DeleteStmt {
 	}
 }
 
+// DeleteBySql creates a DeleteStmt from raw query.
 func (sess *Session) DeleteBySql(query string, value ...interface{}) *DeleteStmt {
 	b := DeleteBySql(query, value...)
 	b.runner = sess
@@ -91,6 +93,7 @@ func (sess *Session) DeleteBySql(query string, value ...interface{}) *DeleteStmt
 	return b
 }
 
+// DeleteBySql creates a DeleteStmt from raw query.
 func (tx *Tx) DeleteBySql(query string, value ...interface{}) *DeleteStmt {
 	b := DeleteBySql(query, value...)
 	b.runner = tx
@@ -99,7 +102,8 @@ func (tx *Tx) DeleteBySql(query string, value ...interface{}) *DeleteStmt {
 	return b
 }
 
-// Where adds a where condition
+// Where adds a where condition.
+// query can be Builder or string. value is used only if query type is string.
 func (b *DeleteStmt) Where(query interface{}, value ...interface{}) *DeleteStmt {
 	switch query := query.(type) {
 	case string:

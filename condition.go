@@ -19,14 +19,14 @@ func buildCond(d Dialect, buf Buffer, pred string, cond ...Builder) error {
 	return nil
 }
 
-// And creates AND from a list of conditions
+// And creates AND from a list of conditions.
 func And(cond ...Builder) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
 		return buildCond(d, buf, "AND", cond...)
 	})
 }
 
-// Or creates OR from a list of conditions
+// Or creates OR from a list of conditions.
 func Or(cond ...Builder) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
 		return buildCond(d, buf, "OR", cond...)

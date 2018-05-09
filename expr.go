@@ -5,7 +5,8 @@ type raw struct {
 	Value []interface{}
 }
 
-// Expr should be used when sql syntax is not supported
+// Expr allows raw expression to be used when current SQL syntax is
+// not supported by gocraft/dbr.
 func Expr(query string, value ...interface{}) Builder {
 	return &raw{Query: query, Value: value}
 }

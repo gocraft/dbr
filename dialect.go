@@ -2,7 +2,8 @@ package dbr
 
 import "time"
 
-// Dialect abstracts database differences
+// Dialect abstracts database driver differences in encoding
+// types, and placeholders.
 type Dialect interface {
 	QuoteIdent(id string) string
 

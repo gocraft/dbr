@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// InsertStmt builds `INSERT INTO ...`
+// InsertStmt builds `INSERT INTO ...`.
 type InsertStmt struct {
 	runner
 	EventReceiver
@@ -24,7 +24,6 @@ type InsertStmt struct {
 
 type InsertBuilder = InsertStmt
 
-// Build builds `INSERT INTO ...` in dialect
 func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 	if b.raw.Query != "" {
 		return b.raw.Build(d, buf)
@@ -78,13 +77,14 @@ func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 	return nil
 }
 
-// InsertInto creates an InsertStmt
+// InsertInto creates an InsertStmt.
 func InsertInto(table string) *InsertStmt {
 	return &InsertStmt{
 		Table: table,
 	}
 }
 
+// InsertInto creates an InsertStmt.
 func (sess *Session) InsertInto(table string) *InsertStmt {
 	b := InsertInto(table)
 	b.runner = sess
@@ -93,6 +93,7 @@ func (sess *Session) InsertInto(table string) *InsertStmt {
 	return b
 }
 
+// InsertInto creates an InsertStmt.
 func (tx *Tx) InsertInto(table string) *InsertStmt {
 	b := InsertInto(table)
 	b.runner = tx
@@ -101,7 +102,7 @@ func (tx *Tx) InsertInto(table string) *InsertStmt {
 	return b
 }
 
-// InsertBySql creates an InsertStmt from raw query
+// InsertBySql creates an InsertStmt from raw query.
 func InsertBySql(query string, value ...interface{}) *InsertStmt {
 	return &InsertStmt{
 		raw: raw{
@@ -111,6 +112,7 @@ func InsertBySql(query string, value ...interface{}) *InsertStmt {
 	}
 }
 
+// InsertBySql creates an InsertStmt from raw query.
 func (sess *Session) InsertBySql(query string, value ...interface{}) *InsertStmt {
 	b := InsertBySql(query, value...)
 	b.runner = sess
@@ -119,6 +121,7 @@ func (sess *Session) InsertBySql(query string, value ...interface{}) *InsertStmt
 	return b
 }
 
+// InsertBySql creates an InsertStmt from raw query.
 func (tx *Tx) InsertBySql(query string, value ...interface{}) *InsertStmt {
 	b := InsertBySql(query, value...)
 	b.runner = tx
@@ -127,19 +130,22 @@ func (tx *Tx) InsertBySql(query string, value ...interface{}) *InsertStmt {
 	return b
 }
 
-// Columns adds columns
 func (b *InsertStmt) Columns(column ...string) *InsertStmt {
 	b.Column = column
 	return b
 }
 
-// Values adds a tuple for columns
+// Values adds a tuple to be inserted.
+// The order of the tuple should match Columns.
 func (b *InsertStmt) Values(value ...interface{}) *InsertStmt {
 	b.Value = append(b.Value, value)
 	return b
 }
 
-// Record adds a tuple for columns from a struct
+// Record adds a tuple for columns from a struct.
+//
+// If there is a field called "Id" or "ID" in the struct,
+// it will be set to LastInsertId.
 func (b *InsertStmt) Record(structValue interface{}) *InsertStmt {
 	v := reflect.Indirect(reflect.ValueOf(structValue))
 
@@ -165,11 +171,14 @@ func (b *InsertStmt) Record(structValue interface{}) *InsertStmt {
 	return b
 }
 
+// Returning specifies the returning columns for postgres.
 func (b *InsertStmt) Returning(column ...string) *InsertStmt {
 	b.ReturnColumn = column
 	return b
 }
 
+// Pair adds (column, value) to be inserted.
+// It is an error to mix Pair with Values and Record.
 func (b *InsertStmt) Pair(column string, value interface{}) *InsertStmt {
 	b.Column = append(b.Column, column)
 	switch len(b.Value) {

@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-// UpdateStmt builds `UPDATE ...`
+// UpdateStmt builds `UPDATE ...`.
 type UpdateStmt struct {
 	runner
 	EventReceiver
@@ -22,7 +22,6 @@ type UpdateStmt struct {
 
 type UpdateBuilder = UpdateStmt
 
-// Build builds `UPDATE ...` in dialect
 func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
 	if b.raw.Query != "" {
 		return b.raw.Build(d, buf)
@@ -69,7 +68,7 @@ func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
 	return nil
 }
 
-// Update creates an UpdateStmt
+// Update creates an UpdateStmt.
 func Update(table string) *UpdateStmt {
 	return &UpdateStmt{
 		Table:      table,
@@ -78,6 +77,7 @@ func Update(table string) *UpdateStmt {
 	}
 }
 
+// Update creates an UpdateStmt.
 func (sess *Session) Update(table string) *UpdateStmt {
 	b := Update(table)
 	b.runner = sess
@@ -86,6 +86,7 @@ func (sess *Session) Update(table string) *UpdateStmt {
 	return b
 }
 
+// Update creates an UpdateStmt.
 func (tx *Tx) Update(table string) *UpdateStmt {
 	b := Update(table)
 	b.runner = tx
@@ -94,7 +95,7 @@ func (tx *Tx) Update(table string) *UpdateStmt {
 	return b
 }
 
-// UpdateBySql creates an UpdateStmt with raw query
+// UpdateBySql creates an UpdateStmt with raw query.
 func UpdateBySql(query string, value ...interface{}) *UpdateStmt {
 	return &UpdateStmt{
 		raw: raw{
@@ -106,6 +107,7 @@ func UpdateBySql(query string, value ...interface{}) *UpdateStmt {
 	}
 }
 
+// UpdateBySql creates an UpdateStmt with raw query.
 func (sess *Session) UpdateBySql(query string, value ...interface{}) *UpdateStmt {
 	b := UpdateBySql(query, value...)
 	b.runner = sess
@@ -114,6 +116,7 @@ func (sess *Session) UpdateBySql(query string, value ...interface{}) *UpdateStmt
 	return b
 }
 
+// UpdateBySql creates an UpdateStmt with raw query.
 func (tx *Tx) UpdateBySql(query string, value ...interface{}) *UpdateStmt {
 	b := UpdateBySql(query, value...)
 	b.runner = tx
@@ -122,7 +125,8 @@ func (tx *Tx) UpdateBySql(query string, value ...interface{}) *UpdateStmt {
 	return b
 }
 
-// Where adds a where condition
+// Where adds a where condition.
+// query can be Builder or string. value is used only if query type is string.
 func (b *UpdateStmt) Where(query interface{}, value ...interface{}) *UpdateStmt {
 	switch query := query.(type) {
 	case string:
@@ -133,13 +137,13 @@ func (b *UpdateStmt) Where(query interface{}, value ...interface{}) *UpdateStmt 
 	return b
 }
 
-// Set specifies a key-value pair
+// Set updates column with value.
 func (b *UpdateStmt) Set(column string, value interface{}) *UpdateStmt {
 	b.Value[column] = value
 	return b
 }
 
-// SetMap specifies a list of key-value pair
+// SetMap specifies a map of (column, value) to update in bulk.
 func (b *UpdateStmt) SetMap(m map[string]interface{}) *UpdateStmt {
 	for col, val := range m {
 		b.Set(col, val)

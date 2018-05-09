@@ -5,7 +5,7 @@ import (
 	"strconv"
 )
 
-// SelectStmt builds `SELECT ...`
+// SelectStmt builds `SELECT ...`.
 type SelectStmt struct {
 	runner
 	EventReceiver
@@ -30,7 +30,6 @@ type SelectStmt struct {
 
 type SelectBuilder = SelectStmt
 
-// Build builds `SELECT ...` in dialect
 func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 	if b.raw.Query != "" {
 		return b.raw.Build(d, buf)
@@ -134,7 +133,7 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 	return nil
 }
 
-// Select creates a SelectStmt
+// Select creates a SelectStmt.
 func Select(column ...interface{}) *SelectStmt {
 	return &SelectStmt{
 		Column:      column,
@@ -151,6 +150,7 @@ func prepareSelect(a []string) []interface{} {
 	return b
 }
 
+// Select creates a SelectStmt.
 func (sess *Session) Select(column ...string) *SelectStmt {
 	b := Select(prepareSelect(column)...)
 	b.runner = sess
@@ -159,6 +159,7 @@ func (sess *Session) Select(column ...string) *SelectStmt {
 	return b
 }
 
+// Select creates a SelectStmt.
 func (tx *Tx) Select(column ...string) *SelectStmt {
 	b := Select(prepareSelect(column)...)
 	b.runner = tx
@@ -167,7 +168,7 @@ func (tx *Tx) Select(column ...string) *SelectStmt {
 	return b
 }
 
-// SelectBySql creates a SelectStmt from raw query
+// SelectBySql creates a SelectStmt from raw query.
 func SelectBySql(query string, value ...interface{}) *SelectStmt {
 	return &SelectStmt{
 		raw: raw{
@@ -179,6 +180,7 @@ func SelectBySql(query string, value ...interface{}) *SelectStmt {
 	}
 }
 
+// SelectBySql creates a SelectStmt from raw query.
 func (sess *Session) SelectBySql(query string, value ...interface{}) *SelectStmt {
 	b := SelectBySql(query, value...)
 	b.runner = sess
@@ -187,6 +189,7 @@ func (sess *Session) SelectBySql(query string, value ...interface{}) *SelectStmt
 	return b
 }
 
+// SelectBySql creates a SelectStmt from raw query.
 func (tx *Tx) SelectBySql(query string, value ...interface{}) *SelectStmt {
 	b := SelectBySql(query, value...)
 	b.runner = tx
@@ -195,19 +198,20 @@ func (tx *Tx) SelectBySql(query string, value ...interface{}) *SelectStmt {
 	return b
 }
 
-// From specifies table
+// From specifies table to select from.
+// table can be Builder like SelectStmt, or string.
 func (b *SelectStmt) From(table interface{}) *SelectStmt {
 	b.Table = table
 	return b
 }
 
-// Distinct adds `DISTINCT`
 func (b *SelectStmt) Distinct() *SelectStmt {
 	b.IsDistinct = true
 	return b
 }
 
-// Where adds a where condition
+// Where adds a where condition.
+// query can be Builder or string. value is used only if query type is string.
 func (b *SelectStmt) Where(query interface{}, value ...interface{}) *SelectStmt {
 	switch query := query.(type) {
 	case string:
@@ -218,7 +222,8 @@ func (b *SelectStmt) Where(query interface{}, value ...interface{}) *SelectStmt 
 	return b
 }
 
-// Having adds a having condition
+// Having adds a having condition.
+// query can be Builder or string. value is used only if query type is string.
 func (b *SelectStmt) Having(query interface{}, value ...interface{}) *SelectStmt {
 	switch query := query.(type) {
 	case string:
@@ -229,7 +234,7 @@ func (b *SelectStmt) Having(query interface{}, value ...interface{}) *SelectStmt
 	return b
 }
 
-// GroupBy specifies columns for grouping
+// GroupBy specifies columns for grouping.
 func (b *SelectStmt) GroupBy(col ...string) *SelectStmt {
 	for _, group := range col {
 		b.Group = append(b.Group, Expr(group))
@@ -237,7 +242,6 @@ func (b *SelectStmt) GroupBy(col ...string) *SelectStmt {
 	return b
 }
 
-// OrderBy specifies columns for ordering
 func (b *SelectStmt) OrderAsc(col string) *SelectStmt {
 	b.Order = append(b.Order, order(col, asc))
 	return b
@@ -248,18 +252,17 @@ func (b *SelectStmt) OrderDesc(col string) *SelectStmt {
 	return b
 }
 
+// OrderBy specifies columns for ordering.
 func (b *SelectStmt) OrderBy(col string) *SelectStmt {
 	b.Order = append(b.Order, Expr(col))
 	return b
 }
 
-// Limit adds limit
 func (b *SelectStmt) Limit(n uint64) *SelectStmt {
 	b.LimitCount = int64(n)
 	return b
 }
 
-// Offset adds offset
 func (b *SelectStmt) Offset(n uint64) *SelectStmt {
 	b.OffsetCount = int64(n)
 	return b
@@ -282,28 +285,35 @@ func (b *SelectStmt) OrderDir(col string, isAsc bool) *SelectStmt {
 	return b
 }
 
-// Join joins table on condition
+// Join add inner-join.
+// on can be Builder or string.
 func (b *SelectStmt) Join(table, on interface{}) *SelectStmt {
 	b.JoinTable = append(b.JoinTable, join(inner, table, on))
 	return b
 }
 
+// LeftJoin add left-join.
+// on can be Builder or string.
 func (b *SelectStmt) LeftJoin(table, on interface{}) *SelectStmt {
 	b.JoinTable = append(b.JoinTable, join(left, table, on))
 	return b
 }
 
+// RightJoin add right-join.
+// on can be Builder or string.
 func (b *SelectStmt) RightJoin(table, on interface{}) *SelectStmt {
 	b.JoinTable = append(b.JoinTable, join(right, table, on))
 	return b
 }
 
+// FullJoin add full-join.
+// on can be Builder or string.
 func (b *SelectStmt) FullJoin(table, on interface{}) *SelectStmt {
 	b.JoinTable = append(b.JoinTable, join(full, table, on))
 	return b
 }
 
-// As creates alias for select statement
+// As creates alias for select statement.
 func (b *SelectStmt) As(alias string) Builder {
 	return as(b, alias)
 }
@@ -319,6 +329,10 @@ func (b *SelectStmt) LoadOneContext(ctx context.Context, value interface{}) erro
 	return nil
 }
 
+// LoadOne loads SQL result into go variable that is not a slice.
+// Unlike Load, it returns ErrNotFound if the SQL result row count is 0.
+//
+// See https://godoc.org/github.com/gocraft/dbr#Load.
 func (b *SelectStmt) LoadOne(value interface{}) error {
 	return b.LoadOneContext(context.Background(), value)
 }
@@ -327,6 +341,9 @@ func (b *SelectStmt) LoadContext(ctx context.Context, value interface{}) (int, e
 	return query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value)
 }
 
+// Load loads multi-row SQL result into a slice of go variables.
+//
+// See https://godoc.org/github.com/gocraft/dbr#Load.
 func (b *SelectStmt) Load(value interface{}) (int, error) {
 	return b.LoadContext(context.Background(), value)
 }

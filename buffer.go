@@ -3,6 +3,7 @@ package dbr
 import "strings"
 
 // Buffer collects strings, and values that are ready to be interpolated.
+// This is used internally to efficiently build SQL statement.
 type Buffer interface {
 	WriteString(string) (int, error)
 	String() string

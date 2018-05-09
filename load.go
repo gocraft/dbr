@@ -5,7 +5,20 @@ import (
 	"reflect"
 )
 
-// Load loads any value from sql.Rows
+// Load loads any value from sql.Rows.
+//
+// value can be:
+//
+// 1. simple type like int64, string, etc.
+//
+// 2. sql.Scanner, which allows loading with custom types.
+//
+// 3. map; the first column from SQL result loaded to the key,
+// and the rest of columns will be loaded into the value.
+// This is useful to dedup SQL result with first column.
+//
+// 4. map of slice; like map, values with the same key are
+// collected with a slice.
 func Load(rows *sql.Rows, value interface{}) (int, error) {
 	defer rows.Close()
 

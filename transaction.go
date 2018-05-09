@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Tx is a transaction for the given Session
+// Tx is a transaction created by Session.
 type Tx struct {
 	EventReceiver
 	Dialect
@@ -14,12 +14,12 @@ type Tx struct {
 	Timeout time.Duration
 }
 
-// GetTimeout returns timeout enforced in Tx
+// GetTimeout returns timeout enforced in Tx.
 func (tx *Tx) GetTimeout() time.Duration {
 	return tx.Timeout
 }
 
-// BeginTx creates a transaction with TxOptions
+// BeginTx creates a transaction with TxOptions.
 func (sess *Session) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 	tx, err := sess.Connection.BeginTx(ctx, opts)
 	if err != nil {
@@ -35,12 +35,12 @@ func (sess *Session) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, err
 	}, nil
 }
 
-// Begin creates a transaction for the given session
+// Begin creates a transaction for the given session.
 func (sess *Session) Begin() (*Tx, error) {
 	return sess.BeginTx(context.Background(), nil)
 }
 
-// Commit finishes the transaction
+// Commit finishes the transaction.
 func (tx *Tx) Commit() error {
 	err := tx.Tx.Commit()
 	if err != nil {
@@ -50,7 +50,7 @@ func (tx *Tx) Commit() error {
 	return nil
 }
 
-// Rollback cancels the transaction
+// Rollback cancels the transaction.
 func (tx *Tx) Rollback() error {
 	err := tx.Tx.Rollback()
 	if err != nil {
@@ -60,9 +60,13 @@ func (tx *Tx) Rollback() error {
 	return nil
 }
 
-// RollbackUnlessCommitted rollsback the transaction unless it has already been committed or rolled back.
-// Useful to defer tx.RollbackUnlessCommitted() -- so you don't have to handle N failure cases
-// Keep in mind the only way to detect an error on the rollback is via the event log.
+// RollbackUnlessCommitted rollsback the transaction unless
+// it has already been committed or rolled back.
+//
+// Useful to defer tx.RollbackUnlessCommitted(), so you don't
+// have to handle N failure cases.
+// Keep in mind the only way to detect an error on the rollback
+// is via the event log.
 func (tx *Tx) RollbackUnlessCommitted() {
 	err := tx.Tx.Rollback()
 	if err == sql.ErrTxDone {
