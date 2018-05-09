@@ -2,7 +2,7 @@ package dbr
 
 import (
 	"context"
-	"fmt"
+	"strconv"
 )
 
 // SelectStmt builds `SELECT ...`
@@ -124,12 +124,12 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 
 	if b.LimitCount >= 0 {
 		buf.WriteString(" LIMIT ")
-		buf.WriteString(fmt.Sprint(b.LimitCount))
+		buf.WriteString(strconv.FormatInt(b.LimitCount, 10))
 	}
 
 	if b.OffsetCount >= 0 {
 		buf.WriteString(" OFFSET ")
-		buf.WriteString(fmt.Sprint(b.OffsetCount))
+		buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
 	}
 	return nil
 }
