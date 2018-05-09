@@ -147,11 +147,8 @@ func (b *InsertStmt) Record(structValue interface{}) *InsertStmt {
 		m := structMap(v)
 		if v.CanSet() {
 			// ID is recommended by golint here
-			for _, name := range []string{"Id", "ID"} {
-				if field, ok := m[name]; ok && field.Kind() == reflect.Int64 {
-					b.RecordID = field.Addr().Interface().(*int64)
-					break
-				}
+			if field, ok := m["id"]; ok && field.Kind() == reflect.Int64 {
+				b.RecordID = field.Addr().Interface().(*int64)
 			}
 		}
 
