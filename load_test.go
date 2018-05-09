@@ -24,7 +24,7 @@ func TestSliceWithSQLScannerSelect(t *testing.T) {
 			Values("test3", "test3@test.com").
 			Exec()
 
-		//plain string slice (original behavour)
+		//plain string slice (original behavior)
 		var stringSlice []string
 		cnt, err := sess.Select("name").From("dbr_people").Load(&stringSlice)
 

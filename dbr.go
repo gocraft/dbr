@@ -1,3 +1,5 @@
+// gocraft/dbr provides additions to Go's database/sql for super fast performance and convenience.
+
 package dbr
 
 import (
@@ -9,8 +11,8 @@ import (
 	"github.com/gocraft/dbr/dialect"
 )
 
-// Open instantiates a Connection for a given database/sql connection
-// and event receiver
+// Open creates a Connection.
+// log can be nil to ignore logging.
 func Open(driver, dsn string, log EventReceiver) (*Connection, error) {
 	if log == nil {
 		log = nullReceiver
@@ -37,15 +39,23 @@ const (
 	placeholder = "?"
 )
 
-// Connection is a connection to the database with an EventReceiver
-// to send events, errors, and timings to
+// Connection wraps sql.DB with an EventReceiver
+// to send events, errors, and timings.
 type Connection struct {
 	*sql.DB
 	Dialect
 	EventReceiver
 }
 
-// Session represents a business unit of execution for some connection
+// Session represents a business unit of execution.
+//
+// All queries in gocraft/dbr are made in the context of a session.
+// This is because when instrumenting your app, it's important
+// to understand which business action the query took place in.
+//
+// A custom EventReceiver can be set.
+//
+// Timeout specifies max duration for an operation like Select.
 type Session struct {
 	*Connection
 	EventReceiver
@@ -53,11 +63,12 @@ type Session struct {
 }
 
 // GetTimeout returns current timeout enforced in session.
-func (s *Session) GetTimeout() time.Duration {
-	return s.Timeout
+func (sess *Session) GetTimeout() time.Duration {
+	return sess.Timeout
 }
 
-// NewSession instantiates a Session for the Connection
+// NewSession instantiates a Session from Connection.
+// If log is nil, Connection EventReceiver is used.
 func (conn *Connection) NewSession(log EventReceiver) *Session {
 	if log == nil {
 		log = conn.EventReceiver // Use parent instrumentation
@@ -72,6 +83,7 @@ var (
 )
 
 // SessionRunner can do anything that a Session can except start a transaction.
+// Both Session and Tx implements this interface.
 type SessionRunner interface {
 	Select(column ...string) *SelectBuilder
 	SelectBySql(query string, value ...interface{}) *SelectBuilder
