@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gocraft/dbr/dialect"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -33,18 +33,18 @@ func TestNullTypesScanning(t *testing.T) {
 
 			test.in.Id = 1
 			_, err := sess.InsertInto("null_types").Columns("id", "string_val", "int64_val", "float64_val", "time_val", "bool_val").Record(test.in).Exec()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			var record nullTypedRecord
 			err = sess.Select("*").From("null_types").Where(Eq("id", test.in.Id)).LoadOne(&record)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			if sess.Dialect == dialect.PostgreSQL {
 				// TODO: https://github.com/lib/pq/issues/329
 				if !record.TimeVal.Time.IsZero() {
 					record.TimeVal.Time = record.TimeVal.Time.UTC()
 				}
 			}
-			assert.Equal(t, test.in, record)
+			require.Equal(t, test.in, record)
 		}
 	}
 }
@@ -54,9 +54,9 @@ func TestNullInt64Unmarshal(t *testing.T) {
 		Num NullInt64
 	}
 	err := json.Unmarshal([]byte(`{"num":null}`), &test)
-	assert.NoError(t, err)
-	assert.Equal(t, int64(0), test.Num.Int64)
-	assert.False(t, test.Num.Valid)
+	require.NoError(t, err)
+	require.Equal(t, int64(0), test.Num.Int64)
+	require.False(t, test.Num.Valid)
 }
 
 func TestNullTypesActuallyNullJSON(t *testing.T) {
@@ -69,12 +69,12 @@ func TestNullTypesActuallyNullJSON(t *testing.T) {
 	}
 	jsonBs := []byte(`{"b":null,"f":null,"s":null,"t":null,"i":null}`)
 	err := json.Unmarshal(jsonBs, &out)
-	assert.NoError(t, err)
-	assert.False(t, out.Bool.Valid)
-	assert.False(t, out.Float.Valid)
-	assert.False(t, out.String.Valid)
-	assert.False(t, out.Time.Valid)
-	assert.False(t, out.Int.Valid)
+	require.NoError(t, err)
+	require.False(t, out.Bool.Valid)
+	require.False(t, out.Float.Valid)
+	require.False(t, out.String.Valid)
+	require.False(t, out.Time.Valid)
+	require.False(t, out.Int.Valid)
 }
 
 func TestNullTypesJSON(t *testing.T) {
@@ -117,17 +117,17 @@ func TestNullTypesJSON(t *testing.T) {
 	} {
 		// marshal ptr
 		b, err := json.Marshal(test.in)
-		assert.NoError(t, err)
-		assert.Equal(t, test.want, string(b))
+		require.NoError(t, err)
+		require.Equal(t, test.want, string(b))
 
 		// marshal value
 		b, err = json.Marshal(test.in2)
-		assert.NoError(t, err)
-		assert.Equal(t, test.want, string(b))
+		require.NoError(t, err)
+		require.Equal(t, test.want, string(b))
 
 		// unmarshal
 		err = json.Unmarshal(b, test.out)
-		assert.NoError(t, err)
-		assert.Equal(t, test.in, test.out)
+		require.NoError(t, err)
+		require.Equal(t, test.in, test.out)
 	}
 }

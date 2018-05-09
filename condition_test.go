@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/gocraft/dbr/dialect"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCondition(t *testing.T) {
@@ -66,8 +66,8 @@ func TestCondition(t *testing.T) {
 	} {
 		buf := NewBuffer()
 		err := test.cond.Build(dialect.MySQL, buf)
-		assert.NoError(t, err)
-		assert.Equal(t, test.query, buf.String())
-		assert.Equal(t, test.value, buf.Value())
+		require.NoError(t, err)
+		require.Equal(t, test.query, buf.String())
+		require.Equal(t, test.value, buf.Value())
 	}
 }

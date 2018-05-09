@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gocraft/dbr/dialect"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestInterpolateIgnoreBinary(t *testing.T) {
@@ -48,10 +48,10 @@ func TestInterpolateIgnoreBinary(t *testing.T) {
 		}
 
 		err := i.interpolate(test.query, test.value, true)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
-		assert.Equal(t, test.wantQuery, i.String())
-		assert.Equal(t, test.wantValue, i.Value())
+		require.Equal(t, test.wantQuery, i.String())
+		require.Equal(t, test.wantValue, i.Value())
 	}
 }
 
@@ -138,8 +138,8 @@ func TestInterpolateForDialect(t *testing.T) {
 		},
 	} {
 		s, err := InterpolateForDialect(test.query, test.value, dialect.MySQL)
-		assert.NoError(t, err)
-		assert.Equal(t, test.want, s)
+		require.NoError(t, err)
+		require.Equal(t, test.want, s)
 	}
 }
 
@@ -147,17 +147,19 @@ func TestInterpolateForDialect(t *testing.T) {
 // more information on the source and the strings themselves.
 func TestCommonSQLInjections(t *testing.T) {
 	for _, sess := range testSession {
+		reset(t, sess)
+
 		for _, injectionAttempt := range strings.Split(injectionAttempts, "\n") {
 			// Create a user with the attempted injection as the email address
 			_, err := sess.InsertInto("dbr_people").
 				Pair("name", injectionAttempt).
 				Exec()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			// SELECT the name back and ensure it's equal to the injection attempt
 			var name string
 			err = sess.Select("name").From("dbr_people").OrderDesc("id").Limit(1).LoadOne(&name)
-			assert.Equal(t, injectionAttempt, name)
+			require.Equal(t, injectionAttempt, name)
 		}
 	}
 }

@@ -4,17 +4,17 @@ import (
 	"testing"
 
 	"github.com/gocraft/dbr/dialect"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUpdateStmt(t *testing.T) {
 	buf := NewBuffer()
 	builder := Update("table").Set("a", 1).Where(Eq("b", 2))
 	err := builder.Build(dialect.MySQL, buf)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.Equal(t, "UPDATE `table` SET `a` = ? WHERE (`b` = ?)", buf.String())
-	assert.Equal(t, []interface{}{1, 2}, buf.Value())
+	require.Equal(t, "UPDATE `table` SET `a` = ? WHERE (`b` = ?)", buf.String())
+	require.Equal(t, []interface{}{1, 2}, buf.Value())
 }
 
 func BenchmarkUpdateValuesSQL(b *testing.B) {

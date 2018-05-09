@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSnakeCase(t *testing.T) {
@@ -46,7 +46,7 @@ func TestSnakeCase(t *testing.T) {
 			want: "xml_name",
 		},
 	} {
-		assert.Equal(t, test.want, camelCaseToSnakeCase(test.in))
+		require.Equal(t, test.want, camelCaseToSnakeCase(test.in))
 	}
 }
 
@@ -99,11 +99,11 @@ func TestStructMap(t *testing.T) {
 		m := structMap(reflect.ValueOf(test.in))
 		for _, c := range test.ok {
 			_, ok := m[c]
-			assert.True(t, ok)
+			require.True(t, ok)
 		}
 		for _, c := range test.bad {
 			_, ok := m[c]
-			assert.False(t, ok)
+			require.False(t, ok)
 		}
 	}
 }

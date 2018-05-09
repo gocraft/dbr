@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/gocraft/dbr/dialect"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSelectStmt(t *testing.T) {
@@ -20,10 +20,10 @@ func TestSelectStmt(t *testing.T) {
 		Limit(3).
 		Offset(4)
 	err := builder.Build(dialect.MySQL, buf)
-	assert.NoError(t, err)
-	assert.Equal(t, "SELECT DISTINCT a, b FROM ? LEFT JOIN `table2` ON table.a1 = table.a2 WHERE (`c` = ?) GROUP BY d HAVING (`e` = ?) ORDER BY f ASC LIMIT 3 OFFSET 4", buf.String())
+	require.NoError(t, err)
+	require.Equal(t, "SELECT DISTINCT a, b FROM ? LEFT JOIN `table2` ON table.a1 = table.a2 WHERE (`c` = ?) GROUP BY d HAVING (`e` = ?) ORDER BY f ASC LIMIT 3 OFFSET 4", buf.String())
 	// two functions cannot be compared
-	assert.Equal(t, 3, len(buf.Value()))
+	require.Equal(t, 3, len(buf.Value()))
 }
 
 func BenchmarkSelectSQL(b *testing.B) {
