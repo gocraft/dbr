@@ -43,16 +43,25 @@ func InterpolateForDialect(query string, value []interface{}, d Dialect) (string
 	return i.String(), nil
 }
 
-func (i *interpolator) interpolate(query string, value []interface{}, topLevel bool) error {
-	if strings.Count(query, placeholder) != len(value) {
-		return ErrPlaceholderCount
-	}
+var escapedPlaceholder = strings.Repeat(placeholder, 2)
 
+func (i *interpolator) interpolate(query string, value []interface{}, topLevel bool) error {
 	valueIndex := 0
 
 	for {
 		index := strings.Index(query, placeholder)
 		if index == -1 {
+			break
+		}
+
+		// escape placeholder by repeating it twice
+		if strings.HasPrefix(query[index:], escapedPlaceholder) {
+			i.WriteString(query[:index+len(escapedPlaceholder)])
+			query = query[index+len(escapedPlaceholder):]
+			continue
+		}
+
+		if valueIndex >= len(value) {
 			break
 		}
 
@@ -69,6 +78,10 @@ func (i *interpolator) interpolate(query string, value []interface{}, topLevel b
 		}
 		query = query[index+len(placeholder):]
 		valueIndex++
+	}
+
+	if valueIndex != len(value) {
+		return ErrPlaceholderCount
 	}
 
 	// placeholder not found; write remaining query
