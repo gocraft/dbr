@@ -30,7 +30,7 @@ type interpolator struct {
 // their arguments before they get to MySQL.
 // The result of this is that it's way faster, and just as secure.
 //
-// Check out these [benchmarks](https://github.com/tyler-smith/golang-sql-benchmark).
+// Check out these benchmarks from https://github.com/tyler-smith/golang-sql-benchmark.
 func InterpolateForDialect(query string, value []interface{}, d Dialect) (string, error) {
 	i := interpolator{
 		Buffer:  NewBuffer(),

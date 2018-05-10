@@ -47,7 +47,7 @@ func ExampleSelectStmt_Load() {
 
 func ExampleSelectStmt_Where() {
 	// database/sql uses prepared statements, which means each argument
-	//  in an IN clause needs its own question mark.
+	// in an IN clause needs its own question mark.
 	// gocraft/dbr, on the other hand, handles interpolation itself
 	// so that you can easily use a single question mark paired with a
 	// dynamically sized slice.

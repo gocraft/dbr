@@ -1,5 +1,4 @@
-// gocraft/dbr provides additions to Go's database/sql for super fast performance and convenience.
-
+// Package dbr provides additions to Go's database/sql for super fast performance and convenience.
 package dbr
 
 import (
