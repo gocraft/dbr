@@ -10,9 +10,8 @@ import (
 
 func TestSQLMock(t *testing.T) {
 	db, mock, err := sqlmock.New()
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(t, err)
+
 	conn := &Connection{
 		DB:            db,
 		EventReceiver: &NullEventReceiver{},
