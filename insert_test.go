@@ -3,7 +3,7 @@ package dbr
 import (
 	"testing"
 
-	"github.com/gocraft/dbr/dialect"
+	"github.com/skilld-labs/dbr/dialect"
 	"github.com/stretchr/testify/assert"
 )
 
