@@ -1,5 +1,10 @@
 package dbr
 
+import (
+	"fmt"
+	"time"
+)
+
 func ExampleOpen() {
 	// create a connection (e.g. "postgres", "mysql", or "sqlite3")
 	conn, _ := Open("postgres", "...", nil)
@@ -80,11 +85,37 @@ func ExampleInsertStmt_Pair() {
 		Pair("body", "I love go.")
 }
 
+func ExampleInsertStmt_Record() {
+	type Suggestion struct {
+		ID        int64
+		Title     NullString
+		CreatedAt time.Time
+	}
+	sugg := &Suggestion{
+		Title:     NewNullString("Gopher"),
+		CreatedAt: time.Now(),
+	}
+	sess := mysqlSession
+	sess.InsertInto("suggestions").
+		Columns("id", "title").
+		Record(&sugg).
+		Exec()
+
+	// id is set automatically
+	fmt.Println(sugg.ID)
+}
+
 func ExampleUpdateStmt() {
 	sess := mysqlSession
 	sess.Update("suggestions").
 		Set("title", "Gopher").
 		Set("body", "I love go.").
+		Where("id = ?", 1)
+}
+
+func ExampleDeleteStmt() {
+	sess := mysqlSession
+	sess.DeleteFrom("suggestions").
 		Where("id = ?", 1)
 }
 
