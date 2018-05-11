@@ -150,20 +150,23 @@ func (b *InsertStmt) Record(structValue interface{}) *InsertStmt {
 	v := reflect.Indirect(reflect.ValueOf(structValue))
 
 	if v.Kind() == reflect.Struct {
-		m := structMap(v)
-		if v.CanSet() {
-			// ID is recommended by golint here
-			if field, ok := m["id"]; ok && field.Kind() == reflect.Int64 {
-				b.RecordID = field.Addr().Interface().(*int64)
+		found := make([]interface{}, len(b.Column)+1)
+		// ID is recommended by golint here
+		findValueByName(v, append(b.Column, "id"), found, false)
+
+		value := found[:len(found)-1]
+		for i, v := range value {
+			if v != nil {
+				value[i] = v.(reflect.Value).Interface()
 			}
 		}
 
-		var value []interface{}
-		for _, key := range b.Column {
-			if val, ok := m[key]; ok {
-				value = append(value, val.Interface())
-			} else {
-				value = append(value, nil)
+		if v.CanSet() {
+			switch idField := found[len(found)-1].(type) {
+			case reflect.Value:
+				if idField.Kind() == reflect.Int64 {
+					b.RecordID = idField.Addr().Interface().(*int64)
+				}
 			}
 		}
 		b.Values(value...)

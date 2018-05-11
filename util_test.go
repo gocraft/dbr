@@ -56,36 +56,37 @@ func BenchmarkCamelCaseToSnakeCase(b *testing.B) {
 	}
 }
 
-func TestStructMap(t *testing.T) {
+func TestFindValueByName(t *testing.T) {
 	for _, test := range []struct {
-		in  interface{}
-		ok  []string
-		bad []string
+		in   interface{}
+		name []string
+		want []string
 	}{
 		{
 			in: struct {
 				CreatedAt time.Time
 			}{},
-			ok: []string{"created_at"},
+			name: []string{"created_at"},
+			want: []string{"created_at"},
 		},
 		{
 			in: struct {
 				intVal int
 			}{},
-			bad: []string{"int_val"},
+			name: []string{"int_val"},
 		},
 		{
 			in: struct {
 				IntVal int `db:"test"`
 			}{},
-			ok:  []string{"test"},
-			bad: []string{"int_val"},
+			name: []string{"test"},
+			want: []string{"test"},
 		},
 		{
 			in: struct {
 				IntVal int `db:"-"`
 			}{},
-			bad: []string{"int_val"},
+			name: []string{"int_val"},
 		},
 		{
 			in: struct {
@@ -93,17 +94,20 @@ func TestStructMap(t *testing.T) {
 					Test2 int
 				}
 			}{},
-			ok: []string{"test2"},
+			name: []string{"test2"},
+			want: []string{"test2"},
 		},
 	} {
-		m := structMap(reflect.ValueOf(test.in))
-		for _, c := range test.ok {
-			_, ok := m[c]
-			require.True(t, ok)
+		found := make([]interface{}, len(test.name))
+		findValueByName(reflect.ValueOf(test.in), test.name, found, false)
+
+		var got []string
+		for i, v := range found {
+			if v != nil {
+				got = append(got, test.name[i])
+			}
 		}
-		for _, c := range test.bad {
-			_, ok := m[c]
-			require.False(t, ok)
-		}
+
+		require.Equal(t, test.want, got)
 	}
 }

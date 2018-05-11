@@ -43,17 +43,11 @@ func camelCaseToSnakeCase(name string) string {
 	return buf.String()
 }
 
-func structMap(value reflect.Value) map[string]reflect.Value {
-	m := make(map[string]reflect.Value)
-	structValue(m, value)
-	return m
-}
-
 var (
 	typeValuer = reflect.TypeOf((*driver.Valuer)(nil)).Elem()
 )
 
-func structValue(m map[string]reflect.Value, value reflect.Value) {
+func findValueByName(value reflect.Value, name []string, found []interface{}, retPtr bool) {
 	if value.Type().Implements(typeValuer) {
 		return
 	}
@@ -62,7 +56,7 @@ func structValue(m map[string]reflect.Value, value reflect.Value) {
 		if value.IsNil() {
 			return
 		}
-		structValue(m, value.Elem())
+		findValueByName(value.Elem(), name, found, retPtr)
 	case reflect.Struct:
 		t := value.Type()
 		for i := 0; i < t.NumField(); i++ {
@@ -81,10 +75,19 @@ func structValue(m map[string]reflect.Value, value reflect.Value) {
 				tag = NameMapping(field.Name)
 			}
 			fieldValue := value.Field(i)
-			if _, ok := m[tag]; !ok {
-				m[tag] = fieldValue
+			for i, want := range name {
+				if want != tag {
+					continue
+				}
+				if found[i] == nil {
+					if retPtr {
+						found[i] = fieldValue.Addr().Interface()
+					} else {
+						found[i] = fieldValue
+					}
+				}
 			}
-			structValue(m, fieldValue)
+			findValueByName(fieldValue, name, found, retPtr)
 		}
 	}
 }

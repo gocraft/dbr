@@ -46,9 +46,9 @@ func Load(rows *sql.Rows, value interface{}) (int, error) {
 		var err error
 
 		if isMapOfSlices {
-			elem = reflect.New(v.Type().Elem().Elem()).Elem()
+			elem = reflectAlloc(v.Type().Elem().Elem())
 		} else if isSlice || isMap {
-			elem = reflect.New(v.Type().Elem()).Elem()
+			elem = reflectAlloc(v.Type().Elem())
 		} else {
 			elem = v
 		}
@@ -58,7 +58,7 @@ func Load(rows *sql.Rows, value interface{}) (int, error) {
 			if err != nil {
 				return 0, err
 			}
-			keyElem = reflect.New(v.Type().Key()).Elem()
+			keyElem = reflectAlloc(v.Type().Key())
 			keyPtr, err := findPtr(column[0:1], keyElem)
 			if err != nil {
 				return 0, err
@@ -95,6 +95,13 @@ func Load(rows *sql.Rows, value interface{}) (int, error) {
 	return count, nil
 }
 
+func reflectAlloc(typ reflect.Type) reflect.Value {
+	if typ.Kind() == reflect.Ptr {
+		return reflect.New(typ.Elem())
+	}
+	return reflect.New(typ).Elem()
+}
+
 type dummyScanner struct{}
 
 func (dummyScanner) Scan(interface{}) error {
@@ -107,18 +114,16 @@ var (
 )
 
 func findPtr(column []string, value reflect.Value) ([]interface{}, error) {
-	if value.Addr().Type().Implements(typeScanner) {
+	if value.CanAddr() && value.Addr().Type().Implements(typeScanner) {
 		return []interface{}{value.Addr().Interface()}, nil
 	}
 	switch value.Kind() {
 	case reflect.Struct:
-		var ptr []interface{}
-		m := structMap(value)
-		for _, key := range column {
-			if val, ok := m[key]; ok {
-				ptr = append(ptr, val.Addr().Interface())
-			} else {
-				ptr = append(ptr, dummyDest)
+		ptr := make([]interface{}, len(column))
+		findValueByName(value, column, ptr, true)
+		for i := range ptr {
+			if ptr[i] == nil {
+				ptr[i] = dummyDest
 			}
 		}
 		return ptr, nil

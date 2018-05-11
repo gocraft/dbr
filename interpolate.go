@@ -62,7 +62,7 @@ func (i *interpolator) interpolate(query string, value []interface{}, topLevel b
 		}
 
 		if valueIndex >= len(value) {
-			break
+			return ErrPlaceholderCount
 		}
 
 		i.WriteString(query[:index])
@@ -103,10 +103,8 @@ func (i *interpolator) encodePlaceholder(value interface{}, topLevel bool) error
 		}
 		paren := false
 		switch value.(type) {
-		case *SelectStmt:
+		case *SelectStmt, *union:
 			paren = !topLevel
-		case *union:
-			paren = true
 		}
 		if paren {
 			i.WriteString("(")
