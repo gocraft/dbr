@@ -20,9 +20,7 @@ BenchmarkLoadValues/sqlx_10000-8      	     100	  17004716 ns/op	 3193997 B/op	 
 BenchmarkLoadValues/dbr_10000-8       	     100	  16150062 ns/op	 2394698 B/op	   90051 allocs/op
 BenchmarkLoadValues/sqlx_100000-8     	      10	 170068209 ns/op	31679944 B/op	 1400053 allocs/op
 BenchmarkLoadValues/dbr_100000-8      	      10	 147202536 ns/op	23680625 B/op	  900061 allocs/op
-
 ```
-
 
 ## Driver support
 
