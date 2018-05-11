@@ -47,18 +47,22 @@ var (
 	typeValuer = reflect.TypeOf((*driver.Valuer)(nil)).Elem()
 )
 
-func findValueByName(value reflect.Value, name []string, found []interface{}, retPtr bool) {
-	if value.Type().Implements(typeValuer) {
-		return
+type tagStore struct {
+	m map[reflect.Type][]string
+}
+
+func newTagStore() *tagStore {
+	return &tagStore{
+		m: make(map[reflect.Type][]string),
 	}
-	switch value.Kind() {
-	case reflect.Ptr:
-		if value.IsNil() {
-			return
-		}
-		findValueByName(value.Elem(), name, found, retPtr)
-	case reflect.Struct:
-		t := value.Type()
+}
+
+func (s *tagStore) get(t reflect.Type) []string {
+	if t.Kind() != reflect.Struct {
+		return nil
+	}
+	if _, ok := s.m[t]; !ok {
+		l := make([]string, t.NumField())
 		for i := 0; i < t.NumField(); i++ {
 			field := t.Field(i)
 			if field.PkgPath != "" && !field.Anonymous {
@@ -74,20 +78,64 @@ func findValueByName(value reflect.Value, name []string, found []interface{}, re
 				// no tag, but we can record the field name
 				tag = NameMapping(field.Name)
 			}
+			l[i] = tag
+		}
+		s.m[t] = l
+	}
+	return s.m[t]
+}
+
+func (s *tagStore) findPtr(value reflect.Value, name []string, ptr []interface{}) error {
+	if value.CanAddr() && value.Addr().Type().Implements(typeScanner) {
+		ptr[0] = value.Addr().Interface()
+		return nil
+	}
+	switch value.Kind() {
+	case reflect.Struct:
+		s.findValueByName(value, name, ptr, true)
+		return nil
+	case reflect.Ptr:
+		if value.IsNil() {
+			value.Set(reflect.New(value.Type().Elem()))
+		}
+		return s.findPtr(value.Elem(), name, ptr)
+	default:
+		ptr[0] = value.Addr().Interface()
+		return nil
+	}
+}
+
+func (s *tagStore) findValueByName(value reflect.Value, name []string, ret []interface{}, retPtr bool) {
+	if value.Type().Implements(typeValuer) {
+		return
+	}
+	switch value.Kind() {
+	case reflect.Ptr:
+		if value.IsNil() {
+			return
+		}
+		s.findValueByName(value.Elem(), name, ret, retPtr)
+	case reflect.Struct:
+		l := s.get(value.Type())
+		for i := 0; i < value.NumField(); i++ {
+			tag := l[i]
+			if tag == "" {
+				continue
+			}
 			fieldValue := value.Field(i)
 			for i, want := range name {
 				if want != tag {
 					continue
 				}
-				if found[i] == nil {
+				if ret[i] == nil {
 					if retPtr {
-						found[i] = fieldValue.Addr().Interface()
+						ret[i] = fieldValue.Addr().Interface()
 					} else {
-						found[i] = fieldValue
+						ret[i] = fieldValue
 					}
 				}
 			}
-			findValueByName(fieldValue, name, found, retPtr)
+			s.findValueByName(fieldValue, name, ret, retPtr)
 		}
 	}
 }

@@ -26,6 +26,7 @@ func Load(rows *sql.Rows, value interface{}) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	ptr := make([]interface{}, len(column))
 
 	v := reflect.ValueOf(value)
 	if v.Kind() != reflect.Ptr || v.IsNil() {
@@ -39,11 +40,11 @@ func Load(rows *sql.Rows, value interface{}) (int, error) {
 	if isMap {
 		v.Set(reflect.MakeMap(v.Type()))
 	}
+
+	s := newTagStore()
 	count := 0
 	for rows.Next() {
 		var elem, keyElem reflect.Value
-		var ptr []interface{}
-		var err error
 
 		if isMapOfSlices {
 			elem = reflectAlloc(v.Type().Elem().Elem())
@@ -54,26 +55,35 @@ func Load(rows *sql.Rows, value interface{}) (int, error) {
 		}
 
 		if isMap {
-			ptr, err = findPtr(column[1:], elem)
+			err := s.findPtr(elem, column[1:], ptr[1:])
 			if err != nil {
 				return 0, err
 			}
 			keyElem = reflectAlloc(v.Type().Key())
-			keyPtr, err := findPtr(column[0:1], keyElem)
+			err = s.findPtr(keyElem, column[:1], ptr[:1])
 			if err != nil {
 				return 0, err
 			}
-			ptr = append(keyPtr, ptr...)
 		} else {
-			ptr, err = findPtr(column, elem)
+			err := s.findPtr(elem, column, ptr)
 			if err != nil {
 				return 0, err
 			}
 		}
 
+		// Before scanning, set nil pointer to dummy dest.
+		// After that, reset pointers to nil for the next batch.
+		for i := range ptr {
+			if ptr[i] == nil {
+				ptr[i] = dummyDest
+			}
+		}
 		err = rows.Scan(ptr...)
 		if err != nil {
 			return 0, err
+		}
+		for i := range ptr {
+			ptr[i] = nil
 		}
 
 		count++
@@ -112,26 +122,3 @@ var (
 	dummyDest   sql.Scanner = dummyScanner{}
 	typeScanner             = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
 )
-
-func findPtr(column []string, value reflect.Value) ([]interface{}, error) {
-	if value.CanAddr() && value.Addr().Type().Implements(typeScanner) {
-		return []interface{}{value.Addr().Interface()}, nil
-	}
-	switch value.Kind() {
-	case reflect.Struct:
-		ptr := make([]interface{}, len(column))
-		findValueByName(value, column, ptr, true)
-		for i := range ptr {
-			if ptr[i] == nil {
-				ptr[i] = dummyDest
-			}
-		}
-		return ptr, nil
-	case reflect.Ptr:
-		if value.IsNil() {
-			value.Set(reflect.New(value.Type().Elem()))
-		}
-		return findPtr(column, value.Elem())
-	}
-	return []interface{}{value.Addr().Interface()}, nil
-}
