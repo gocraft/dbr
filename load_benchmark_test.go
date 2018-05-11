@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -53,7 +54,7 @@ func BenchmarkLoadValues(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				var suggs []*Suggestion
 				b.StartTimer()
-				err := db.Select(&suggs, query)
+				err := db.SelectContext(context.Background(), &suggs, query)
 				b.StopTimer()
 				require.NoError(b, err)
 				require.Len(b, suggs, n)
@@ -65,7 +66,7 @@ func BenchmarkLoadValues(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				var suggs []*Suggestion
 				b.StartTimer()
-				_, err := sess.SelectBySql(query).Load(&suggs)
+				_, err := sess.SelectBySql(query).LoadContext(context.Background(), &suggs)
 				b.StopTimer()
 				require.NoError(b, err)
 				require.Len(b, suggs, n)

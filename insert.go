@@ -152,7 +152,8 @@ func (b *InsertStmt) Record(structValue interface{}) *InsertStmt {
 	if v.Kind() == reflect.Struct {
 		found := make([]interface{}, len(b.Column)+1)
 		// ID is recommended by golint here
-		findValueByName(v, append(b.Column, "id"), found, false)
+		s := newTagStore()
+		s.findValueByName(v, append(b.Column, "id"), found, false)
 
 		value := found[:len(found)-1]
 		for i, v := range value {

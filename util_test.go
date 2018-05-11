@@ -99,7 +99,8 @@ func TestFindValueByName(t *testing.T) {
 		},
 	} {
 		found := make([]interface{}, len(test.name))
-		findValueByName(reflect.ValueOf(test.in), test.name, found, false)
+		s := newTagStore()
+		s.findValueByName(reflect.ValueOf(test.in), test.name, found, false)
 
 		var got []string
 		for i, v := range found {
