@@ -15,6 +15,7 @@ type InsertStmt struct {
 
 	raw
 
+	toIgnore     bool
 	Table        string
 	Column       []string
 	Value        [][]interface{}
@@ -37,7 +38,13 @@ func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 		return ErrColumnNotSpecified
 	}
 
-	buf.WriteString("INSERT INTO ")
+	buf.WriteString("INSERT ")
+
+	if b.toIgnore {
+		buf.WriteString("IGNORE" )
+	}
+	buf.WriteString("INTO ")
+
 	buf.WriteString(d.QuoteIdent(b.Table))
 
 	var placeholderBuf strings.Builder
@@ -127,6 +134,11 @@ func (tx *Tx) InsertBySql(query string, value ...interface{}) *InsertStmt {
 	b.runner = tx
 	b.EventReceiver = tx
 	b.Dialect = tx.Dialect
+	return b
+}
+
+func (b *InsertStmt) SetIgnore(toIgnore bool) *InsertStmt {
+	b.toIgnore = toIgnore
 	return b
 }
 
