@@ -57,6 +57,11 @@ type Printer interface {
 	Print(v ...interface{})
 }
 
+// PrinterFunc implements Printer as a function.
+type PrinterFunc func(v ...interface{})
+
+func (f PrinterFunc) Print(v ...interface{}) { f(v...) }
+
 // NewPrintEventReceiver creates an instance that prints to the Printer you provide.
 // Passing nil will use a log.Logger that writes to os.Stderr.
 func NewPrintEventReceiver(p Printer) *PrintEventReceiver {
