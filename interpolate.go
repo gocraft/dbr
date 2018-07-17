@@ -56,7 +56,7 @@ func (i *interpolator) interpolate(query string, value []interface{}, topLevel b
 
 		// escape placeholder by repeating it twice
 		if strings.HasPrefix(query[index:], escapedPlaceholder) {
-			i.WriteString(query[:index+len(escapedPlaceholder)])
+			i.WriteString(query[:index+1]) // Write placeholder once, not twice
 			query = query[index+len(escapedPlaceholder):]
 			continue
 		}
