@@ -117,6 +117,28 @@ func TestMaps(t *testing.T) {
 	}
 }
 
+func TestConcreteType(t *testing.T) {
+	for _, sess := range testSession {
+		reset(t, sess)
+
+		_, err := sess.InsertInto("dbr_people").
+			Columns("name", "email").
+			Values("test1", "test1@test.com").
+			Values("test2", "test2@test.com").
+			Values("test2", "test3@test.com").
+			Exec()
+
+		var m []interface{}
+		cnt, err := sess.Select("*").From("dbr_people").Load(&m, dbrPerson{})
+		require.NoError(t, err)
+		require.Equal(t, cnt, 3)
+		require.Len(t, m, 3)
+		person, ok := m[0].(dbrPerson)
+		require.True(t, ok)
+		require.Equal(t, person.Name, "test1")
+	}
+}
+
 func TestPostgresArray(t *testing.T) {
 	sess := postgresSession
 	for _, v := range []string{

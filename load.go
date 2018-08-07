@@ -19,7 +19,7 @@ import (
 //
 // 4. map of slice; like map, values with the same key are
 // collected with a slice.
-func Load(rows *sql.Rows, value interface{}) (int, error) {
+func Load(rows *sql.Rows, value interface{}, concreteType ...interface{}) (int, error) {
 	defer rows.Close()
 
 	column, err := rows.Columns()
@@ -37,6 +37,10 @@ func Load(rows *sql.Rows, value interface{}) (int, error) {
 	isSlice := v.Kind() == reflect.Slice && v.Type().Elem().Kind() != reflect.Uint8 && !isScanner
 	isMap := v.Kind() == reflect.Map && !isScanner
 	isMapOfSlices := isMap && v.Type().Elem().Kind() == reflect.Slice && v.Type().Elem().Elem().Kind() != reflect.Uint8
+	var elemType reflect.Type
+	if len(concreteType) == 1 {
+		elemType = reflect.ValueOf(concreteType[0]).Type()
+	}
 	if isMap {
 		v.Set(reflect.MakeMap(v.Type()))
 	}
@@ -46,7 +50,9 @@ func Load(rows *sql.Rows, value interface{}) (int, error) {
 	for rows.Next() {
 		var elem, keyElem reflect.Value
 
-		if isMapOfSlices {
+		if elemType != nil {
+			elem = reflectAlloc(elemType)
+		} else if isMapOfSlices {
 			elem = reflectAlloc(v.Type().Elem().Elem())
 		} else if isSlice || isMap {
 			elem = reflectAlloc(v.Type().Elem())
