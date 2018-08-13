@@ -141,7 +141,7 @@ func exec(ctx context.Context, runner runner, log EventReceiver, builder Builder
 	return result, nil
 }
 
-func query(ctx context.Context, runner runner, log EventReceiver, builder Builder, d Dialect, dest interface{}, concreteType ...interface{}) (int, error) {
+func query(ctx context.Context, runner runner, log EventReceiver, builder Builder, d Dialect, dest interface{}) (int, error) {
 	timeout := runner.GetTimeout()
 	if timeout > 0 {
 		var cancel func()
@@ -176,7 +176,7 @@ func query(ctx context.Context, runner runner, log EventReceiver, builder Builde
 			"sql": query,
 		})
 	}
-	count, err := Load(rows, dest, concreteType...)
+	count, err := Load(rows, dest)
 	if err != nil {
 		return 0, log.EventErrKv("dbr.select.load.scan", err, kvs{
 			"sql": query,

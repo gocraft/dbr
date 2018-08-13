@@ -337,13 +337,13 @@ func (b *SelectStmt) LoadOne(value interface{}) error {
 	return b.LoadOneContext(context.Background(), value)
 }
 
-func (b *SelectStmt) LoadContext(ctx context.Context, value interface{}, concreteType ...interface{}) (int, error) {
-	return query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value, concreteType...)
+func (b *SelectStmt) LoadContext(ctx context.Context, value interface{}) (int, error) {
+	return query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value)
 }
 
 // Load loads multi-row SQL result into a slice of go variables.
 //
 // See https://godoc.org/github.com/gocraft/dbr#Load.
-func (b *SelectStmt) Load(value interface{}, concreteType ...interface{}) (int, error) {
-	return b.LoadContext(context.Background(), value, concreteType...)
+func (b *SelectStmt) Load(value interface{}) (int, error) {
+	return b.LoadContext(context.Background(), value)
 }

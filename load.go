@@ -5,6 +5,15 @@ import (
 	"reflect"
 )
 
+type interfaceLoader struct {
+	v   interface{}
+	typ reflect.Type
+}
+
+func InterfaceLoader(value interface{}, concreteType interface{}) interface{} {
+	return interfaceLoader{value, reflect.ValueOf(concreteType).Type()}
+}
+
 // Load loads any value from sql.Rows.
 //
 // value can be:
@@ -19,7 +28,7 @@ import (
 //
 // 4. map of slice; like map, values with the same key are
 // collected with a slice.
-func Load(rows *sql.Rows, value interface{}, concreteType ...interface{}) (int, error) {
+func Load(rows *sql.Rows, value interface{}) (int, error) {
 	defer rows.Close()
 
 	column, err := rows.Columns()
@@ -28,7 +37,17 @@ func Load(rows *sql.Rows, value interface{}, concreteType ...interface{}) (int, 
 	}
 	ptr := make([]interface{}, len(column))
 
-	v := reflect.ValueOf(value)
+	var v reflect.Value
+	var elemType reflect.Type
+
+	if il, ok := value.(interfaceLoader); ok {
+		v = reflect.ValueOf(il.v)
+		elemType = il.typ
+	} else {
+		v = reflect.ValueOf(value)
+	}
+
+	v = reflect.ValueOf(value)
 	if v.Kind() != reflect.Ptr || v.IsNil() {
 		return 0, ErrInvalidPointer
 	}
@@ -37,10 +56,6 @@ func Load(rows *sql.Rows, value interface{}, concreteType ...interface{}) (int, 
 	isSlice := v.Kind() == reflect.Slice && v.Type().Elem().Kind() != reflect.Uint8 && !isScanner
 	isMap := v.Kind() == reflect.Map && !isScanner
 	isMapOfSlices := isMap && v.Type().Elem().Kind() == reflect.Slice && v.Type().Elem().Elem().Kind() != reflect.Uint8
-	var elemType reflect.Type
-	if len(concreteType) == 1 {
-		elemType = reflect.ValueOf(concreteType[0]).Type()
-	}
 	if isMap {
 		v.Set(reflect.MakeMap(v.Type()))
 	}

@@ -117,7 +117,7 @@ func TestMaps(t *testing.T) {
 	}
 }
 
-func TestConcreteType(t *testing.T) {
+func TestInterfaceLoader(t *testing.T) {
 	for _, sess := range testSession {
 		reset(t, sess)
 
@@ -129,7 +129,7 @@ func TestConcreteType(t *testing.T) {
 			Exec()
 
 		var m []interface{}
-		cnt, err := sess.Select("*").From("dbr_people").Load(&m, dbrPerson{})
+		cnt, err := sess.Select("*").From("dbr_people").Load(InterfaceLoader(&m, dbrPerson{}))
 		require.NoError(t, err)
 		require.Equal(t, cnt, 3)
 		require.Len(t, m, 3)
