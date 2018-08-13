@@ -131,11 +131,11 @@ func TestInterfaceLoader(t *testing.T) {
 		var m []interface{}
 		cnt, err := sess.Select("*").From("dbr_people").Load(InterfaceLoader(&m, dbrPerson{}))
 		require.NoError(t, err)
-		require.Equal(t, cnt, 3)
+		require.Equal(t, 3, cnt)
 		require.Len(t, m, 3)
 		person, ok := m[0].(dbrPerson)
 		require.True(t, ok)
-		require.Equal(t, person.Name, "test1")
+		require.Equal(t, "test1", person.Name)
 	}
 }
 
