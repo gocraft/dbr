@@ -47,7 +47,6 @@ func Load(rows *sql.Rows, value interface{}) (int, error) {
 		v = reflect.ValueOf(value)
 	}
 
-	v = reflect.ValueOf(value)
 	if v.Kind() != reflect.Ptr || v.IsNil() {
 		return 0, ErrInvalidPointer
 	}
