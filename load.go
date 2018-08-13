@@ -11,7 +11,7 @@ type interfaceLoader struct {
 }
 
 func InterfaceLoader(value interface{}, concreteType interface{}) interface{} {
-	return interfaceLoader{value, reflect.ValueOf(concreteType).Type()}
+	return interfaceLoader{value, reflect.TypeOf(concreteType)}
 }
 
 // Load loads any value from sql.Rows.
