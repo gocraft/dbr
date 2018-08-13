@@ -5,6 +5,15 @@ import (
 	"reflect"
 )
 
+type interfaceLoader struct {
+	v   interface{}
+	typ reflect.Type
+}
+
+func InterfaceLoader(value interface{}, concreteType interface{}) interface{} {
+	return interfaceLoader{value, reflect.TypeOf(concreteType)}
+}
+
 // Load loads any value from sql.Rows.
 //
 // value can be:
@@ -28,7 +37,16 @@ func Load(rows *sql.Rows, value interface{}) (int, error) {
 	}
 	ptr := make([]interface{}, len(column))
 
-	v := reflect.ValueOf(value)
+	var v reflect.Value
+	var elemType reflect.Type
+
+	if il, ok := value.(interfaceLoader); ok {
+		v = reflect.ValueOf(il.v)
+		elemType = il.typ
+	} else {
+		v = reflect.ValueOf(value)
+	}
+
 	if v.Kind() != reflect.Ptr || v.IsNil() {
 		return 0, ErrInvalidPointer
 	}
@@ -46,7 +64,9 @@ func Load(rows *sql.Rows, value interface{}) (int, error) {
 	for rows.Next() {
 		var elem, keyElem reflect.Value
 
-		if isMapOfSlices {
+		if elemType != nil {
+			elem = reflectAlloc(elemType)
+		} else if isMapOfSlices {
 			elem = reflectAlloc(v.Type().Elem().Elem())
 		} else if isSlice || isMap {
 			elem = reflectAlloc(v.Type().Elem())
