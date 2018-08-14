@@ -1,14 +1,15 @@
 package dbr
 
-// identifier is a type of string
+// I is quoted identifier
 type I string
 
+// Build quotes string with dialect.
 func (i I) Build(d Dialect, buf Buffer) error {
 	buf.WriteString(d.QuoteIdent(string(i)))
 	return nil
 }
 
-// As creates an alias for expr. e.g. SELECT `a1` AS `a2`
+// As creates an alias for expr.
 func (i I) As(alias string) Builder {
 	return as(i, alias)
 }

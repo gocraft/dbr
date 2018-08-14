@@ -3,7 +3,7 @@ package dialect
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMySQL(t *testing.T) {
@@ -20,7 +20,7 @@ func TestMySQL(t *testing.T) {
 			want: "`col`",
 		},
 	} {
-		assert.Equal(t, test.want, MySQL.QuoteIdent(test.in))
+		require.Equal(t, test.want, MySQL.QuoteIdent(test.in))
 	}
 }
 
@@ -38,7 +38,7 @@ func TestPostgreSQL(t *testing.T) {
 			want: `"col"`,
 		},
 	} {
-		assert.Equal(t, test.want, PostgreSQL.QuoteIdent(test.in))
+		require.Equal(t, test.want, PostgreSQL.QuoteIdent(test.in))
 	}
 }
 
@@ -56,6 +56,6 @@ func TestSQLite3(t *testing.T) {
 			want: `"col"`,
 		},
 	} {
-		assert.Equal(t, test.want, SQLite3.QuoteIdent(test.in))
+		require.Equal(t, test.want, SQLite3.QuoteIdent(test.in))
 	}
 }

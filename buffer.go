@@ -1,9 +1,11 @@
 package dbr
 
-import "bytes"
+import "strings"
 
+// Buffer collects strings, and values that are ready to be interpolated.
+// This is used internally to efficiently build SQL statement.
 type Buffer interface {
-	WriteString(s string) (n int, err error)
+	WriteString(string) (int, error)
 	String() string
 
 	WriteValue(v ...interface{}) (err error)
@@ -11,10 +13,11 @@ type Buffer interface {
 }
 
 type buffer struct {
-	bytes.Buffer
+	strings.Builder
 	v []interface{}
 }
 
+// NewBuffer creates a new Buffer.
 func NewBuffer() Buffer {
 	return &buffer{}
 }

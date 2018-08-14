@@ -1,17 +1,17 @@
 package dbr
 
 import (
-	"bytes"
+	"context"
 	"fmt"
-	"log"
 	"os"
 	"testing"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gocraft/dbr/dialect"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 //
@@ -19,41 +19,17 @@ import (
 //
 
 var (
-	currID int64 = 256
-)
-
-// create id
-func nextID() int64 {
-	currID++
-	return currID
-}
-
-const (
-	mysqlDSN    = "root@unix(/tmp/mysql.sock)/uservoice_test?charset=utf8"
-	postgresDSN = "postgres://postgres@localhost:5432/uservoice_test?sslmode=disable"
+	mysqlDSN    = os.Getenv("DBR_TEST_MYSQL_DSN")
+	postgresDSN = os.Getenv("DBR_TEST_POSTGRES_DSN")
 	sqlite3DSN  = ":memory:"
 )
 
 func createSession(driver, dsn string) *Session {
-	var testDSN string
-	switch driver {
-	case "mysql":
-		testDSN = os.Getenv("DBR_TEST_MYSQL_DSN")
-	case "postgres":
-		testDSN = os.Getenv("DBR_TEST_POSTGRES_DSN")
-	case "sqlite3":
-		testDSN = os.Getenv("DBR_TEST_SQLITE3_DSN")
-	}
-	if testDSN != "" {
-		dsn = testDSN
-	}
 	conn, err := Open(driver, dsn, nil)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	sess := conn.NewSession(nil)
-	reset(sess)
-	return sess
+	return conn.NewSession(nil)
 }
 
 var (
@@ -81,7 +57,7 @@ type nullTypedRecord struct {
 	BoolVal    NullBool
 }
 
-func reset(sess *Session) {
+func reset(t *testing.T, sess *Session) {
 	var autoIncrementType string
 	switch sess.Dialect {
 	case dialect.MySQL:
@@ -110,102 +86,121 @@ func reset(sess *Session) {
 		)`, autoIncrementType),
 	} {
 		_, err := sess.Exec(v)
-		if err != nil {
-			log.Fatalf("Failed to execute statement: %s, Got error: %s", v, err)
-		}
-	}
-}
-
-func BenchmarkByteaNoBinaryEncode(b *testing.B) {
-	benchmarkBytea(b, postgresSession)
-}
-
-func BenchmarkByteaBinaryEncode(b *testing.B) {
-	benchmarkBytea(b, postgresBinarySession)
-}
-
-func benchmarkBytea(b *testing.B, sess *Session) {
-	data := bytes.Repeat([]byte("0123456789"), 1000)
-	for _, v := range []string{
-		`DROP TABLE IF EXISTS bytea_table`,
-		`CREATE TABLE bytea_table (
-			val bytea
-		)`,
-	} {
-		_, err := sess.Exec(v)
-		assert.NoError(b, err)
-	}
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		_, err := sess.InsertInto("bytea_table").Pair("val", data).Exec()
-		assert.NoError(b, err)
+		require.NoError(t, err)
 	}
 }
 
 func TestBasicCRUD(t *testing.T) {
 	for _, sess := range testSession {
+		reset(t, sess)
+
 		jonathan := dbrPerson{
 			Name:  "jonathan",
 			Email: "jonathan@uservoice.com",
 		}
 		insertColumns := []string{"name", "email"}
 		if sess.Dialect == dialect.PostgreSQL {
-			jonathan.Id = nextID()
+			jonathan.Id = 1
 			insertColumns = []string{"id", "name", "email"}
 		}
 		// insert
 		result, err := sess.InsertInto("dbr_people").Columns(insertColumns...).Record(&jonathan).Exec()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		rowsAffected, err := result.RowsAffected()
-		assert.NoError(t, err)
-		assert.EqualValues(t, 1, rowsAffected)
+		require.NoError(t, err)
+		require.Equal(t, int64(1), rowsAffected)
 
-		assert.True(t, jonathan.Id > 0)
+		require.True(t, jonathan.Id > 0)
 		// select
 		var people []dbrPerson
-		count, err := sess.Select("*").From("dbr_people").Where(Eq("id", jonathan.Id)).LoadStructs(&people)
-		assert.NoError(t, err)
-		if assert.Equal(t, 1, count) {
-			assert.Equal(t, jonathan.Id, people[0].Id)
-			assert.Equal(t, jonathan.Name, people[0].Name)
-			assert.Equal(t, jonathan.Email, people[0].Email)
-		}
+		count, err := sess.Select("*").From("dbr_people").Where(Eq("id", jonathan.Id)).Load(&people)
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+		require.Equal(t, jonathan.Id, people[0].Id)
+		require.Equal(t, jonathan.Name, people[0].Name)
+		require.Equal(t, jonathan.Email, people[0].Email)
 
 		// select id
 		ids, err := sess.Select("id").From("dbr_people").ReturnInt64s()
-		assert.NoError(t, err)
-		assert.Equal(t, 1, len(ids))
+		require.NoError(t, err)
+		require.Equal(t, 1, len(ids))
 
 		// select id limit
 		ids, err = sess.Select("id").From("dbr_people").Limit(1).ReturnInt64s()
-		assert.NoError(t, err)
-		assert.Equal(t, 1, len(ids))
+		require.NoError(t, err)
+		require.Equal(t, 1, len(ids))
 
 		// update
 		result, err = sess.Update("dbr_people").Where(Eq("id", jonathan.Id)).Set("name", "jonathan1").Exec()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		rowsAffected, err = result.RowsAffected()
-		assert.NoError(t, err)
-		assert.EqualValues(t, 1, rowsAffected)
+		require.NoError(t, err)
+		require.Equal(t, int64(1), rowsAffected)
 
 		var n NullInt64
-		sess.Select("count(*)").From("dbr_people").Where("name = ?", "jonathan1").LoadValue(&n)
-		assert.EqualValues(t, 1, n.Int64)
+		sess.Select("count(*)").From("dbr_people").Where("name = ?", "jonathan1").LoadOne(&n)
+		require.Equal(t, int64(1), n.Int64)
 
 		// delete
 		result, err = sess.DeleteFrom("dbr_people").Where(Eq("id", jonathan.Id)).Exec()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		rowsAffected, err = result.RowsAffected()
-		assert.NoError(t, err)
-		assert.EqualValues(t, 1, rowsAffected)
+		require.NoError(t, err)
+		require.Equal(t, int64(1), rowsAffected)
 
 		// select id
 		ids, err = sess.Select("id").From("dbr_people").ReturnInt64s()
-		assert.NoError(t, err)
-		assert.Equal(t, 0, len(ids))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(ids))
+	}
+}
+
+func TestTimeout(t *testing.T) {
+	mysqlSession := createSession("mysql", mysqlDSN)
+	postgresSession := createSession("postgres", postgresDSN)
+	sqlite3Session := createSession("sqlite3", sqlite3DSN)
+
+	// all test sessions should be here
+	testSession := []*Session{mysqlSession, postgresSession, sqlite3Session}
+
+	for _, sess := range testSession {
+		reset(t, sess)
+
+		// session op timeout
+		sess.Timeout = time.Nanosecond
+		var people []dbrPerson
+		_, err := sess.Select("*").From("dbr_people").Load(&people)
+		require.Equal(t, context.DeadlineExceeded, err)
+
+		_, err = sess.InsertInto("dbr_people").Columns("name", "email").Values("test", "test@test.com").Exec()
+		require.Equal(t, context.DeadlineExceeded, err)
+
+		_, err = sess.Update("dbr_people").Set("name", "test1").Exec()
+		require.Equal(t, context.DeadlineExceeded, err)
+
+		_, err = sess.DeleteFrom("dbr_people").Exec()
+		require.Equal(t, context.DeadlineExceeded, err)
+
+		// tx op timeout
+		sess.Timeout = 0
+		tx, err := sess.Begin()
+		require.NoError(t, err)
+		defer tx.RollbackUnlessCommitted()
+		tx.Timeout = time.Nanosecond
+
+		_, err = tx.Select("*").From("dbr_people").Load(&people)
+		require.Equal(t, context.DeadlineExceeded, err)
+
+		_, err = tx.InsertInto("dbr_people").Columns("name", "email").Values("test", "test@test.com").Exec()
+		require.Equal(t, context.DeadlineExceeded, err)
+
+		_, err = tx.Update("dbr_people").Set("name", "test1").Exec()
+		require.Equal(t, context.DeadlineExceeded, err)
+
+		_, err = tx.DeleteFrom("dbr_people").Exec()
+		require.Equal(t, context.DeadlineExceeded, err)
 	}
 }

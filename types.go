@@ -12,22 +12,22 @@ import (
 // Your app can use these Null types instead of the defaults. The sole benefit you get is a MarshalJSON method that is not retarded.
 //
 
-// NullString is a type that can be null or a string
+// NullString is a type that can be null or a string.
 type NullString struct {
 	sql.NullString
 }
 
-// NullFloat64 is a type that can be null or a float64
+// NullFloat64 is a type that can be null or a float64.
 type NullFloat64 struct {
 	sql.NullFloat64
 }
 
-// NullInt64 is a type that can be null or an int
+// NullInt64 is a type that can be null or an int.
 type NullInt64 struct {
 	sql.NullInt64
 }
 
-// NullTime is a type that can be null or a time
+// NullTime is a type that can be null or a time.
 type NullTime struct {
 	Time  time.Time
 	Valid bool // Valid is true if Time is not NULL
@@ -41,14 +41,14 @@ func (n NullTime) Value() (driver.Value, error) {
 	return n.Time, nil
 }
 
-// NullBool is a type that can be null or a bool
+// NullBool is a type that can be null or a bool.
 type NullBool struct {
 	sql.NullBool
 }
 
 var nullString = []byte("null")
 
-// MarshalJSON correctly serializes a NullString to JSON
+// MarshalJSON correctly serializes a NullString to JSON.
 func (n NullString) MarshalJSON() ([]byte, error) {
 	if n.Valid {
 		return json.Marshal(n.String)
@@ -56,7 +56,7 @@ func (n NullString) MarshalJSON() ([]byte, error) {
 	return nullString, nil
 }
 
-// MarshalJSON correctly serializes a NullInt64 to JSON
+// MarshalJSON correctly serializes a NullInt64 to JSON.
 func (n NullInt64) MarshalJSON() ([]byte, error) {
 	if n.Valid {
 		return json.Marshal(n.Int64)
@@ -64,7 +64,7 @@ func (n NullInt64) MarshalJSON() ([]byte, error) {
 	return nullString, nil
 }
 
-// MarshalJSON correctly serializes a NullFloat64 to JSON
+// MarshalJSON correctly serializes a NullFloat64 to JSON.
 func (n NullFloat64) MarshalJSON() ([]byte, error) {
 	if n.Valid {
 		return json.Marshal(n.Float64)
@@ -72,7 +72,7 @@ func (n NullFloat64) MarshalJSON() ([]byte, error) {
 	return nullString, nil
 }
 
-// MarshalJSON correctly serializes a NullTime to JSON
+// MarshalJSON correctly serializes a NullTime to JSON.
 func (n NullTime) MarshalJSON() ([]byte, error) {
 	if n.Valid {
 		return json.Marshal(n.Time)
@@ -80,7 +80,7 @@ func (n NullTime) MarshalJSON() ([]byte, error) {
 	return nullString, nil
 }
 
-// MarshalJSON correctly serializes a NullBool to JSON
+// MarshalJSON correctly serializes a NullBool to JSON.
 func (n NullBool) MarshalJSON() ([]byte, error) {
 	if n.Valid {
 		return json.Marshal(n.Bool)
@@ -88,7 +88,7 @@ func (n NullBool) MarshalJSON() ([]byte, error) {
 	return nullString, nil
 }
 
-// UnmarshalJSON correctly deserializes a NullString from JSON
+// UnmarshalJSON correctly deserializes a NullString from JSON.
 func (n *NullString) UnmarshalJSON(b []byte) error {
 	var s interface{}
 	if err := json.Unmarshal(b, &s); err != nil {
@@ -97,16 +97,19 @@ func (n *NullString) UnmarshalJSON(b []byte) error {
 	return n.Scan(s)
 }
 
-// UnmarshalJSON correctly deserializes a NullInt64 from JSON
+// UnmarshalJSON correctly deserializes a NullInt64 from JSON.
 func (n *NullInt64) UnmarshalJSON(b []byte) error {
 	var s json.Number
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
+	if s == "" {
+		return n.Scan(nil)
+	}
 	return n.Scan(s)
 }
 
-// UnmarshalJSON correctly deserializes a NullFloat64 from JSON
+// UnmarshalJSON correctly deserializes a NullFloat64 from JSON.
 func (n *NullFloat64) UnmarshalJSON(b []byte) error {
 	var s interface{}
 	if err := json.Unmarshal(b, &s); err != nil {
@@ -115,7 +118,7 @@ func (n *NullFloat64) UnmarshalJSON(b []byte) error {
 	return n.Scan(s)
 }
 
-// UnmarshalJSON correctly deserializes a NullTime from JSON
+// UnmarshalJSON correctly deserializes a NullTime from JSON.
 func (n *NullTime) UnmarshalJSON(b []byte) error {
 	// scan for null
 	if bytes.Equal(b, nullString) {
@@ -129,7 +132,7 @@ func (n *NullTime) UnmarshalJSON(b []byte) error {
 	return n.Scan(t)
 }
 
-// UnmarshalJSON correctly deserializes a NullBool from JSON
+// UnmarshalJSON correctly deserializes a NullBool from JSON.
 func (n *NullBool) UnmarshalJSON(b []byte) error {
 	var s interface{}
 	if err := json.Unmarshal(b, &s); err != nil {
@@ -138,26 +141,31 @@ func (n *NullBool) UnmarshalJSON(b []byte) error {
 	return n.Scan(s)
 }
 
+// NewNullInt64 creates a NullInt64 with Scan().
 func NewNullInt64(v interface{}) (n NullInt64) {
 	n.Scan(v)
 	return
 }
 
+// NewNullFloat64 creates a NullFloat64 with Scan().
 func NewNullFloat64(v interface{}) (n NullFloat64) {
 	n.Scan(v)
 	return
 }
 
+// NewNullString creates a NullString with Scan().
 func NewNullString(v interface{}) (n NullString) {
 	n.Scan(v)
 	return
 }
 
+// NewNullTime creates a NullTime with Scan().
 func NewNullTime(v interface{}) (n NullTime) {
 	n.Scan(v)
 	return
 }
 
+// NewNullBool creates a NullBool with Scan().
 func NewNullBool(v interface{}) (n NullBool) {
 	n.Scan(v)
 	return

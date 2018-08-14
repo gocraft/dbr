@@ -4,16 +4,16 @@ import (
 	"testing"
 
 	"github.com/gocraft/dbr/dialect"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDeleteStmt(t *testing.T) {
 	buf := NewBuffer()
 	builder := DeleteFrom("table").Where(Eq("a", 1))
 	err := builder.Build(dialect.MySQL, buf)
-	assert.NoError(t, err)
-	assert.Equal(t, "DELETE FROM `table` WHERE (`a` = ?)", buf.String())
-	assert.Equal(t, []interface{}{1}, buf.Value())
+	require.NoError(t, err)
+	require.Equal(t, "DELETE FROM `table` WHERE (`a` = ?)", buf.String())
+	require.Equal(t, []interface{}{1}, buf.Value())
 }
 
 func BenchmarkDeleteSQL(b *testing.B) {

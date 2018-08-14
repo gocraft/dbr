@@ -1,16 +1,27 @@
 package dbr
 
-// UpdateStmt builds `UPDATE ...`
+import (
+	"context"
+	"database/sql"
+	"strconv"
+)
+
+// UpdateStmt builds `UPDATE ...`.
 type UpdateStmt struct {
+	runner
+	EventReceiver
+	Dialect
+
 	raw
 
-	Table string
-	Value map[string]interface{}
-
-	WhereCond []Builder
+	Table      string
+	Value      map[string]interface{}
+	WhereCond  []Builder
+	LimitCount int64
 }
 
-// Build builds `UPDATE ...` in dialect
+type UpdateBuilder = UpdateStmt
+
 func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
 	if b.raw.Query != "" {
 		return b.raw.Build(d, buf)
@@ -48,29 +59,74 @@ func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
 			return err
 		}
 	}
+
+	if b.LimitCount >= 0 {
+		buf.WriteString(" LIMIT ")
+		buf.WriteString(strconv.FormatInt(b.LimitCount, 10))
+	}
+
 	return nil
 }
 
-// Update creates an UpdateStmt
+// Update creates an UpdateStmt.
 func Update(table string) *UpdateStmt {
 	return &UpdateStmt{
-		Table: table,
-		Value: make(map[string]interface{}),
+		Table:      table,
+		Value:      make(map[string]interface{}),
+		LimitCount: -1,
 	}
 }
 
-// UpdateBySql creates an UpdateStmt with raw query
+// Update creates an UpdateStmt.
+func (sess *Session) Update(table string) *UpdateStmt {
+	b := Update(table)
+	b.runner = sess
+	b.EventReceiver = sess
+	b.Dialect = sess.Dialect
+	return b
+}
+
+// Update creates an UpdateStmt.
+func (tx *Tx) Update(table string) *UpdateStmt {
+	b := Update(table)
+	b.runner = tx
+	b.EventReceiver = tx
+	b.Dialect = tx.Dialect
+	return b
+}
+
+// UpdateBySql creates an UpdateStmt with raw query.
 func UpdateBySql(query string, value ...interface{}) *UpdateStmt {
 	return &UpdateStmt{
 		raw: raw{
 			Query: query,
 			Value: value,
 		},
-		Value: make(map[string]interface{}),
+		Value:      make(map[string]interface{}),
+		LimitCount: -1,
 	}
 }
 
-// Where adds a where condition
+// UpdateBySql creates an UpdateStmt with raw query.
+func (sess *Session) UpdateBySql(query string, value ...interface{}) *UpdateStmt {
+	b := UpdateBySql(query, value...)
+	b.runner = sess
+	b.EventReceiver = sess
+	b.Dialect = sess.Dialect
+	return b
+}
+
+// UpdateBySql creates an UpdateStmt with raw query.
+func (tx *Tx) UpdateBySql(query string, value ...interface{}) *UpdateStmt {
+	b := UpdateBySql(query, value...)
+	b.runner = tx
+	b.EventReceiver = tx
+	b.Dialect = tx.Dialect
+	return b
+}
+
+// Where adds a where condition.
+// query can be Builder or string. value is used only if query type is string.
 func (b *UpdateStmt) Where(query interface{}, value ...interface{}) *UpdateStmt {
 	switch query := query.(type) {
 	case string:
@@ -81,16 +137,29 @@ func (b *UpdateStmt) Where(query interface{}, value ...interface{}) *UpdateStmt 
 	return b
 }
 
-// Set specifies a key-value pair
+// Set updates column with value.
 func (b *UpdateStmt) Set(column string, value interface{}) *UpdateStmt {
 	b.Value[column] = value
 	return b
 }
 
-// SetMap specifies a list of key-value pair
+// SetMap specifies a map of (column, value) to update in bulk.
 func (b *UpdateStmt) SetMap(m map[string]interface{}) *UpdateStmt {
 	for col, val := range m {
 		b.Set(col, val)
 	}
 	return b
+}
+
+func (b *UpdateStmt) Limit(n uint64) *UpdateStmt {
+	b.LimitCount = int64(n)
+	return b
+}
+
+func (b *UpdateStmt) Exec() (sql.Result, error) {
+	return b.ExecContext(context.Background())
+}
+
+func (b *UpdateStmt) ExecContext(ctx context.Context) (sql.Result, error) {
+	return exec(ctx, b.runner, b.EventReceiver, b, b.Dialect)
 }
