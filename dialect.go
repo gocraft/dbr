@@ -13,4 +13,6 @@ type Dialect interface {
 	EncodeBytes(b []byte) string
 
 	Placeholder(n int) string
+	JoinPrefix() string
+	JoinOn() string
 }
