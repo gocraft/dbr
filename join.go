@@ -11,7 +11,7 @@ const (
 
 func join(t joinType, table interface{}, on interface{}) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
-		buf.WriteString(" ")
+		buf.WriteString(d.JoinPrefix())
 		switch t {
 		case left:
 			buf.WriteString("LEFT ")
@@ -28,7 +28,7 @@ func join(t joinType, table interface{}, on interface{}) Builder {
 			buf.WriteString(placeholder)
 			buf.WriteValue(table)
 		}
-		buf.WriteString(" ON ")
+		buf.WriteString(d.JoinOn())
 		switch on := on.(type) {
 		case string:
 			buf.WriteString(on)

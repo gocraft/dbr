@@ -64,3 +64,11 @@ func (d mysql) EncodeBytes(b []byte) string {
 func (d mysql) Placeholder(_ int) string {
 	return "?"
 }
+
+func (d mysql) JoinPrefix() string {
+	return " "
+}
+
+func (d mysql) JoinOn() string {
+	return " ON "
+}
