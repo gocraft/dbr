@@ -15,4 +15,6 @@ type Dialect interface {
 	Placeholder(n int) string
 	JoinPrefix() string
 	JoinOn() string
+
+	CombinedOffset() bool
 }

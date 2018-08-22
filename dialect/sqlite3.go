@@ -46,3 +46,7 @@ func (d sqlite3) JoinPrefix() string {
 func (d sqlite3) JoinOn() string {
 	return " ON "
 }
+
+func (d sqlite3) CombinedOffset() bool {
+	return false
+}

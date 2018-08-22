@@ -72,3 +72,7 @@ func (d mysql) JoinPrefix() string {
 func (d mysql) JoinOn() string {
 	return " ON "
 }
+
+func (d mysql) CombinedOffset() bool {
+	return false
+}

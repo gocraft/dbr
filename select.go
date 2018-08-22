@@ -26,7 +26,6 @@ type SelectStmt struct {
 
 	LimitCount     int64
 	OffsetCount    int64
-	UseOffsetLimit bool
 }
 
 type SelectBuilder = SelectStmt
@@ -122,11 +121,15 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		}
 	}
 
-	if b.UseOffsetLimit {
-		buf.WriteString(" LIMIT ")
-		buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
-		buf.WriteString(" , ")
-		buf.WriteString(strconv.FormatInt(b.LimitCount, 10))
+	if d.CombinedOffset() {
+		if b.LimitCount >= 0 {
+			buf.WriteString(" LIMIT ")
+			if b.OffsetCount >= 0 {
+				buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
+				buf.WriteString(" , ")
+			}
+			buf.WriteString(strconv.FormatInt(b.LimitCount, 10))
+		}
 	} else {
 		if b.LimitCount >= 0 {
 			buf.WriteString(" LIMIT ")
@@ -273,13 +276,6 @@ func (b *SelectStmt) Limit(n uint64) *SelectStmt {
 
 func (b *SelectStmt) Offset(n uint64) *SelectStmt {
 	b.OffsetCount = int64(n)
-	return b
-}
-
-func (b *SelectStmt) OffsetLimit(offset, limit uint64) *SelectStmt {
-	b.LimitCount = int64(limit)
-	b.OffsetCount = int64(offset)
-	b.UseOffsetLimit = true
 	return b
 }
 

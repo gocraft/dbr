@@ -43,3 +43,7 @@ func (d postgreSQL) JoinPrefix() string {
 func (d postgreSQL) JoinOn() string {
 	return " ON "
 }
+
+func (d postgreSQL) CombinedOffset() bool {
+	return false
+}

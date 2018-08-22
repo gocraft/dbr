@@ -23,3 +23,7 @@ func (d clickhouse) JoinPrefix() string {
 func (d clickhouse) JoinOn() string {
 	return " USING "
 }
+
+func (d clickhouse) CombinedOffset() bool {
+	return true
+}
