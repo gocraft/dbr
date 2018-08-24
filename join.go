@@ -12,6 +12,7 @@ const (
 
 func join(t joinType, table interface{}, on interface{}) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
+		buf.WriteString(" ")
 		switch t {
 		case anyLeft:
 			buf.WriteString("ANY LEFT ")
