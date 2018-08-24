@@ -13,5 +13,5 @@ type Dialect interface {
 	EncodeBytes(b []byte) string
 
 	Placeholder(n int) string
-	SupportsOn() string
+	SupportsOn() bool
 }
