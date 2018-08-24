@@ -40,5 +40,5 @@ func (d sqlite3) Placeholder(_ int) string {
 }
 
 func (d sqlite3) SupportsOn() bool {
-	return false
+	return true
 }

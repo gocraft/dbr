@@ -37,5 +37,5 @@ func (d postgreSQL) Placeholder(n int) string {
 }
 
 func (d postgreSQL) SupportsOn() bool {
-	return false
+	return true
 }
