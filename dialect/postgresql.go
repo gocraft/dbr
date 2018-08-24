@@ -35,3 +35,7 @@ func (d postgreSQL) EncodeBytes(b []byte) string {
 func (d postgreSQL) Placeholder(n int) string {
 	return fmt.Sprintf("$%d", n+1)
 }
+
+func (d postgreSQL) SupportsOn() bool {
+	return false
+}

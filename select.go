@@ -299,6 +299,13 @@ func (b *SelectStmt) LeftJoin(table, on interface{}) *SelectStmt {
 	return b
 }
 
+// LeftJoin add left-join.
+// on can be Builder or string.
+func (b *SelectStmt) AnyLeftJoin(table, on interface{}) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, join(anyLeft, table, on))
+	return b
+}
+
 // RightJoin add right-join.
 // on can be Builder or string.
 func (b *SelectStmt) RightJoin(table, on interface{}) *SelectStmt {
