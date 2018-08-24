@@ -7,12 +7,15 @@ const (
 	left
 	right
 	full
+	anyLeft
 )
 
 func join(t joinType, table interface{}, on interface{}) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
-		buf.WriteString(d.JoinPrefix())
+		buf.WriteString(" ")
 		switch t {
+		case anyLeft:
+			buf.WriteString("ANY LEFT ")
 		case left:
 			buf.WriteString("LEFT ")
 		case right:
@@ -28,7 +31,11 @@ func join(t joinType, table interface{}, on interface{}) Builder {
 			buf.WriteString(placeholder)
 			buf.WriteValue(table)
 		}
-		buf.WriteString(d.JoinOn())
+		if d.SupportsOn() {
+			buf.WriteString(" ON ")
+		} else {
+			buf.WriteString(" USING ")
+		}
 		switch on := on.(type) {
 		case string:
 			buf.WriteString(on)

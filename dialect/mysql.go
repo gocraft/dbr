@@ -65,10 +65,6 @@ func (d mysql) Placeholder(_ int) string {
 	return "?"
 }
 
-func (d mysql) JoinPrefix() string {
-	return " "
-}
-
-func (d mysql) JoinOn() string {
-	return " ON "
+func (d mysql) SupportsOn() bool {
+	return true
 }
