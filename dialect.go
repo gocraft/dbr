@@ -17,4 +17,5 @@ type Dialect interface {
 	JoinOn() string
 
 	CombinedOffset() bool
+	SupportsOn() bool
 }

@@ -16,12 +16,8 @@ func (d clickhouse) EncodeTime(t time.Time) string {
 	return `'` + t.UTC().Format(clickhouseTimeFormat) + `'`
 }
 
-func (d clickhouse) JoinPrefix() string {
-	return " ALL "
-}
-
-func (d clickhouse) JoinOn() string {
-	return " USING "
+func (d clickhouse) SupportsOn() bool {
+	return false
 }
 
 func (d clickhouse) CombinedOffset() bool {

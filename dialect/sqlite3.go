@@ -39,12 +39,8 @@ func (d sqlite3) Placeholder(_ int) string {
 	return "?"
 }
 
-func (d sqlite3) JoinPrefix() string {
-	return " "
-}
-
-func (d sqlite3) JoinOn() string {
-	return " ON "
+func (d sqlite3) SupportsOn() bool {
+	return true
 }
 
 func (d sqlite3) CombinedOffset() bool {

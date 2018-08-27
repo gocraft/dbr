@@ -36,12 +36,8 @@ func (d postgreSQL) Placeholder(n int) string {
 	return fmt.Sprintf("$%d", n+1)
 }
 
-func (d postgreSQL) JoinPrefix() string {
-	return " "
-}
-
-func (d postgreSQL) JoinOn() string {
-	return " ON "
+func (d postgreSQL) SupportsOn() bool {
+	return true
 }
 
 func (d postgreSQL) CombinedOffset() bool {
