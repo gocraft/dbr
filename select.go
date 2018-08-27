@@ -317,6 +317,13 @@ func (b *SelectStmt) AnyLeftJoin(table, on interface{}) *SelectStmt {
 	return b
 }
 
+// AllFullJoin add all-full.
+// on can be Builder or string.
+func (b *SelectStmt) AllFullJoin(table, on interface{}) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, join(allFull, table, on))
+	return b
+}
+
 // RightJoin add right-join.
 // on can be Builder or string.
 func (b *SelectStmt) RightJoin(table, on interface{}) *SelectStmt {

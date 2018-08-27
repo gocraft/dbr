@@ -4,6 +4,7 @@ type joinType uint8
 
 const (
 	inner joinType = iota
+	allFull
 	left
 	right
 	full
@@ -16,6 +17,8 @@ func join(t joinType, table interface{}, on interface{}) Builder {
 		switch t {
 		case anyLeft:
 			buf.WriteString("ANY LEFT ")
+		case allFull:
+			buf.WriteString("ALL FULL ")
 		case left:
 			buf.WriteString("LEFT ")
 		case right:
