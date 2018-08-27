@@ -24,8 +24,8 @@ type SelectStmt struct {
 	HavingCond []Builder
 	Order      []Builder
 
-	LimitCount     int64
-	OffsetCount    int64
+	LimitCount  int64
+	OffsetCount int64
 }
 
 type SelectBuilder = SelectStmt
