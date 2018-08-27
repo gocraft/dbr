@@ -121,14 +121,25 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		}
 	}
 
-	if b.LimitCount >= 0 {
-		buf.WriteString(" LIMIT ")
-		buf.WriteString(strconv.FormatInt(b.LimitCount, 10))
-	}
+	if d.CombinedOffset() {
+		if b.LimitCount >= 0 {
+			buf.WriteString(" LIMIT ")
+			if b.OffsetCount >= 0 {
+				buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
+				buf.WriteString(" , ")
+			}
+			buf.WriteString(strconv.FormatInt(b.LimitCount, 10))
+		}
+	} else {
+		if b.LimitCount >= 0 {
+			buf.WriteString(" LIMIT ")
+			buf.WriteString(strconv.FormatInt(b.LimitCount, 10))
+		}
 
-	if b.OffsetCount >= 0 {
-		buf.WriteString(" OFFSET ")
-		buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
+		if b.OffsetCount >= 0 {
+			buf.WriteString(" OFFSET ")
+			buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
+		}
 	}
 	return nil
 }

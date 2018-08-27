@@ -19,3 +19,7 @@ func (d clickhouse) EncodeTime(t time.Time) string {
 func (d clickhouse) SupportsOn() bool {
 	return false
 }
+
+func (d clickhouse) CombinedOffset() bool {
+	return true
+}

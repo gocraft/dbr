@@ -39,3 +39,7 @@ func (d postgreSQL) Placeholder(n int) string {
 func (d postgreSQL) SupportsOn() bool {
 	return true
 }
+
+func (d postgreSQL) CombinedOffset() bool {
+	return false
+}

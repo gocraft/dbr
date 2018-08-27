@@ -68,3 +68,7 @@ func (d mysql) Placeholder(_ int) string {
 func (d mysql) SupportsOn() bool {
 	return true
 }
+
+func (d mysql) CombinedOffset() bool {
+	return false
+}
