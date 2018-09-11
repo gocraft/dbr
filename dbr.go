@@ -181,7 +181,10 @@ func queryRows(ctx context.Context, runner runner, log EventReceiver, builder Bu
 }
 
 func query(ctx context.Context, runner runner, log EventReceiver, builder Builder, d Dialect, dest interface{}) (int, error) {
-	query, rows, dest := queryRows(ctx, runner, log, builder, d)
+	query, rows, err := queryRows(ctx, runner, log, builder, d)
+	if err != nil {
+		return 0, err
+	}
 	count, err := Load(rows, dest)
 	if err != nil {
 		return 0, log.EventErrKv("dbr.select.load.scan", err, kvs{

@@ -128,8 +128,9 @@ func TestSelectRows(t *testing.T) {
 			Values("test3", "test3@test.com").
 			Exec()
 
-		rows, err := sess.Select("*").From("dbr_people").Rows()
+		rows, err := sess.Select("*").From("dbr_people").OrderAsc("id").Rows()
 		require.NoError(t, err)
+		defer rows.Close()
 
 		want := []dbrPerson{
 			{Id: 1, Name: "test1", Email: "test1@test.com"},
