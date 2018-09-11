@@ -145,7 +145,7 @@ func TestSelectRows(t *testing.T) {
 			count++
 		}
 
-		require.Equal(t, 3, len(want))
+		require.Equal(t, len(want), count)
 	}
 }
 

@@ -325,7 +325,8 @@ func (b *SelectStmt) Rows() (*sql.Rows, error) {
 }
 
 func (b *SelectStmt) RowsContext(ctx context.Context) (*sql.Rows, error) {
-	return queryRows(ctx, b.runner, b.EventReceiver, b, b.Dialect)
+	_, rows, err := queryRows(ctx, b.runner, b.EventReceiver, b, b.Dialect)
+	return rows, err
 }
 
 func (b *SelectStmt) LoadOneContext(ctx context.Context, value interface{}) error {
