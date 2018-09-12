@@ -1,6 +1,8 @@
 package dbr
 
-import "reflect"
+import (
+	"reflect"
+)
 
 func buildCond(d Dialect, buf Buffer, pred string, cond ...Builder) error {
 	for i, c := range cond {
@@ -115,5 +117,52 @@ func Lt(column string, value interface{}) Builder {
 func Lte(column string, value interface{}) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
 		return buildCmp(d, buf, "<=", column, value)
+	})
+}
+
+func buildLikeCmp(d Dialect, buf Buffer, pred string, column string, value interface{}) error {
+	if value == nil {
+		return ErrInvalidValue
+	}
+
+	v := reflect.ValueOf(value)
+	switch v.Kind() {
+	case reflect.String:
+		// pass as is
+		return buildCmp(d, buf, pred, column, value)
+	case reflect.Ptr, reflect.Interface: // pointer or interface
+		// for pointers & interfaces check
+		return buildLikeCmp(d, buf, pred, column, v.Elem().Interface())
+	case reflect.Slice:
+		switch v.Type().Elem().Kind() {
+		case reflect.Uint8: // bytes
+			// interpolator will handle this case
+			return buildCmp(d, buf, pred, column, string(value.([]byte)))
+		case reflect.Int32: // rune
+			// need to convert into string
+			return buildCmp(d, buf, pred, column, string(value.([]rune)))
+		}
+	}
+
+	return ErrInvalidValue
+}
+
+// Like is `LIKE`.
+// When value is nil, do nothing.
+// When value is a slice, do nothing.
+// Otherwise it will be translated to `LIKE`.
+func Like(column string, value interface{}) Builder {
+	return BuildFunc(func(d Dialect, buf Buffer) error {
+		return buildLikeCmp(d, buf, "LIKE", column, value)
+	})
+}
+
+// NotLike is `NOT LIKE`.
+// When value is nil, do nothing.
+// When value is a slice, do nothing.
+// Otherwise it will be translated to `NOT LIKE`.
+func NotLike(column string, value interface{}) Builder {
+	return BuildFunc(func(d Dialect, buf Buffer) error {
+		return buildLikeCmp(d, buf, "NOT LIKE", column, value)
 	})
 }
