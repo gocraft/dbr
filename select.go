@@ -26,6 +26,9 @@ type SelectStmt struct {
 
 	LimitCount  int64
 	OffsetCount int64
+
+	LimitByCol   []Builder
+	LimitByCount int64
 }
 
 type SelectBuilder = SelectStmt
@@ -139,6 +142,21 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		if b.OffsetCount >= 0 {
 			buf.WriteString(" OFFSET ")
 			buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
+		}
+	}
+
+	if b.LimitByCount > 0 {
+		buf.WriteString(" LIMIT ")
+		buf.WriteString(strconv.FormatInt(b.LimitByCount, 10))
+		buf.WriteString(" BY ")
+		for i, limit := range b.LimitByCol {
+			if i > 0 {
+				buf.WriteString(", ")
+			}
+			err := limit.Build(d, buf)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -266,6 +284,15 @@ func (b *SelectStmt) OrderDesc(col string) *SelectStmt {
 // OrderBy specifies columns for ordering.
 func (b *SelectStmt) OrderBy(col string) *SelectStmt {
 	b.Order = append(b.Order, Expr(col))
+	return b
+}
+
+func (b *SelectStmt) LimitBy(n uint64, col ...string) *SelectStmt {
+	b.LimitByCount = int64(n)
+	b.LimitByCol = []Builder{}
+	for _, limit := range col {
+		b.LimitByCol = append(b.LimitByCol, Expr(limit))
+	}
 	return b
 }
 
