@@ -1,6 +1,8 @@
 package dbr
 
-import "reflect"
+import (
+	"reflect"
+)
 
 func buildCond(d Dialect, buf Buffer, pred string, cond ...Builder) error {
 	for i, c := range cond {
@@ -115,5 +117,34 @@ func Lt(column string, value interface{}) Builder {
 func Lte(column string, value interface{}) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
 		return buildCmp(d, buf, "<=", column, value)
+	})
+}
+
+func buildLike(d Dialect, buf Buffer, column, pattern string, isNot bool, escape []string) error {
+	buf.WriteString(d.QuoteIdent(column))
+	if isNot {
+		buf.WriteString(" NOT LIKE ")
+	} else {
+		buf.WriteString(" LIKE ")
+	}
+	buf.WriteString(d.EncodeString(pattern))
+	if len(escape) > 0 {
+		buf.WriteString(" ESCAPE ")
+		buf.WriteString(d.EncodeString(escape[0]))
+	}
+	return nil
+}
+
+// Like is `LIKE`, with an optional `ESCAPE` clause
+func Like(column, value string, escape ...string) Builder {
+	return BuildFunc(func(d Dialect, buf Buffer) error {
+		return buildLike(d, buf, column, value, false, escape)
+	})
+}
+
+// NotLike is `NOT LIKE`, with an optional `ESCAPE` clause
+func NotLike(column, value string, escape ...string) Builder {
+	return BuildFunc(func(d Dialect, buf Buffer) error {
+		return buildLike(d, buf, column, value, true, escape)
 	})
 }
