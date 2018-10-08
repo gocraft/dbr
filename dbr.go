@@ -142,13 +142,9 @@ func exec(ctx context.Context, runner runner, log EventReceiver, builder Builder
 }
 
 func queryRows(ctx context.Context, runner runner, log EventReceiver, builder Builder, d Dialect) (string, *sql.Rows, error) {
-	timeout := runner.GetTimeout()
-	if timeout > 0 {
-		var cancel func()
-		ctx, cancel = context.WithTimeout(ctx, timeout)
-		defer cancel()
-	}
-
+	// discard the timeout set in the runner, the context should not be canceled
+	// implicitly here but explicitly by the caller since the returned *sql.Rows
+	// may still listening to the context
 	i := interpolator{
 		Buffer:       NewBuffer(),
 		Dialect:      d,
@@ -181,6 +177,13 @@ func queryRows(ctx context.Context, runner runner, log EventReceiver, builder Bu
 }
 
 func query(ctx context.Context, runner runner, log EventReceiver, builder Builder, d Dialect, dest interface{}) (int, error) {
+	timeout := runner.GetTimeout()
+	if timeout > 0 {
+		var cancel func()
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+
 	query, rows, err := queryRows(ctx, runner, log, builder, d)
 	if err != nil {
 		return 0, err
