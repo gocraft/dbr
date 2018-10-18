@@ -8,6 +8,9 @@ import (
 	"time"
 
 	"github.com/gocraft/dbr/dialect"
+	ot "github.com/opentracing/opentracing-go"
+	otext "github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
 )
 
 // Open creates a Connection.
@@ -131,9 +134,14 @@ func exec(ctx context.Context, runner runner, log EventReceiver, builder Builder
 			"sql": query,
 		})
 	}()
+	span, ctx := ot.StartSpanFromContext(ctx, "dbr.exec")
+	otext.DBStatement.Set(span, query)
+	defer span.Finish()
 
 	result, err := runner.ExecContext(ctx, query, value...)
 	if err != nil {
+		otext.Error.Set(span, true)
+		span.LogFields(otlog.String("event", "error"), otlog.Error(err))
 		return result, log.EventErrKv("dbr.exec.exec", err, kvs{
 			"sql": query,
 		})
@@ -165,9 +173,14 @@ func queryRows(ctx context.Context, runner runner, log EventReceiver, builder Bu
 			"sql": query,
 		})
 	}()
+	span, ctx := ot.StartSpanFromContext(ctx, "dbr.select")
+	otext.DBStatement.Set(span, query)
+	defer span.Finish()
 
 	rows, err := runner.QueryContext(ctx, query, value...)
 	if err != nil {
+		otext.Error.Set(span, true)
+		span.LogFields(otlog.String("event", "error"), otlog.Error(err))
 		return query, nil, log.EventErrKv("dbr.select.load.query", err, kvs{
 			"sql": query,
 		})
