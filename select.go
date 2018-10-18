@@ -124,6 +124,21 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		}
 	}
 
+	if b.LimitByCount > 0 {
+		buf.WriteString(" LIMIT ")
+		buf.WriteString(strconv.FormatInt(b.LimitByCount, 10))
+		buf.WriteString(" BY ")
+		for i, limit := range b.LimitByCol {
+			if i > 0 {
+				buf.WriteString(", ")
+			}
+			err := limit.Build(d, buf)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	if d.CombinedOffset() {
 		if b.LimitCount >= 0 {
 			buf.WriteString(" LIMIT ")
@@ -142,21 +157,6 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		if b.OffsetCount >= 0 {
 			buf.WriteString(" OFFSET ")
 			buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
-		}
-	}
-
-	if b.LimitByCount > 0 {
-		buf.WriteString(" LIMIT ")
-		buf.WriteString(strconv.FormatInt(b.LimitByCount, 10))
-		buf.WriteString(" BY ")
-		for i, limit := range b.LimitByCol {
-			if i > 0 {
-				buf.WriteString(", ")
-			}
-			err := limit.Build(d, buf)
-			if err != nil {
-				return err
-			}
 		}
 	}
 	return nil
