@@ -136,6 +136,7 @@ func exec(ctx context.Context, runner runner, log EventReceiver, builder Builder
 	}()
 	span, ctx := ot.StartSpanFromContext(ctx, "dbr.exec")
 	otext.DBStatement.Set(span, query)
+	otext.DBType.Set(span, "sql")
 	defer span.Finish()
 
 	result, err := runner.ExecContext(ctx, query, value...)
@@ -175,6 +176,7 @@ func queryRows(ctx context.Context, runner runner, log EventReceiver, builder Bu
 	}()
 	span, ctx := ot.StartSpanFromContext(ctx, "dbr.select")
 	otext.DBStatement.Set(span, query)
+	otext.DBType.Set(span, "sql")
 	defer span.Finish()
 
 	rows, err := runner.QueryContext(ctx, query, value...)
