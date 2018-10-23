@@ -132,7 +132,7 @@ func exec(ctx context.Context, runner runner, log EventReceiver, builder Builder
 		})
 	}()
 
-	otimpl, hasOpenTracing := log.(OpenTracingEventReceiver)
+	otimpl, hasOpenTracing := log.(TracingEventReceiver)
 	if hasOpenTracing {
 		ctx = otimpl.SpanStart(ctx, "dbr.exec", query)
 		defer otimpl.SpanFinish(ctx)
@@ -175,7 +175,7 @@ func queryRows(ctx context.Context, runner runner, log EventReceiver, builder Bu
 		})
 	}()
 
-	otimpl, hasOpenTracing := log.(OpenTracingEventReceiver)
+	otimpl, hasOpenTracing := log.(TracingEventReceiver)
 	if hasOpenTracing {
 		ctx = otimpl.SpanStart(ctx, "dbr.select", query)
 		defer otimpl.SpanFinish(ctx)

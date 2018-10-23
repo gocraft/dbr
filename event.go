@@ -12,9 +12,9 @@ type EventReceiver interface {
 	TimingKv(eventName string, nanoseconds int64, kvs map[string]string)
 }
 
-// OpenTracingEventReceiver is an optional interface an EventReceiver type can implement
-// to allow opentracing instrumentation
-type OpenTracingEventReceiver interface {
+// TracingEventReceiver is an optional interface an EventReceiver type can implement
+// to allow tracing instrumentation
+type TracingEventReceiver interface {
 	EventReceiver
 
 	SpanStart(ctx context.Context, eventName, query string) context.Context
