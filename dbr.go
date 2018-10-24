@@ -132,16 +132,16 @@ func exec(ctx context.Context, runner runner, log EventReceiver, builder Builder
 		})
 	}()
 
-	otimpl, hasOpenTracing := log.(TracingEventReceiver)
-	if hasOpenTracing {
-		ctx = otimpl.SpanStart(ctx, "dbr.exec", query)
-		defer otimpl.SpanFinish(ctx)
+	traceImpl, hasTracingImpl := log.(TracingEventReceiver)
+	if hasTracingImpl {
+		ctx = traceImpl.SpanStart(ctx, "dbr.exec", query)
+		defer traceImpl.SpanFinish(ctx)
 	}
 
 	result, err := runner.ExecContext(ctx, query, value...)
 	if err != nil {
-		if hasOpenTracing {
-			otimpl.SpanError(ctx, err)
+		if hasTracingImpl {
+			traceImpl.SpanError(ctx, err)
 		}
 		return result, log.EventErrKv("dbr.exec.exec", err, kvs{
 			"sql": query,
@@ -175,16 +175,16 @@ func queryRows(ctx context.Context, runner runner, log EventReceiver, builder Bu
 		})
 	}()
 
-	otimpl, hasOpenTracing := log.(TracingEventReceiver)
-	if hasOpenTracing {
-		ctx = otimpl.SpanStart(ctx, "dbr.select", query)
-		defer otimpl.SpanFinish(ctx)
+	traceImpl, hasTracingImpl := log.(TracingEventReceiver)
+	if hasTracingImpl {
+		ctx = traceImpl.SpanStart(ctx, "dbr.select", query)
+		defer traceImpl.SpanFinish(ctx)
 	}
 
 	rows, err := runner.QueryContext(ctx, query, value...)
 	if err != nil {
-		if hasOpenTracing {
-			otimpl.SpanError(ctx, err)
+		if hasTracingImpl {
+			traceImpl.SpanError(ctx, err)
 		}
 		return query, nil, log.EventErrKv("dbr.select.load.query", err, kvs{
 			"sql": query,
