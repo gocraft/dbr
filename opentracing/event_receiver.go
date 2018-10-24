@@ -8,7 +8,8 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 )
 
-// EventReceiver implements dbr.TracingEventReceiver for opentracing-go
+// EventReceiver provides an embeddable implementation of dbr.TracingEventReceiver
+// powered by opentracing-go.
 type EventReceiver struct{}
 
 // SpanStart starts a new query span from ctx, then returns a new context with the new span.
