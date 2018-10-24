@@ -15,8 +15,6 @@ type EventReceiver interface {
 // TracingEventReceiver is an optional interface an EventReceiver type can implement
 // to allow tracing instrumentation
 type TracingEventReceiver interface {
-	EventReceiver
-
 	SpanStart(ctx context.Context, eventName, query string) context.Context
 	SpanError(ctx context.Context, err error)
 	SpanFinish(ctx context.Context)
