@@ -3,6 +3,7 @@ package dbr
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,6 +19,13 @@ func TestTransactionCommit(t *testing.T) {
 
 		result, err := tx.InsertInto("dbr_people").Columns("id", "name", "email").Values(id, "Barack", "obama@whitehouse.gov").Exec()
 		require.NoError(t, err)
+		require.Len(t, sess.EventReceiver.(*testTraceReceiver).started, 1)
+		assert.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].eventName, "dbr.exec")
+		assert.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "INSERT")
+		assert.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "dbr_people")
+		assert.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "name")
+		assert.Equal(t, 1, sess.EventReceiver.(*testTraceReceiver).finished)
+		assert.Equal(t, 0, sess.EventReceiver.(*testTraceReceiver).errored)
 
 		rowsAffected, err := result.RowsAffected()
 		require.NoError(t, err)
@@ -29,6 +37,7 @@ func TestTransactionCommit(t *testing.T) {
 		var person dbrPerson
 		err = tx.Select("*").From("dbr_people").Where(Eq("id", id)).LoadOne(&person)
 		require.Error(t, err)
+		assert.Equal(t, 1, sess.EventReceiver.(*testTraceReceiver).errored)
 	}
 }
 

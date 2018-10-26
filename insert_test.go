@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/gocraft/dbr/dialect"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,6 +34,13 @@ func TestPostgresReturning(t *testing.T) {
 		Returning("id").Load(&person.Id)
 	require.NoError(t, err)
 	require.True(t, person.Id > 0)
+	require.Len(t, sess.EventReceiver.(*testTraceReceiver).started, 1)
+	assert.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].eventName, "dbr.select")
+	assert.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "INSERT")
+	assert.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "dbr_people")
+	assert.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "name")
+	assert.Equal(t, 1, sess.EventReceiver.(*testTraceReceiver).finished)
+	assert.Equal(t, 0, sess.EventReceiver.(*testTraceReceiver).errored)
 }
 
 func BenchmarkInsertValuesSQL(b *testing.B) {
