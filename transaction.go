@@ -28,7 +28,7 @@ func (sess *Session) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, err
 	sess.Event("dbr.begin")
 
 	return &Tx{
-		EventReceiver: sess,
+		EventReceiver: sess.EventReceiver,
 		Dialect:       sess.Dialect,
 		Tx:            tx,
 		Timeout:       sess.GetTimeout(),

@@ -59,7 +59,7 @@ func DeleteFrom(table string) *DeleteStmt {
 func (sess *Session) DeleteFrom(table string) *DeleteStmt {
 	b := DeleteFrom(table)
 	b.runner = sess
-	b.EventReceiver = sess
+	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
 	return b
 }
@@ -68,7 +68,7 @@ func (sess *Session) DeleteFrom(table string) *DeleteStmt {
 func (tx *Tx) DeleteFrom(table string) *DeleteStmt {
 	b := DeleteFrom(table)
 	b.runner = tx
-	b.EventReceiver = tx
+	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
 	return b
 }
@@ -88,7 +88,7 @@ func DeleteBySql(query string, value ...interface{}) *DeleteStmt {
 func (sess *Session) DeleteBySql(query string, value ...interface{}) *DeleteStmt {
 	b := DeleteBySql(query, value...)
 	b.runner = sess
-	b.EventReceiver = sess
+	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
 	return b
 }
@@ -97,7 +97,7 @@ func (sess *Session) DeleteBySql(query string, value ...interface{}) *DeleteStmt
 func (tx *Tx) DeleteBySql(query string, value ...interface{}) *DeleteStmt {
 	b := DeleteBySql(query, value...)
 	b.runner = tx
-	b.EventReceiver = tx
+	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
 	return b
 }
