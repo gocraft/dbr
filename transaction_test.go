@@ -18,6 +18,13 @@ func TestTransactionCommit(t *testing.T) {
 
 		result, err := tx.InsertInto("dbr_people").Columns("id", "name", "email").Values(id, "Barack", "obama@whitehouse.gov").Exec()
 		require.NoError(t, err)
+		require.Len(t, sess.EventReceiver.(*testTraceReceiver).started, 1)
+		require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].eventName, "dbr.exec")
+		require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "INSERT")
+		require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "dbr_people")
+		require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "name")
+		require.Equal(t, 1, sess.EventReceiver.(*testTraceReceiver).finished)
+		require.Equal(t, 0, sess.EventReceiver.(*testTraceReceiver).errored)
 
 		rowsAffected, err := result.RowsAffected()
 		require.NoError(t, err)
@@ -29,6 +36,7 @@ func TestTransactionCommit(t *testing.T) {
 		var person dbrPerson
 		err = tx.Select("*").From("dbr_people").Where(Eq("id", id)).LoadOne(&person)
 		require.Error(t, err)
+		require.Equal(t, 1, sess.EventReceiver.(*testTraceReceiver).errored)
 	}
 }
 

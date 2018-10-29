@@ -33,6 +33,13 @@ func TestPostgresReturning(t *testing.T) {
 		Returning("id").Load(&person.Id)
 	require.NoError(t, err)
 	require.True(t, person.Id > 0)
+	require.Len(t, sess.EventReceiver.(*testTraceReceiver).started, 1)
+	require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].eventName, "dbr.select")
+	require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "INSERT")
+	require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "dbr_people")
+	require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "name")
+	require.Equal(t, 1, sess.EventReceiver.(*testTraceReceiver).finished)
+	require.Equal(t, 0, sess.EventReceiver.(*testTraceReceiver).errored)
 }
 
 func BenchmarkInsertValuesSQL(b *testing.B) {

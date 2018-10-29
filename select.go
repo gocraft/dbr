@@ -155,7 +155,7 @@ func prepareSelect(a []string) []interface{} {
 func (sess *Session) Select(column ...string) *SelectStmt {
 	b := Select(prepareSelect(column)...)
 	b.runner = sess
-	b.EventReceiver = sess
+	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
 	return b
 }
@@ -164,7 +164,7 @@ func (sess *Session) Select(column ...string) *SelectStmt {
 func (tx *Tx) Select(column ...string) *SelectStmt {
 	b := Select(prepareSelect(column)...)
 	b.runner = tx
-	b.EventReceiver = tx
+	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
 	return b
 }
@@ -185,7 +185,7 @@ func SelectBySql(query string, value ...interface{}) *SelectStmt {
 func (sess *Session) SelectBySql(query string, value ...interface{}) *SelectStmt {
 	b := SelectBySql(query, value...)
 	b.runner = sess
-	b.EventReceiver = sess
+	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
 	return b
 }
@@ -194,7 +194,7 @@ func (sess *Session) SelectBySql(query string, value ...interface{}) *SelectStmt
 func (tx *Tx) SelectBySql(query string, value ...interface{}) *SelectStmt {
 	b := SelectBySql(query, value...)
 	b.runner = tx
-	b.EventReceiver = tx
+	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
 	return b
 }
