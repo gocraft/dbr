@@ -11,7 +11,6 @@ import (
 	"github.com/gocraft/dbr/dialect"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -89,6 +88,7 @@ func reset(t *testing.T, sess *Session) {
 		_, err := sess.Exec(v)
 		require.NoError(t, err)
 	}
+	// clear test data collected by testTraceReceiver
 	sess.EventReceiver = &testTraceReceiver{}
 }
 
@@ -176,19 +176,19 @@ func TestTimeout(t *testing.T) {
 		var people []dbrPerson
 		_, err := sess.Select("*").From("dbr_people").Load(&people)
 		require.Equal(t, context.DeadlineExceeded, err)
-		assert.Equal(t, 1, sess.EventReceiver.(*testTraceReceiver).errored)
+		require.Equal(t, 1, sess.EventReceiver.(*testTraceReceiver).errored)
 
 		_, err = sess.InsertInto("dbr_people").Columns("name", "email").Values("test", "test@test.com").Exec()
 		require.Equal(t, context.DeadlineExceeded, err)
-		assert.Equal(t, 2, sess.EventReceiver.(*testTraceReceiver).errored)
+		require.Equal(t, 2, sess.EventReceiver.(*testTraceReceiver).errored)
 
 		_, err = sess.Update("dbr_people").Set("name", "test1").Exec()
 		require.Equal(t, context.DeadlineExceeded, err)
-		assert.Equal(t, 3, sess.EventReceiver.(*testTraceReceiver).errored)
+		require.Equal(t, 3, sess.EventReceiver.(*testTraceReceiver).errored)
 
 		_, err = sess.DeleteFrom("dbr_people").Exec()
 		require.Equal(t, context.DeadlineExceeded, err)
-		assert.Equal(t, 4, sess.EventReceiver.(*testTraceReceiver).errored)
+		require.Equal(t, 4, sess.EventReceiver.(*testTraceReceiver).errored)
 
 		// tx op timeout
 		sess.Timeout = 0
