@@ -175,6 +175,33 @@ func (b *InsertStmt) Record(structValue interface{}) *InsertStmt {
 	return b
 }
 
+// RecordWithIncrement adds a tuple for columns from a struct.
+//
+// If there is a field called "Id" or "ID" in the struct,
+// it will be set to LastInsertId.
+func (b *InsertStmt) RecordWithIncrement(structValue interface{}, autoIncrement *int64) *InsertStmt {
+	v := reflect.Indirect(reflect.ValueOf(structValue))
+
+	if v.Kind() == reflect.Struct {
+		found := make([]interface{}, len(b.Column)+1)
+		// ID is recommended by golint here
+		s := newTagStore()
+		s.findValueByName(v, b.Column, found, false)
+
+		value := found[:len(found)-1]
+		for i, v := range value {
+			if v != nil {
+				value[i] = v.(reflect.Value).Interface()
+			}
+		}
+
+		b.Values(value...)
+	}
+
+	b.RecordID = autoIncrement
+	return b
+}
+
 // Returning specifies the returning columns for postgres.
 func (b *InsertStmt) Returning(column ...string) *InsertStmt {
 	b.ReturnColumn = column
