@@ -289,28 +289,52 @@ func (b *SelectStmt) OrderDir(col string, isAsc bool) *SelectStmt {
 // Join add inner-join.
 // on can be Builder or string.
 func (b *SelectStmt) Join(table, on interface{}) *SelectStmt {
-	b.JoinTable = append(b.JoinTable, join(inner, table, on))
+	b.JoinTable = append(b.JoinTable, join(inner, joinOn, table, on))
 	return b
 }
 
 // LeftJoin add left-join.
 // on can be Builder or string.
 func (b *SelectStmt) LeftJoin(table, on interface{}) *SelectStmt {
-	b.JoinTable = append(b.JoinTable, join(left, table, on))
+	b.JoinTable = append(b.JoinTable, join(left, joinOn, table, on))
 	return b
 }
 
 // RightJoin add right-join.
 // on can be Builder or string.
 func (b *SelectStmt) RightJoin(table, on interface{}) *SelectStmt {
-	b.JoinTable = append(b.JoinTable, join(right, table, on))
+	b.JoinTable = append(b.JoinTable, join(right, joinOn, table, on))
 	return b
 }
 
 // FullJoin add full-join.
 // on can be Builder or string.
 func (b *SelectStmt) FullJoin(table, on interface{}) *SelectStmt {
-	b.JoinTable = append(b.JoinTable, join(full, table, on))
+	b.JoinTable = append(b.JoinTable, join(full, joinOn, table, on))
+	return b
+}
+
+// JoinUsingUsing add inner-join with "USING"
+func (b *SelectStmt) JoinUsing(table, using string) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, join(inner, joinUsing, table, using))
+	return b
+}
+
+// LeftJoinUsing add left-join with "USING"
+func (b *SelectStmt) LeftJoinUsing(table, using string) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, join(left, joinUsing, table, using))
+	return b
+}
+
+// RightJoinUsing add right-join with "USING"
+func (b *SelectStmt) RightJoinUsing(table, using string) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, join(right, joinUsing, table, using))
+	return b
+}
+
+// FullJoinUsing add full-join with "USING"
+func (b *SelectStmt) FullJoinUsing(table, using string) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, join(full, joinUsing, table, using))
 	return b
 }
 

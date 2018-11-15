@@ -1,15 +1,21 @@
 package dbr
 
-type joinType uint8
+type (
+	joinType uint8
+	method uint8
+)
 
 const (
 	inner joinType = iota
 	left
 	right
 	full
+
+	joinOn method = iota
+	joinUsing
 )
 
-func join(t joinType, table interface{}, on interface{}) Builder {
+func join(t joinType, m method, table interface{}, on interface{}) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
 		buf.WriteString(" ")
 		switch t {
@@ -28,7 +34,11 @@ func join(t joinType, table interface{}, on interface{}) Builder {
 			buf.WriteString(placeholder)
 			buf.WriteValue(table)
 		}
-		buf.WriteString(" ON ")
+		if m == joinUsing {
+			buf.WriteString(" USING ")
+		} else {
+			buf.WriteString(" ON ")
+		}
 		switch on := on.(type) {
 		case string:
 			buf.WriteString(on)
