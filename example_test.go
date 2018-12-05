@@ -7,7 +7,8 @@ import (
 
 func ExampleOpen() {
 	// create a connection (e.g. "postgres", "mysql", or "sqlite3")
-	conn, _ := OpenMultiConnection(&ConnectionConfig{Driver:"postgres", Dsn: "..."}, &ConnectionConfig{Driver:"postgres", Dsn: "..."}, nil)
+	individualConn := &ConnectionConfig{Driver:"postgres", Dsn: "..."}
+	conn, _ := OpenMultiConnection(individualConn, individualConn, nil)
 	conn.Write.SetMaxOpenConns(10)
 
 	// create a session for each business unit of execution (e.g. a web request or goworkers job)
