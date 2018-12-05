@@ -24,8 +24,8 @@ var (
 	sqlite3DSN  = ":memory:"
 )
 
-func createSession(readConnConfig *ConnectionConfig, writeConnConfig *ConnectionConfig) *Session {
-	conn, err := OpenMultiConnection(readConnConfig, writeConnConfig, &testTraceReceiver{})
+func createSession(driver, dsn string) *Session {
+	conn, err := Open(driver, dsn, &testTraceReceiver{})
 	if err != nil {
 		panic(err)
 	}
@@ -33,17 +33,10 @@ func createSession(readConnConfig *ConnectionConfig, writeConnConfig *Connection
 }
 
 var (
-	mysqlConn = &ConnectionConfig{Driver:"mysql", Dsn: mysqlDSN}
-	mysqlSession          = createSession(mysqlConn, mysqlConn)
-
-	postgresConn = &ConnectionConfig{Driver:"postgres", Dsn: postgresDSN}
-	postgresSession       = createSession(postgresConn, postgresConn)
-
-	postgresBinaryConn = &ConnectionConfig{Driver:"postgres", Dsn: postgresDSN+"&binary_parameters=yes"}
-	postgresBinarySession = createSession(postgresBinaryConn, postgresBinaryConn)
-
-	sqlite3Conn = &ConnectionConfig{Driver:"sqlite3", Dsn: sqlite3DSN}
-	sqlite3Session        = createSession(sqlite3Conn, sqlite3Conn)
+	mysqlSession          = createSession("mysql", mysqlDSN)
+	postgresSession       = createSession("postgres", postgresDSN)
+	postgresBinarySession = createSession("postgres", postgresDSN+"&binary_parameters=yes")
+	sqlite3Session        = createSession("sqlite3", sqlite3DSN)
 
 	// all test sessions should be here
 	testSession = []*Session{mysqlSession, postgresSession, sqlite3Session}
@@ -69,7 +62,7 @@ func reset(t *testing.T, sess *Session) {
 	switch sess.Write.Dialect {
 	case dialect.MySQL:
 		autoIncrementType = "serial PRIMARY KEY"
-	case dialect.PostgreSQL :
+	case dialect.PostgreSQL:
 		autoIncrementType = "serial PRIMARY KEY"
 	case dialect.SQLite3:
 		autoIncrementType = "integer PRIMARY KEY"
@@ -88,7 +81,7 @@ func reset(t *testing.T, sess *Session) {
 			string_val varchar(255) NULL,
 			int64_val integer NULL,
 			float64_val float NULL,
-			time_val timestamp NULL,
+			time_val timestamp NULL ,
 			bool_val bool NULL
 		)`, autoIncrementType),
 	} {
@@ -168,14 +161,9 @@ func TestBasicCRUD(t *testing.T) {
 }
 
 func TestTimeout(t *testing.T) {
-	mysqlConn = &ConnectionConfig{Driver:"mysql", Dsn: mysqlDSN}
-	mysqlSession          = createSession(mysqlConn, mysqlConn)
-
-	postgresConn = &ConnectionConfig{Driver:"postgres", Dsn: postgresDSN}
-	postgresSession       = createSession(postgresConn, postgresConn)
-
-	sqlite3Conn = &ConnectionConfig{Driver:"sqlite3", Dsn: sqlite3DSN}
-	sqlite3Session        = createSession(sqlite3Conn, sqlite3Conn)
+	mysqlSession := createSession("mysql", mysqlDSN)
+	postgresSession := createSession("postgres", postgresDSN)
+	sqlite3Session := createSession("sqlite3", sqlite3DSN)
 
 	// all test sessions should be here
 	testSession := []*Session{mysqlSession, postgresSession, sqlite3Session}
