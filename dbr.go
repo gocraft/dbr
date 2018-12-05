@@ -41,6 +41,14 @@ func OpenMultiConnection(readConnConfig *ConnectionConfig, writeConnConfig *Conn
 		log = nullReceiver
 	}
 
+	if readConnConfig == nil {
+		return nil, fmt.Errorf("sql: unknown read connection configuration (forgotten?)")
+	}
+
+	if writeConnConfig == nil {
+		return nil, fmt.Errorf("sql: unknown write connection configuration (forgotten?)")
+	}
+
 	// read connection
 	readConn, err := sql.Open(readConnConfig.Driver, readConnConfig.Dsn)
 	if err != nil {
