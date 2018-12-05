@@ -46,7 +46,7 @@ var (
 	sqlite3Session        = createSession(sqlite3Conn, sqlite3Conn)
 
 	// all test sessions should be here
-	testSession = []*Session{mysqlSession, postgresSession, postgresBinarySession, sqlite3Session}
+	testSession = []*Session{mysqlSession, postgresSession, sqlite3Session}
 )
 
 type dbrPerson struct {
@@ -173,8 +173,6 @@ func TestTimeout(t *testing.T) {
 
 	postgresConn = &ConnectionConfig{Driver:"postgres", Dsn: postgresDSN}
 	postgresSession       = createSession(postgresConn, postgresConn)
-
-	postgresBinaryConn = &ConnectionConfig{Driver:"postgres", Dsn: postgresDSN+"&binary_parameters=yes"}
 
 	sqlite3Conn = &ConnectionConfig{Driver:"sqlite3", Dsn: sqlite3DSN}
 	sqlite3Session        = createSession(sqlite3Conn, sqlite3Conn)
