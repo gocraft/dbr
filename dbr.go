@@ -78,9 +78,11 @@ func loadDialect(driver string) (d Dialect, err error) {
 		d = dialect.PostgreSQL
 	case "sqlite3":
 		d = dialect.SQLite3
+	default:
+		return nil, ErrNotSupported
 	}
 
-	return nil, ErrNotSupported
+	return d, nil
 }
 
 const (
