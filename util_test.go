@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"dbr/vendor/github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSnakeCase(t *testing.T) {

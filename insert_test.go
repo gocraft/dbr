@@ -3,8 +3,8 @@ package dbr
 import (
 	"testing"
 
-	"dbr/vendor/github.com/gocraft/dbr/dialect"
-	"dbr/vendor/github.com/stretchr/testify/require"
+	"github.com/gocraft/dbr/dialect"
+	"github.com/stretchr/testify/require"
 )
 
 type insertTest struct {

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"dbr/vendor/github.com/jmoiron/sqlx"
-	"dbr/vendor/github.com/stretchr/testify/require"
+	"github.com/jmoiron/sqlx"
+	"github.com/stretchr/testify/require"
 )
 
 func BenchmarkLoadValues(b *testing.B) {

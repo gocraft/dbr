@@ -3,9 +3,9 @@ package dbr
 import (
 	"testing"
 
-	sqlmock "dbr/vendor/github.com/DATA-DOG/go-sqlmock"
-	"dbr/vendor/github.com/gocraft/dbr/dialect"
-	"dbr/vendor/github.com/stretchr/testify/require"
+	sqlmock "github.com/DATA-DOG/go-sqlmock"
+	"github.com/gocraft/dbr/dialect"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSQLMock(t *testing.T) {
