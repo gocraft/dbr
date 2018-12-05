@@ -12,9 +12,10 @@ func TestSQLMock(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 
+	individualConn := &DbAccess{DB: db, Dialect: dialect.MySQL}
 	conn := &Connection{
-		Read:&DbAccess{DB: db, Dialect: dialect.MySQL},
-		Write:&DbAccess{DB: db, Dialect: dialect.MySQL},
+		Read:individualConn,
+		Write:individualConn,
 		EventReceiver: &NullEventReceiver{},
 	}
 	sess := conn.NewSession(nil)
@@ -27,7 +28,10 @@ func TestSQLMock(t *testing.T) {
 
 	mock.ExpectClose()
 	conn.Read.Close()
-	conn.Write.Close()
+
+	if conn.Read != conn.Write {
+		conn.Write.Close()
+	}
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
