@@ -33,10 +33,17 @@ func createSession(readConnConfig *ConnectionConfig, writeConnConfig *Connection
 }
 
 var (
-	mysqlSession          = createSession(&ConnectionConfig{Driver:"mysql", Dsn: mysqlDSN}, &ConnectionConfig{Driver:"mysql", Dsn: mysqlDSN})
-	postgresSession       = createSession(&ConnectionConfig{Driver:"postgres", Dsn: postgresDSN}, &ConnectionConfig{Driver:"postgres", Dsn: postgresDSN})
-	postgresBinarySession = createSession(&ConnectionConfig{Driver:"postgres", Dsn: postgresDSN+"&binary_parameters=yes"}, &ConnectionConfig{Driver:"postgres", Dsn: postgresDSN+"&binary_parameters=yes"})
-	sqlite3Session        = createSession(&ConnectionConfig{Driver:"sqlite3", Dsn: sqlite3DSN}, &ConnectionConfig{Driver:"sqlite3", Dsn: sqlite3DSN})
+	mysqlConn = &ConnectionConfig{Driver:"mysql", Dsn: mysqlDSN}
+	mysqlSession          = createSession(mysqlConn, mysqlConn)
+
+	postgresConn = &ConnectionConfig{Driver:"postgres", Dsn: postgresDSN}
+	postgresSession       = createSession(postgresConn, postgresConn)
+
+	postgresBinaryConn = &ConnectionConfig{Driver:"postgres", Dsn: postgresDSN+"&binary_parameters=yes"}
+	postgresBinarySession = createSession(postgresBinaryConn, postgresBinaryConn)
+
+	sqlite3Conn = &ConnectionConfig{Driver:"sqlite3", Dsn: sqlite3DSN}
+	sqlite3Session        = createSession(sqlite3Conn, sqlite3Conn)
 
 	// all test sessions should be here
 	testSession = []*Session{mysqlSession, postgresSession, sqlite3Session}
@@ -161,10 +168,14 @@ func TestBasicCRUD(t *testing.T) {
 }
 
 func TestTimeout(t *testing.T) {
-	mysqlSession          = createSession(&ConnectionConfig{Driver:"mysql", Dsn: mysqlDSN}, &ConnectionConfig{Driver:"mysql", Dsn: mysqlDSN})
-	postgresSession       = createSession(&ConnectionConfig{Driver:"postgres", Dsn: postgresDSN}, &ConnectionConfig{Driver:"postgres", Dsn: postgresDSN})
-	sqlite3Session        = createSession(&ConnectionConfig{Driver:"sqlite3", Dsn: sqlite3DSN}, &ConnectionConfig{Driver:"sqlite3", Dsn: sqlite3DSN})
+	mysqlConn = &ConnectionConfig{Driver:"mysql", Dsn: mysqlDSN}
+	mysqlSession          = createSession(mysqlConn, mysqlConn)
 
+	postgresConn = &ConnectionConfig{Driver:"postgres", Dsn: postgresDSN}
+	postgresSession       = createSession(postgresConn, postgresConn)
+
+	sqlite3Conn = &ConnectionConfig{Driver:"sqlite3", Dsn: sqlite3DSN}
+	sqlite3Session        = createSession(sqlite3Conn, sqlite3Conn)
 
 	// all test sessions should be here
 	testSession := []*Session{mysqlSession, postgresSession, sqlite3Session}
