@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"dbr-aaa/vendor/github.com/gocraft/dbr/dialect"
+	"github.com/gocraft/dbr/dialect"
 )
 
 type ConnectionConfig struct{

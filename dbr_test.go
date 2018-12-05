@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	_ "dbr-aaa/vendor/github.com/go-sql-driver/mysql"
-	"dbr-aaa/vendor/github.com/gocraft/dbr/dialect"
-	_ "dbr-aaa/vendor/github.com/lib/pq"
-	_ "dbr-aaa/vendor/github.com/mattn/go-sqlite3"
-	"dbr-aaa/vendor/github.com/stretchr/testify/require"
+	_ "dbr/vendor/github.com/go-sql-driver/mysql"
+	"dbr/vendor/github.com/gocraft/dbr/dialect"
+	_ "dbr/vendor/github.com/lib/pq"
+	_ "dbr/vendor/github.com/mattn/go-sqlite3"
+	"dbr/vendor/github.com/stretchr/testify/require"
 )
 
 //

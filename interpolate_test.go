@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"dbr-aaa/vendor/github.com/gocraft/dbr/dialect"
-	"dbr-aaa/vendor/github.com/stretchr/testify/require"
+	"dbr/vendor/github.com/gocraft/dbr/dialect"
+	"dbr/vendor/github.com/stretchr/testify/require"
 )
 
 func TestInterpolateIgnoreBinary(t *testing.T) {

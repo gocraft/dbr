@@ -3,10 +3,10 @@ package dbr
 import (
 	"testing"
 
-	"dbr-aaa/vendor/github.com/lib/pq"
+	"dbr/vendor/github.com/lib/pq"
 
-	"dbr-aaa/vendor/github.com/gocraft/dbr/dialect"
-	"dbr-aaa/vendor/github.com/stretchr/testify/require"
+	"dbr/vendor/github.com/gocraft/dbr/dialect"
+	"dbr/vendor/github.com/stretchr/testify/require"
 )
 
 func TestSelectStmt(t *testing.T) {

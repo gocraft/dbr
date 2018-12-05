@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"dbr-aaa/vendor/github.com/stretchr/testify/require"
+	"dbr/vendor/github.com/stretchr/testify/require"
 )
 
 func BenchmarkByteaNoBinaryEncode(b *testing.B) {

@@ -3,7 +3,7 @@ package dbr
 import (
 	"testing"
 
-	"dbr-aaa/vendor/github.com/stretchr/testify/require"
+	"dbr/vendor/github.com/stretchr/testify/require"
 )
 
 func TestTransactionCommit(t *testing.T) {
