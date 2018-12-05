@@ -3,10 +3,10 @@ package dbr
 import (
 	"testing"
 
-	"github.com/lib/pq"
+	"dbr-aaa/vendor/github.com/lib/pq"
 
-	"github.com/gocraft/dbr/dialect"
-	"github.com/stretchr/testify/require"
+	"dbr-aaa/vendor/github.com/gocraft/dbr/dialect"
+	"dbr-aaa/vendor/github.com/stretchr/testify/require"
 )
 
 func TestSelectStmt(t *testing.T) {
@@ -180,7 +180,7 @@ func TestPostgresArray(t *testing.T) {
 			val integer[]
 		)`,
 	} {
-		_, err := sess.Exec(v)
+		_, err := sess.Write.Exec(v)
 		require.NoError(t, err)
 	}
 

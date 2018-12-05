@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gocraft/dbr/dialect"
-	"github.com/stretchr/testify/require"
+	"dbr-aaa/vendor/github.com/gocraft/dbr/dialect"
+	"dbr-aaa/vendor/github.com/stretchr/testify/require"
 )
 
 var (
@@ -38,7 +38,7 @@ func TestNullTypesScanning(t *testing.T) {
 			var record nullTypedRecord
 			err = sess.Select("*").From("null_types").Where(Eq("id", test.in.Id)).LoadOne(&record)
 			require.NoError(t, err)
-			if sess.Dialect == dialect.PostgreSQL {
+			if sess.Write.Dialect == dialect.PostgreSQL {
 				// TODO: https://github.com/lib/pq/issues/329
 				if !record.TimeVal.Time.IsZero() {
 					record.TimeVal.Time = record.TimeVal.Time.UTC()

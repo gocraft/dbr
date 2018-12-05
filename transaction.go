@@ -21,7 +21,7 @@ func (tx *Tx) GetTimeout() time.Duration {
 
 // BeginTx creates a transaction with TxOptions.
 func (sess *Session) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
-	tx, err := sess.Connection.BeginTx(ctx, opts)
+	tx, err := sess.Connection.Write.BeginTx(ctx, opts)
 	if err != nil {
 		return nil, sess.EventErr("dbr.begin.error", err)
 	}
@@ -29,9 +29,9 @@ func (sess *Session) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, err
 
 	return &Tx{
 		EventReceiver: sess.EventReceiver,
-		Dialect:       sess.Dialect,
+		Dialect:       sess.Write.Dialect,
 		Tx:            tx,
-		Timeout:       sess.GetTimeout(),
+		Timeout:       sess.Write.GetTimeout(),
 	}, nil
 }
 

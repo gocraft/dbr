@@ -7,8 +7,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gocraft/dbr/dialect"
+	"dbr-aaa/vendor/github.com/gocraft/dbr/dialect"
 )
+
+type ConnectionConfig struct{
+	Driver string
+	Dsn string
+}
 
 // Open creates a Connection.
 // log can be nil to ignore logging.
@@ -16,11 +21,48 @@ func Open(driver, dsn string, log EventReceiver) (*Connection, error) {
 	if log == nil {
 		log = nullReceiver
 	}
+
+	// connection
 	conn, err := sql.Open(driver, dsn)
 	if err != nil {
 		return nil, err
 	}
-	var d Dialect
+	dialect, err := loadDialect(driver)
+
+	db := &DbAccess{DB: conn, Dialect: dialect}
+
+	return &Connection{Read: db, Write:db, EventReceiver: log}, nil
+}
+
+// Open creates a Connection with multi read-write connections.
+// log can be nil to ignore logging.
+func OpenMultiConnection(readConnConfig *ConnectionConfig, writeConnConfig *ConnectionConfig, log EventReceiver) (*Connection, error) {
+	if log == nil {
+		log = nullReceiver
+	}
+
+	// read connection
+	readConn, err := sql.Open(readConnConfig.Driver, readConnConfig.Dsn)
+	if err != nil {
+		return nil, err
+	}
+	readDialect, err := loadDialect(readConnConfig.Driver)
+
+	// write connection
+	writeConn, err := sql.Open(writeConnConfig.Driver, writeConnConfig.Dsn)
+	if err != nil {
+		return nil, err
+	}
+	writeDialect, err := loadDialect(writeConnConfig.Driver)
+
+	return &Connection{
+		Read: &DbAccess{DB: readConn, Dialect: readDialect},
+		Write: &DbAccess{DB: writeConn, Dialect: writeDialect},
+		EventReceiver: log,
+	}, nil
+}
+
+func loadDialect(driver string) (d Dialect, err error) {
 	switch driver {
 	case "mysql":
 		d = dialect.MySQL
@@ -28,22 +70,27 @@ func Open(driver, dsn string, log EventReceiver) (*Connection, error) {
 		d = dialect.PostgreSQL
 	case "sqlite3":
 		d = dialect.SQLite3
-	default:
-		return nil, ErrNotSupported
 	}
-	return &Connection{DB: conn, EventReceiver: log, Dialect: d}, nil
+
+	return nil, ErrNotSupported
 }
 
 const (
 	placeholder = "?"
 )
 
-// Connection wraps sql.DB with an EventReceiver
+// Connection wraps sql.DbAccess with an EventReceiver
 // to send events, errors, and timings.
 type Connection struct {
+	Read *DbAccess
+	Write *DbAccess
+	EventReceiver
+}
+
+type DbAccess struct {
 	*sql.DB
 	Dialect
-	EventReceiver
+	Timeout time.Duration
 }
 
 // Session represents a business unit of execution.
@@ -58,12 +105,12 @@ type Connection struct {
 type Session struct {
 	*Connection
 	EventReceiver
-	Timeout time.Duration
+
 }
 
 // GetTimeout returns current timeout enforced in session.
-func (sess *Session) GetTimeout() time.Duration {
-	return sess.Timeout
+func (db *DbAccess) GetTimeout() time.Duration {
+	return db.Timeout
 }
 
 // NewSession instantiates a Session from Connection.

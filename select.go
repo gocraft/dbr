@@ -154,9 +154,9 @@ func prepareSelect(a []string) []interface{} {
 // Select creates a SelectStmt.
 func (sess *Session) Select(column ...string) *SelectStmt {
 	b := Select(prepareSelect(column)...)
-	b.runner = sess
+	b.runner = sess.Read
 	b.EventReceiver = sess.EventReceiver
-	b.Dialect = sess.Dialect
+	b.Dialect = sess.Read.Dialect
 	return b
 }
 
@@ -184,9 +184,9 @@ func SelectBySql(query string, value ...interface{}) *SelectStmt {
 // SelectBySql creates a SelectStmt from raw query.
 func (sess *Session) SelectBySql(query string, value ...interface{}) *SelectStmt {
 	b := SelectBySql(query, value...)
-	b.runner = sess
+	b.runner = sess.Read
 	b.EventReceiver = sess.EventReceiver
-	b.Dialect = sess.Dialect
+	b.Dialect = sess.Read.Dialect
 	return b
 }
 

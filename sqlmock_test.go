@@ -3,9 +3,9 @@ package dbr
 import (
 	"testing"
 
-	sqlmock "github.com/DATA-DOG/go-sqlmock"
-	"github.com/gocraft/dbr/dialect"
-	"github.com/stretchr/testify/require"
+	sqlmock "dbr-aaa/vendor/github.com/DATA-DOG/go-sqlmock"
+	"dbr-aaa/vendor/github.com/gocraft/dbr/dialect"
+	"dbr-aaa/vendor/github.com/stretchr/testify/require"
 )
 
 func TestSQLMock(t *testing.T) {
@@ -13,9 +13,9 @@ func TestSQLMock(t *testing.T) {
 	require.NoError(t, err)
 
 	conn := &Connection{
-		DB:            db,
+		Read:&DbAccess{DB: db, Dialect: dialect.MySQL},
+		Write:&DbAccess{DB: db, Dialect: dialect.MySQL},
 		EventReceiver: &NullEventReceiver{},
-		Dialect:       dialect.MySQL,
 	}
 	sess := conn.NewSession(nil)
 
@@ -26,7 +26,8 @@ func TestSQLMock(t *testing.T) {
 	require.Equal(t, []int64{1, 2}, id)
 
 	mock.ExpectClose()
-	conn.Close()
+	conn.Read.Close()
+	conn.Write.Close()
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }

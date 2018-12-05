@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/gocraft/dbr/dialect"
-	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/require"
+	_ "dbr-aaa/vendor/github.com/go-sql-driver/mysql"
+	"dbr-aaa/vendor/github.com/gocraft/dbr/dialect"
+	_ "dbr-aaa/vendor/github.com/lib/pq"
+	_ "dbr-aaa/vendor/github.com/mattn/go-sqlite3"
+	"dbr-aaa/vendor/github.com/stretchr/testify/require"
 )
 
 //
@@ -24,8 +24,8 @@ var (
 	sqlite3DSN  = ":memory:"
 )
 
-func createSession(driver, dsn string) *Session {
-	conn, err := Open(driver, dsn, &testTraceReceiver{})
+func createSession(readConnConfig *ConnectionConfig, writeConnConfig *ConnectionConfig) *Session {
+	conn, err := OpenMultiConnection(readConnConfig, writeConnConfig, &testTraceReceiver{})
 	if err != nil {
 		panic(err)
 	}
@@ -33,10 +33,10 @@ func createSession(driver, dsn string) *Session {
 }
 
 var (
-	mysqlSession          = createSession("mysql", mysqlDSN)
-	postgresSession       = createSession("postgres", postgresDSN)
-	postgresBinarySession = createSession("postgres", postgresDSN+"&binary_parameters=yes")
-	sqlite3Session        = createSession("sqlite3", sqlite3DSN)
+	mysqlSession          = createSession(&ConnectionConfig{Driver:"mysql", Dsn: mysqlDSN}, &ConnectionConfig{Driver:"mysql", Dsn: mysqlDSN})
+	postgresSession       = createSession(&ConnectionConfig{Driver:"postgres", Dsn: postgresDSN}, &ConnectionConfig{Driver:"postgres", Dsn: postgresDSN})
+	postgresBinarySession = createSession(&ConnectionConfig{Driver:"postgres", Dsn: postgresDSN+"&binary_parameters=yes"}, &ConnectionConfig{Driver:"postgres", Dsn: postgresDSN+"&binary_parameters=yes"})
+	sqlite3Session        = createSession(&ConnectionConfig{Driver:"sqlite3", Dsn: sqlite3DSN}, &ConnectionConfig{Driver:"sqlite3", Dsn: sqlite3DSN})
 
 	// all test sessions should be here
 	testSession = []*Session{mysqlSession, postgresSession, sqlite3Session}
@@ -59,7 +59,7 @@ type nullTypedRecord struct {
 
 func reset(t *testing.T, sess *Session) {
 	var autoIncrementType string
-	switch sess.Dialect {
+	switch sess.Write.Dialect {
 	case dialect.MySQL:
 		autoIncrementType = "serial PRIMARY KEY"
 	case dialect.PostgreSQL:
@@ -85,7 +85,7 @@ func reset(t *testing.T, sess *Session) {
 			bool_val bool NULL
 		)`, autoIncrementType),
 	} {
-		_, err := sess.Exec(v)
+		_, err := sess.Write.Exec(v)
 		require.NoError(t, err)
 	}
 	// clear test data collected by testTraceReceiver
@@ -101,7 +101,7 @@ func TestBasicCRUD(t *testing.T) {
 			Email: "jonathan@uservoice.com",
 		}
 		insertColumns := []string{"name", "email"}
-		if sess.Dialect == dialect.PostgreSQL {
+		if sess.Write.Dialect == dialect.PostgreSQL {
 			jonathan.Id = 1
 			insertColumns = []string{"id", "name", "email"}
 		}
@@ -161,9 +161,10 @@ func TestBasicCRUD(t *testing.T) {
 }
 
 func TestTimeout(t *testing.T) {
-	mysqlSession := createSession("mysql", mysqlDSN)
-	postgresSession := createSession("postgres", postgresDSN)
-	sqlite3Session := createSession("sqlite3", sqlite3DSN)
+	mysqlSession          = createSession(&ConnectionConfig{Driver:"mysql", Dsn: mysqlDSN}, &ConnectionConfig{Driver:"mysql", Dsn: mysqlDSN})
+	postgresSession       = createSession(&ConnectionConfig{Driver:"postgres", Dsn: postgresDSN}, &ConnectionConfig{Driver:"postgres", Dsn: postgresDSN})
+	sqlite3Session        = createSession(&ConnectionConfig{Driver:"sqlite3", Dsn: sqlite3DSN}, &ConnectionConfig{Driver:"sqlite3", Dsn: sqlite3DSN})
+
 
 	// all test sessions should be here
 	testSession := []*Session{mysqlSession, postgresSession, sqlite3Session}
@@ -172,7 +173,7 @@ func TestTimeout(t *testing.T) {
 		reset(t, sess)
 
 		// session op timeout
-		sess.Timeout = time.Nanosecond
+		sess.Write.Timeout = time.Nanosecond
 		var people []dbrPerson
 		_, err := sess.Select("*").From("dbr_people").Load(&people)
 		require.Equal(t, context.DeadlineExceeded, err)
@@ -191,7 +192,7 @@ func TestTimeout(t *testing.T) {
 		require.Equal(t, 4, sess.EventReceiver.(*testTraceReceiver).errored)
 
 		// tx op timeout
-		sess.Timeout = 0
+		sess.Write.Timeout = 0
 		tx, err := sess.Begin()
 		require.NoError(t, err)
 		defer tx.RollbackUnlessCommitted()

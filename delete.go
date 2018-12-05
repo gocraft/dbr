@@ -58,9 +58,9 @@ func DeleteFrom(table string) *DeleteStmt {
 // DeleteFrom creates a DeleteStmt.
 func (sess *Session) DeleteFrom(table string) *DeleteStmt {
 	b := DeleteFrom(table)
-	b.runner = sess
+	b.runner = sess.Write
 	b.EventReceiver = sess.EventReceiver
-	b.Dialect = sess.Dialect
+	b.Dialect = sess.Write.Dialect
 	return b
 }
 
@@ -87,9 +87,9 @@ func DeleteBySql(query string, value ...interface{}) *DeleteStmt {
 // DeleteBySql creates a DeleteStmt from raw query.
 func (sess *Session) DeleteBySql(query string, value ...interface{}) *DeleteStmt {
 	b := DeleteBySql(query, value...)
-	b.runner = sess
+	b.runner = sess.Write
 	b.EventReceiver = sess.EventReceiver
-	b.Dialect = sess.Dialect
+	b.Dialect = sess.Write.Dialect
 	return b
 }
 

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"dbr-aaa/vendor/github.com/stretchr/testify/require"
 )
 
 func BenchmarkByteaNoBinaryEncode(b *testing.B) {
@@ -23,7 +23,7 @@ func benchmarkBytea(b *testing.B, sess *Session) {
 			val bytea
 		)`,
 	} {
-		_, err := sess.Exec(v)
+		_, err := sess.Write.Exec(v)
 		require.NoError(b, err)
 	}
 	b.ResetTimer()

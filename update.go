@@ -80,9 +80,9 @@ func Update(table string) *UpdateStmt {
 // Update creates an UpdateStmt.
 func (sess *Session) Update(table string) *UpdateStmt {
 	b := Update(table)
-	b.runner = sess
+	b.runner = sess.Write
 	b.EventReceiver = sess.EventReceiver
-	b.Dialect = sess.Dialect
+	b.Dialect = sess.Write.Dialect
 	return b
 }
 
@@ -110,9 +110,9 @@ func UpdateBySql(query string, value ...interface{}) *UpdateStmt {
 // UpdateBySql creates an UpdateStmt with raw query.
 func (sess *Session) UpdateBySql(query string, value ...interface{}) *UpdateStmt {
 	b := UpdateBySql(query, value...)
-	b.runner = sess
+	b.runner = sess.Write
 	b.EventReceiver = sess.EventReceiver
-	b.Dialect = sess.Dialect
+	b.Dialect = sess.Write.Dialect
 	return b
 }
 

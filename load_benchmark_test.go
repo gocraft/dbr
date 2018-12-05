@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jmoiron/sqlx"
-	"github.com/stretchr/testify/require"
+	"dbr-aaa/vendor/github.com/jmoiron/sqlx"
+	"dbr-aaa/vendor/github.com/stretchr/testify/require"
 )
 
 func BenchmarkLoadValues(b *testing.B) {
@@ -19,7 +19,7 @@ func BenchmarkLoadValues(b *testing.B) {
 			body text
 		)`,
 	} {
-		_, err := sess.Exec(v)
+		_, err := sess.Write.Exec(v)
 		require.NoError(b, err)
 	}
 	tx, err := sess.Begin()

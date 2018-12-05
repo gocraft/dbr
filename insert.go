@@ -87,9 +87,9 @@ func InsertInto(table string) *InsertStmt {
 // InsertInto creates an InsertStmt.
 func (sess *Session) InsertInto(table string) *InsertStmt {
 	b := InsertInto(table)
-	b.runner = sess
+	b.runner = sess.Write
 	b.EventReceiver = sess.EventReceiver
-	b.Dialect = sess.Dialect
+	b.Dialect = sess.Write.Dialect
 	return b
 }
 
@@ -115,9 +115,9 @@ func InsertBySql(query string, value ...interface{}) *InsertStmt {
 // InsertBySql creates an InsertStmt from raw query.
 func (sess *Session) InsertBySql(query string, value ...interface{}) *InsertStmt {
 	b := InsertBySql(query, value...)
-	b.runner = sess
+	b.runner = sess.Write
 	b.EventReceiver = sess.EventReceiver
-	b.Dialect = sess.Dialect
+	b.Dialect = sess.Write.Dialect
 	return b
 }
 
