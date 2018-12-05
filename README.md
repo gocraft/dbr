@@ -32,6 +32,10 @@ See [godoc](https://godoc.org/github.com/gocraft/dbr) for more examples.
 conn, _ := Open("postgres", "...", nil)
 conn.SetMaxOpenConns(10)
 
+// create a multi read-write (read connection, write connection, log) connection (e.g. "postgres", "mysql", or "sqlite3")
+conn, _ = OpenMultiConnection(conn, _ = &ConnectionConfig{Driver:"mysql", Dsn: mysqlDSN}, &ConnectionConfig{Driver:"mysql", Dsn: mysqlDSN}, nil)
+conn.SetMaxOpenConns(10)
+
 // create a session for each business unit of execution (e.g. a web request or goworkers job)
 sess := conn.NewSession(nil)
 
