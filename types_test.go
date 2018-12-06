@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gocraft/dbr/dialect"
+	"github.com/embrace-io/dbr/dialect"
 	"github.com/stretchr/testify/require"
 )
 
