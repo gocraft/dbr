@@ -24,10 +24,10 @@ func (d clickhouse) CombinedOffset() bool {
 	return true
 }
 
-func (d clickhouse) OnConflict(constraint string) string {
+func (d clickhouse) OnConflict(_ string) string {
 	return ""
 }
 
-func (d clickhouse) Proposed(column string) string {
+func (d clickhouse) Proposed(_ string) string {
 	return ""
 }
