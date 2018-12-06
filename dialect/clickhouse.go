@@ -23,3 +23,11 @@ func (d clickhouse) SupportsOn() bool {
 func (d clickhouse) CombinedOffset() bool {
 	return true
 }
+
+func (d clickhouse) OnConflict(constraint string) string {
+	return ""
+}
+
+func (d clickhouse) Proposed(column string) string {
+	return ""
+}

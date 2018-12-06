@@ -43,3 +43,11 @@ func (d postgreSQL) SupportsOn() bool {
 func (d postgreSQL) CombinedOffset() bool {
 	return false
 }
+
+func (d postgreSQL) OnConflict(constraint string) string {
+	return fmt.Sprintf("ON CONFLICT ON CONSTRAINT %s DO UPDATE SET", d.QuoteIdent(constraint))
+}
+
+func (d postgreSQL) Proposed(column string) string {
+	return fmt.Sprintf("EXCLUDED.%s", d.QuoteIdent(column))
+}

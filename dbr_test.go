@@ -204,3 +204,21 @@ func TestTimeout(t *testing.T) {
 		require.Equal(t, context.DeadlineExceeded, err)
 	}
 }
+
+func TestOnConflict(t *testing.T) {
+	for _, sess := range testSession {
+		if sess.Dialect == dialect.SQLite3 || sess.Dialect == dialect.ClickHouse {
+			continue
+		}
+		for i := 0; i < 2; i++ {
+			b := sess.InsertInto("dbr_keys").Columns("key_value", "val_value").Values("key", "value")
+			b.OnConflict("dbr_keys_pkey").Action("val_value", Expr("CONCAT(?, 2)", Proposed("val_value")))
+			_, err := b.Exec()
+			assert.NoError(t, err)
+		}
+		var value string
+		_, err := sess.SelectBySql("SELECT val_value FROM dbr_keys WHERE key_value=?", "key").Load(&value)
+		assert.NoError(t, err)
+		assert.Equal(t, "value2", value)
+	}
+}
