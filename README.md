@@ -12,7 +12,7 @@ $ go get -u github.com/gocraft/dbr
 ```
 
 ```go
-import "github.com/gocraft/dbr"
+import "github.com/embrace-io/dbr"
 ```
 
 ## Driver support
