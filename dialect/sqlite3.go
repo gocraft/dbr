@@ -46,3 +46,11 @@ func (d sqlite3) SupportsOn() bool {
 func (d sqlite3) CombinedOffset() bool {
 	return false
 }
+
+func (d sqlite3) OnConflict(_ string) string {
+	return ""
+}
+
+func (d sqlite3) Proposed(_ string) string {
+	return ""
+}

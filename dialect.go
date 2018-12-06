@@ -14,6 +14,9 @@ type Dialect interface {
 
 	Placeholder(n int) string
 
+	OnConflict(constraint string) string
+	Proposed(column string) string
+
 	CombinedOffset() bool
 	SupportsOn() bool
 }

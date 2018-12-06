@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/embrace-io/dbr/dialect"
+	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
@@ -84,6 +84,8 @@ func reset(t *testing.T, sess *Session) {
 			time_val timestamp NULL ,
 			bool_val bool NULL
 		)`, autoIncrementType),
+		`DROP TABLE IF EXISTS dbr_keys`,
+		`CREATE TABLE dbr_keys (key_value varchar(255) PRIMARY KEY, val_value varchar(255))`,
 	} {
 		_, err := sess.Exec(v)
 		require.NoError(t, err)
@@ -202,5 +204,23 @@ func TestTimeout(t *testing.T) {
 
 		_, err = tx.DeleteFrom("dbr_people").Exec()
 		require.Equal(t, context.DeadlineExceeded, err)
+	}
+}
+
+func TestOnConflict(t *testing.T) {
+	for _, sess := range testSession {
+		if sess.Dialect == dialect.SQLite3 || sess.Dialect == dialect.Clickhouse {
+			continue
+		}
+		for i := 0; i < 2; i++ {
+			b := sess.InsertInto("dbr_keys").Columns("key_value", "val_value").Values("key", "value")
+			b.OnConflict("dbr_keys_pkey").Action("val_value", Expr("CONCAT(?, 2)", Proposed("val_value")))
+			_, err := b.Exec()
+			require.NoError(t, err)
+		}
+		var value string
+		_, err := sess.SelectBySql("SELECT val_value FROM dbr_keys WHERE key_value=?", "key").Load(&value)
+		require.NoError(t, err)
+		require.Equal(t, "value2", value)
 	}
 }
