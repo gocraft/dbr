@@ -161,6 +161,8 @@ Inspiration from these excellent libraries:
 * [sqlx](https://github.com/jmoiron/sqlx) - various useful tools and utils for interacting with database/sql.
 * [Squirrel](https://github.com/lann/squirrel) - simple fluent query builder.
 
+Upsert functionality shamelessly and gratefully adapted from [mailru/dbr](https://github.com/mailru/dbr)
+
 Authors:
 * Jonathan Novak -- [https://github.com/cypriss](https://github.com/cypriss)
 * Tai-Lin Chu -- [https://github.com/taylorchu](https://github.com/taylorchu)
