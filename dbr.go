@@ -10,6 +10,7 @@ import (
 	"github.com/gocraft/dbr/dialect"
 )
 
+// ConnectionConfig Connection Configuration
 type ConnectionConfig struct{
 	Driver string
 	Dsn string
@@ -34,8 +35,7 @@ func Open(driver, dsn string, log EventReceiver) (*Connection, error) {
 	return &Connection{Read: db, Write:db, EventReceiver: log}, nil
 }
 
-// Open creates a Connection with multi read-write connections.
-// log can be nil to ignore logging.
+// OpenMultiConnection Open creates a Connection with multi read-write connections. Log can be nil to ignore logging.
 func OpenMultiConnection(readConnConfig *ConnectionConfig, writeConnConfig *ConnectionConfig, log EventReceiver) (*Connection, error) {
 	if log == nil {
 		log = nullReceiver
@@ -97,6 +97,7 @@ type Connection struct {
 	EventReceiver
 }
 
+// DbAccess access to the database
 type DbAccess struct {
 	*sql.DB
 	Dialect
