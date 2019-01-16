@@ -63,6 +63,36 @@ func TestCondition(t *testing.T) {
 			query: "(`a` < ?) AND ((`b` > ?) OR (`c` != ?))",
 			value: []interface{}{1, 2, 3},
 		},
+		{
+			cond:  Like("a", "%BLAH%", "#"),
+			query: "`a` LIKE '%BLAH%' ESCAPE '#'",
+			value: nil,
+		},
+		{
+			cond:  Like("a", "%50#%%", "#"),
+			query: "`a` LIKE '%50#%%' ESCAPE '#'",
+			value: nil,
+		},
+		{
+			cond:  NotLike("a", "%BLAH%", "#"),
+			query: "`a` NOT LIKE '%BLAH%' ESCAPE '#'",
+			value: nil,
+		},
+		{
+			cond:  NotLike("a", "%50#%%", "#"),
+			query: "`a` NOT LIKE '%50#%%' ESCAPE '#'",
+			value: nil,
+		},
+		{
+			cond:  Like("a", "_x_"),
+			query: "`a` LIKE '_x_'",
+			value: nil,
+		},
+		{
+			cond:  NotLike("a", "_x_"),
+			query: "`a` NOT LIKE '_x_'",
+			value: nil,
+		},
 	} {
 		buf := NewBuffer()
 		err := test.cond.Build(dialect.MySQL, buf)

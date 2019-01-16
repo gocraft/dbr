@@ -1,5 +1,7 @@
 package dbr
 
+import "context"
+
 // EventReceiver gets events from dbr methods for logging purposes.
 type EventReceiver interface {
 	Event(eventName string)
@@ -8,6 +10,14 @@ type EventReceiver interface {
 	EventErrKv(eventName string, err error, kvs map[string]string) error
 	Timing(eventName string, nanoseconds int64)
 	TimingKv(eventName string, nanoseconds int64, kvs map[string]string)
+}
+
+// TracingEventReceiver is an optional interface an EventReceiver type can implement
+// to allow tracing instrumentation
+type TracingEventReceiver interface {
+	SpanStart(ctx context.Context, eventName, query string) context.Context
+	SpanError(ctx context.Context, err error)
+	SpanFinish(ctx context.Context)
 }
 
 type kvs map[string]string

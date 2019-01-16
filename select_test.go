@@ -117,6 +117,39 @@ func TestMaps(t *testing.T) {
 	}
 }
 
+func TestSelectRows(t *testing.T) {
+	for _, sess := range testSession {
+		reset(t, sess)
+
+		_, err := sess.InsertInto("dbr_people").
+			Columns("name", "email").
+			Values("test1", "test1@test.com").
+			Values("test2", "test2@test.com").
+			Values("test3", "test3@test.com").
+			Exec()
+
+		rows, err := sess.Select("*").From("dbr_people").OrderAsc("id").Rows()
+		require.NoError(t, err)
+		defer rows.Close()
+
+		want := []dbrPerson{
+			{Id: 1, Name: "test1", Email: "test1@test.com"},
+			{Id: 2, Name: "test2", Email: "test2@test.com"},
+			{Id: 3, Name: "test3", Email: "test3@test.com"},
+		}
+
+		count := 0
+		for rows.Next() {
+			var p dbrPerson
+			require.NoError(t, rows.Scan(&p.Id, &p.Name, &p.Email))
+			require.Equal(t, want[count], p)
+			count++
+		}
+
+		require.Equal(t, len(want), count)
+	}
+}
+
 func TestInterfaceLoader(t *testing.T) {
 	for _, sess := range testSession {
 		reset(t, sess)

@@ -128,7 +128,7 @@ func InsertInto(table string) *InsertStmt {
 func (sess *Session) InsertInto(table string) *InsertStmt {
 	b := InsertInto(table)
 	b.runner = sess
-	b.EventReceiver = sess
+	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
 	return b
 }
@@ -137,7 +137,7 @@ func (sess *Session) InsertInto(table string) *InsertStmt {
 func (tx *Tx) InsertInto(table string) *InsertStmt {
 	b := InsertInto(table)
 	b.runner = tx
-	b.EventReceiver = tx
+	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
 	return b
 }
@@ -156,7 +156,7 @@ func InsertBySql(query string, value ...interface{}) *InsertStmt {
 func (sess *Session) InsertBySql(query string, value ...interface{}) *InsertStmt {
 	b := InsertBySql(query, value...)
 	b.runner = sess
-	b.EventReceiver = sess
+	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
 	return b
 }
@@ -165,7 +165,7 @@ func (sess *Session) InsertBySql(query string, value ...interface{}) *InsertStmt
 func (tx *Tx) InsertBySql(query string, value ...interface{}) *InsertStmt {
 	b := InsertBySql(query, value...)
 	b.runner = tx
-	b.EventReceiver = tx
+	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
 	return b
 }

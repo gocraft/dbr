@@ -81,7 +81,7 @@ func Update(table string) *UpdateStmt {
 func (sess *Session) Update(table string) *UpdateStmt {
 	b := Update(table)
 	b.runner = sess
-	b.EventReceiver = sess
+	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
 	return b
 }
@@ -90,7 +90,7 @@ func (sess *Session) Update(table string) *UpdateStmt {
 func (tx *Tx) Update(table string) *UpdateStmt {
 	b := Update(table)
 	b.runner = tx
-	b.EventReceiver = tx
+	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
 	return b
 }
@@ -111,7 +111,7 @@ func UpdateBySql(query string, value ...interface{}) *UpdateStmt {
 func (sess *Session) UpdateBySql(query string, value ...interface{}) *UpdateStmt {
 	b := UpdateBySql(query, value...)
 	b.runner = sess
-	b.EventReceiver = sess
+	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
 	return b
 }
@@ -120,7 +120,7 @@ func (sess *Session) UpdateBySql(query string, value ...interface{}) *UpdateStmt
 func (tx *Tx) UpdateBySql(query string, value ...interface{}) *UpdateStmt {
 	b := UpdateBySql(query, value...)
 	b.runner = tx
-	b.EventReceiver = tx
+	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
 	return b
 }
