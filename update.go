@@ -14,10 +14,11 @@ type UpdateStmt struct {
 
 	raw
 
-	Table      string
-	Value      map[string]interface{}
-	WhereCond  []Builder
-	LimitCount int64
+	Table        string
+	Value        map[string]interface{}
+	WhereCond    []Builder
+	ReturnColumn []string
+	LimitCount   int64
 }
 
 type UpdateBuilder = UpdateStmt
@@ -57,6 +58,16 @@ func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
 		err := And(b.WhereCond...).Build(d, buf)
 		if err != nil {
 			return err
+		}
+	}
+
+	if len(b.ReturnColumn) > 0 {
+		buf.WriteString(" RETURNING ")
+		for i, col := range b.ReturnColumn {
+			if i > 0 {
+				buf.WriteString(",")
+			}
+			buf.WriteString(d.QuoteIdent(col))
 		}
 	}
 
@@ -137,6 +148,12 @@ func (b *UpdateStmt) Where(query interface{}, value ...interface{}) *UpdateStmt 
 	return b
 }
 
+// Returning specifies the returning columns for postgres.
+func (b *UpdateStmt) Returning(column ...string) *UpdateStmt {
+	b.ReturnColumn = column
+	return b
+}
+
 // Set updates column with value.
 func (b *UpdateStmt) Set(column string, value interface{}) *UpdateStmt {
 	b.Value[column] = value
@@ -162,4 +179,13 @@ func (b *UpdateStmt) Exec() (sql.Result, error) {
 
 func (b *UpdateStmt) ExecContext(ctx context.Context) (sql.Result, error) {
 	return exec(ctx, b.runner, b.EventReceiver, b, b.Dialect)
+}
+
+func (b *UpdateStmt) LoadContext(ctx context.Context, value interface{}) error {
+	_, err := query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value)
+	return err
+}
+
+func (b *UpdateStmt) Load(value interface{}) error {
+	return b.LoadContext(context.Background(), value)
 }
