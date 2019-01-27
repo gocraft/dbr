@@ -36,10 +36,9 @@ func TestPostgresUpdateReturning(t *testing.T) {
 	reset(t, sess)
 
 	var ids []int
-	err := sess.Update("dbr_people").Set("name", "Kordian").Where(Eq("id", 1)).
-		Returning("id").Load(&ids)
+	err := sess.Update("dbr_people").Set("name", "Kordian").
+		Where(Eq("id", 1)).Returning("id").Load(&ids)
 	require.NoError(t, err)
-	require.Len(t, ids, 1)
 	require.Len(t, sess.EventReceiver.(*testTraceReceiver).started, 1)
 	require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].eventName, "dbr.update")
 	require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "UPDATE")
