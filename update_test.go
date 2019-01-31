@@ -30,3 +30,21 @@ func BenchmarkUpdateMapSQL(b *testing.B) {
 		Update("table").SetMap(map[string]interface{}{"a": 1, "b": 2}).Build(dialect.MySQL, buf)
 	}
 }
+
+func TestPostgresUpdateReturning(t *testing.T) {
+	sess := postgresSession
+	reset(t, sess)
+
+	var ids []int
+	err := sess.Update("dbr_people").Set("name", "Kordian").
+		Where(Eq("id", 1)).Returning("id").Load(&ids)
+	require.NoError(t, err)
+	require.Len(t, sess.EventReceiver.(*testTraceReceiver).started, 1)
+	require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].eventName, "dbr.select")
+	require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "UPDATE")
+	require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "dbr_people")
+	require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "name")
+	require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "RETURNING")
+	require.Equal(t, 1, sess.EventReceiver.(*testTraceReceiver).finished)
+	require.Equal(t, 0, sess.EventReceiver.(*testTraceReceiver).errored)
+}
