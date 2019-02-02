@@ -74,7 +74,7 @@ func ExampleSelectStmt_Join() {
 func ExampleSelectStmt_As() {
 	sess := mysqlSession
 	sess.Select("count(id)").From(
-		Select("*").From("suggestions").As("count"),
+		Select(I("IDX").As("id")).From("suggestions"),
 	)
 }
 
@@ -151,12 +151,12 @@ func ExampleUnion() {
 	Union(
 		Select("*"),
 		Select("*"),
-	).As("subquery")
+	)
 }
 
 func ExampleUnionAll() {
 	UnionAll(
 		Select("*"),
 		Select("*"),
-	).As("subquery")
+	)
 }

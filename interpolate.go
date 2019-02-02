@@ -103,7 +103,7 @@ func (i *interpolator) encodePlaceholder(value interface{}, topLevel bool) error
 		}
 		paren := false
 		switch value.(type) {
-		case *SelectStmt, *union:
+		case *SelectStmt:
 			paren = !topLevel
 		}
 		if paren {

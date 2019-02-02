@@ -6,20 +6,14 @@ type union struct {
 }
 
 // Union builds `... UNION ...`.
-func Union(builder ...Builder) interface {
-	Builder
-	As(string) Builder
-} {
+func Union(builder ...Builder) Builder {
 	return &union{
 		builder: builder,
 	}
 }
 
 // UnionAll builds `... UNION ALL ...`.
-func UnionAll(builder ...Builder) interface {
-	Builder
-	As(string) Builder
-} {
+func UnionAll(builder ...Builder) Builder {
 	return &union{
 		builder: builder,
 		all:     true,
@@ -38,8 +32,4 @@ func (u *union) Build(d Dialect, buf Buffer) error {
 		buf.WriteValue(b)
 	}
 	return nil
-}
-
-func (u *union) As(alias string) Builder {
-	return as(u, alias)
 }

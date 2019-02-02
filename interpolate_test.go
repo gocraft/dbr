@@ -113,8 +113,8 @@ func TestInterpolateForDialect(t *testing.T) {
 		},
 		{
 			query: "?",
-			value: []interface{}{Select("a").From("table").As("a1")},
-			want:  "(SELECT a FROM table) AS `a1`",
+			value: []interface{}{Select(I("a").As("A")).From("table")},
+			want:  "SELECT `a` AS `A` FROM table",
 		},
 		{
 			query: "?",
@@ -122,9 +122,9 @@ func TestInterpolateForDialect(t *testing.T) {
 				UnionAll(
 					Select("a").From("table1"),
 					Select("b").From("table2"),
-				).As("t"),
+				),
 			},
-			want: "((SELECT a FROM table1) UNION ALL (SELECT b FROM table2)) AS `t`",
+			want: "(SELECT a FROM table1) UNION ALL (SELECT b FROM table2)",
 		},
 		{
 			query: "?",

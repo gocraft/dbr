@@ -314,11 +314,6 @@ func (b *SelectStmt) FullJoin(table, on interface{}) *SelectStmt {
 	return b
 }
 
-// As creates alias for select statement.
-func (b *SelectStmt) As(alias string) Builder {
-	return as(b, alias)
-}
-
 // Rows executes the query and returns the rows returned, or any error encountered.
 func (b *SelectStmt) Rows() (*sql.Rows, error) {
 	return b.RowsContext(context.Background())
