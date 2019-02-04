@@ -151,12 +151,12 @@ func ExampleUnion() {
 	Union(
 		Select("*"),
 		Select("*"),
-	).As("subquery")
+	)
 }
 
 func ExampleUnionAll() {
 	UnionAll(
 		Select("*"),
 		Select("*"),
-	).As("subquery")
+	)
 }

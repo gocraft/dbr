@@ -316,7 +316,7 @@ func (b *SelectStmt) FullJoin(table, on interface{}) *SelectStmt {
 
 // As creates alias for select statement.
 func (b *SelectStmt) As(alias string) Builder {
-	return as(b, alias)
+	return as((*selectStmtNoParens)(b), alias)
 }
 
 // Rows executes the query and returns the rows returned, or any error encountered.

@@ -114,7 +114,7 @@ func TestInterpolateForDialect(t *testing.T) {
 		{
 			query: "?",
 			value: []interface{}{Select("a").From("table").As("a1")},
-			want:  "(SELECT a FROM table) AS `a1`",
+			want:  "SELECT a FROM table AS `a1`",
 		},
 		{
 			query: "?",
@@ -122,9 +122,19 @@ func TestInterpolateForDialect(t *testing.T) {
 				UnionAll(
 					Select("a").From("table1"),
 					Select("b").From("table2"),
-				).As("t"),
+				),
 			},
-			want: "((SELECT a FROM table1) UNION ALL (SELECT b FROM table2)) AS `t`",
+			want: "SELECT a FROM table1 UNION ALL SELECT b FROM table2",
+		},
+		{
+			query: "?",
+			value: []interface{}{
+				Select("*").From(UnionAll(
+					Select("a").From("table1"),
+					Select("b").From("table2"),
+				)),
+			},
+			want: "SELECT * FROM (SELECT a FROM table1 UNION ALL SELECT b FROM table2)",
 		},
 		{
 			query: "?",
@@ -156,22 +166,25 @@ func TestInterpolateForDialect(t *testing.T) {
 // Attempts to test common SQL injection strings. See `InjectionAttempts` for
 // more information on the source and the strings themselves.
 func TestCommonSQLInjections(t *testing.T) {
-	for _, sess := range testSession {
-		reset(t, sess)
+	for _, test := range testSession {
+		t.Run(test.Test, func(t *testing.T) {
+			sess := test.Sess
+			reset(t, sess)
 
-		for _, injectionAttempt := range strings.Split(injectionAttempts, "\n") {
-			// Create a user with the attempted injection as the email address
-			_, err := sess.InsertInto("dbr_people").
-				Pair("name", injectionAttempt).
-				Exec()
-			require.NoError(t, err)
+			for _, injectionAttempt := range strings.Split(injectionAttempts, "\n") {
+				// Create a user with the attempted injection as the email address
+				_, err := sess.InsertInto("dbr_people").
+					Pair("name", injectionAttempt).
+					Exec()
+				require.NoError(t, err)
 
-			// SELECT the name back and ensure it's equal to the injection attempt
-			var name string
-			err = sess.Select("name").From("dbr_people").OrderDesc("id").Limit(1).LoadOne(&name)
-			require.NoError(t, err)
-			require.Equal(t, injectionAttempt, name)
-		}
+				// SELECT the name back and ensure it's equal to the injection attempt
+				var name string
+				err = sess.Select("name").From("dbr_people").OrderDesc("id").Limit(1).LoadOne(&name)
+				require.NoError(t, err)
+				require.Equal(t, injectionAttempt, name)
+			}
+		})
 	}
 }
 
