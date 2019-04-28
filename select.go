@@ -3,6 +3,7 @@ package dbr
 import (
 	"context"
 	"database/sql"
+	"math"
 	"strconv"
 )
 
@@ -122,15 +123,19 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		}
 	}
 
-	if b.LimitCount >= 0 {
+	if b.LimitCount >= 0 || b.OffsetCount >= 0 {
+		if b.LimitCount < 0 {
+			b.LimitCount = math.MaxInt64
+		}
 		buf.WriteString(" LIMIT ")
 		buf.WriteString(strconv.FormatInt(b.LimitCount, 10))
+
+		if b.OffsetCount >= 0 {
+			buf.WriteString(" OFFSET ")
+			buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
+		}
 	}
 
-	if b.OffsetCount >= 0 {
-		buf.WriteString(" OFFSET ")
-		buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
-	}
 	return nil
 }
 
