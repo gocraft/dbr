@@ -24,6 +24,7 @@ type SelectStmt struct {
 	Group      []Builder
 	HavingCond []Builder
 	Order      []Builder
+	Suffixes   []Builder
 
 	LimitCount  int64
 	OffsetCount int64
@@ -131,6 +132,17 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		buf.WriteString(" OFFSET ")
 		buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
 	}
+
+	if len(b.Suffixes) > 0 {
+		for _, suffix := range b.Suffixes {
+			buf.WriteString(" ")
+			err := suffix.Build(d, buf)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -266,6 +278,12 @@ func (b *SelectStmt) Limit(n uint64) *SelectStmt {
 
 func (b *SelectStmt) Offset(n uint64) *SelectStmt {
 	b.OffsetCount = int64(n)
+	return b
+}
+
+// Suffix adds an expression to the end of the query. This is useful to add dialect-specific clauses like FOR UPDATE
+func (b *SelectStmt) Suffix(suffix string, value ...interface{}) *SelectStmt {
+	b.Suffixes = append(b.Suffixes, Expr(suffix, value...))
 	return b
 }
 

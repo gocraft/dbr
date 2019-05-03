@@ -20,10 +20,12 @@ func TestSelectStmt(t *testing.T) {
 		Having(Eq("e", 2)).
 		OrderAsc("f").
 		Limit(3).
-		Offset(4)
+		Offset(4).
+		Suffix("FOR UPDATE")
+
 	err := builder.Build(dialect.MySQL, buf)
 	require.NoError(t, err)
-	require.Equal(t, "SELECT DISTINCT a, b FROM ? LEFT JOIN `table2` ON table.a1 = table.a2 WHERE (`c` = ?) GROUP BY d HAVING (`e` = ?) ORDER BY f ASC LIMIT 3 OFFSET 4", buf.String())
+	require.Equal(t, "SELECT DISTINCT a, b FROM ? LEFT JOIN `table2` ON table.a1 = table.a2 WHERE (`c` = ?) GROUP BY d HAVING (`e` = ?) ORDER BY f ASC LIMIT 3 OFFSET 4 FOR UPDATE", buf.String())
 	// two functions cannot be compared
 	require.Equal(t, 3, len(buf.Value()))
 }
