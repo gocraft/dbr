@@ -97,7 +97,7 @@ func ExampleInsertStmt_Record() {
 	}
 	sess := mysqlSession
 	sess.InsertInto("suggestions").
-		Columns("id", "title").
+		Columns("title").
 		Record(&sugg).
 		Exec()
 

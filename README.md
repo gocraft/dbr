@@ -123,7 +123,7 @@ sugg := &Suggestion{
 }
 sess := mysqlSession
 sess.InsertInto("suggestions").
-	Columns("id", "title").
+	Columns("title").
 	Record(&sugg).
 	Exec()
 
