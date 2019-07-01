@@ -20,6 +20,7 @@ type InsertStmt struct {
 	Value        [][]interface{}
 	ReturnColumn []string
 	RecordID     *int64
+	comments     Comments
 }
 
 type InsertBuilder = InsertStmt
@@ -36,6 +37,8 @@ func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 	if len(b.Column) == 0 {
 		return ErrColumnNotSpecified
 	}
+
+	b.comments.Write(buf)
 
 	buf.WriteString("INSERT INTO ")
 	buf.WriteString(d.QuoteIdent(b.Table))
@@ -132,6 +135,12 @@ func (tx *Tx) InsertBySql(query string, value ...interface{}) *InsertStmt {
 
 func (b *InsertStmt) Columns(column ...string) *InsertStmt {
 	b.Column = column
+	return b
+}
+
+// Comment adds a comment to prepended. All multi-line sql comment characters are stripped
+func (b *InsertStmt) Comment(comment string) *InsertStmt {
+	b.comments = b.comments.Append(comment)
 	return b
 }
 

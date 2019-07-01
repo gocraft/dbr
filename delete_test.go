@@ -9,10 +9,10 @@ import (
 
 func TestDeleteStmt(t *testing.T) {
 	buf := NewBuffer()
-	builder := DeleteFrom("table").Where(Eq("a", 1))
+	builder := DeleteFrom("table").Where(Eq("a", 1)).Comment("DELETE TEST")
 	err := builder.Build(dialect.MySQL, buf)
 	require.NoError(t, err)
-	require.Equal(t, "DELETE FROM `table` WHERE (`a` = ?)", buf.String())
+	require.Equal(t, "/* DELETE TEST */\nDELETE FROM `table` WHERE (`a` = ?)", buf.String())
 	require.Equal(t, []interface{}{1}, buf.Value())
 }
 
