@@ -2,15 +2,16 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.10
+      - image: circleci/golang:1.12
         environment:
           - DBR_TEST_MYSQL_DSN=root:root@tcp(127.0.0.1:3306)/circle_test
           - DBR_TEST_POSTGRES_DSN=postgres://postgres:mysecretpassword@127.0.0.1:5432/postgres?sslmode=disable
-      - image: percona:5.7.20
+          - GO111MODULE=on
+      - image: percona:5.7
         environment:
           - MYSQL_DATABASE=circle_test
           - MYSQL_ROOT_PASSWORD=root
-      - image: postgres:9.6-alpine
+      - image: postgres:11-alpine
 
     working_directory: /go/src/github.com/gocraft/dbr
     steps:
@@ -23,5 +24,4 @@ jobs:
       - run:
           name: Wait for db
           command: dockerize -wait tcp://127.0.0.1:3306 -wait tcp://127.0.0.1:5432 -timeout 1m
-      - run: go get -t ./...
       - run: go test -v -cover -bench . ./...
