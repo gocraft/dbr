@@ -3,19 +3,20 @@ package dbr
 import "strings"
 
 const (
-	OPENING_SQL_COMMENT = "/*"
-	CLOSING_SQL_COMMENT = "*/"
-	SPACE               = " "
-	NEWLINE             = "\n"
-	EMPTY_STRING        = ""
+	openingSQLComment = "/*"
+	closingSQLComment = "*/"
+	space             = " "
+	newline           = "\n"
+	emptyString       = ""
 )
 
 // Comments represents a set of mysql comments
 type Comments []string
 
+// Append a new sql comment to a set of comments
 func (comments Comments) Append(comment string) Comments {
-	comment = strings.Replace(comment, OPENING_SQL_COMMENT, EMPTY_STRING, -1)
-	comment = strings.Replace(comment, CLOSING_SQL_COMMENT, EMPTY_STRING, -1)
+	comment = strings.Replace(comment, openingSQLComment, emptyString, -1)
+	comment = strings.Replace(comment, closingSQLComment, emptyString, -1)
 	comment = strings.TrimSpace(comment)
 	comments = append(comments, comment)
 	return comments
@@ -24,11 +25,11 @@ func (comments Comments) Append(comment string) Comments {
 // Write will write each comment in the form of "/* some comment */\n"
 func (comments Comments) Write(buf Buffer) {
 	for _, comment := range comments {
-		buf.WriteString(OPENING_SQL_COMMENT)
-		buf.WriteString(SPACE)
+		buf.WriteString(openingSQLComment)
+		buf.WriteString(space)
 		buf.WriteString(comment)
-		buf.WriteString(SPACE)
-		buf.WriteString(CLOSING_SQL_COMMENT)
-		buf.WriteString(NEWLINE)
+		buf.WriteString(space)
+		buf.WriteString(closingSQLComment)
+		buf.WriteString(newline)
 	}
 }
