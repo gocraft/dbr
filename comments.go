@@ -22,14 +22,15 @@ func (comments Comments) Append(comment string) Comments {
 	return comments
 }
 
-// Write will write each comment in the form of "/* some comment */\n"
-func (comments Comments) Write(buf Buffer) {
+// Build writes each comment in the form of "/* some comment */\n"
+func (comments Comments) Build(d Dialect, buf Buffer) error {
 	for _, comment := range comments {
-		buf.WriteString(openingSQLComment)
-		buf.WriteString(space)
-		buf.WriteString(comment)
-		buf.WriteString(space)
-		buf.WriteString(closingSQLComment)
-		buf.WriteString(newline)
+		words := []string{openingSQLComment, space, comment, space, closingSQLComment, newline}
+		for _, str := range words {
+			if _, err := buf.WriteString(str); err != nil {
+				return err
+			}
+		}
 	}
+	return nil
 }

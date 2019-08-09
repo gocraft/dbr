@@ -32,7 +32,7 @@ func (b *DeleteStmt) Build(d Dialect, buf Buffer) error {
 		return ErrTableNotSpecified
 	}
 
-	b.comments.Write(buf)
+	b.comments.Build(d, buf)
 
 	buf.WriteString("DELETE FROM ")
 	buf.WriteString(d.QuoteIdent(b.Table))
