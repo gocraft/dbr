@@ -10,7 +10,7 @@ const (
 	emptyString       = ""
 )
 
-// Comments represents a set of mysql comments
+// Comments represents a set of sql comments
 type Comments []string
 
 // Append a new sql comment to a set of comments
