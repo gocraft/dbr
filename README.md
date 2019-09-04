@@ -8,11 +8,11 @@
 gocraft/dbr provides additions to Go's database/sql for super fast performance and convenience.
 
 ```
-$ go get -u github.com/gocraft/dbr
+$ go get -u github.com/gocraft/dbr/v2
 ```
 
 ```go
-import "github.com/gocraft/dbr"
+import "github.com/gocraft/dbr/v2"
 ```
 
 ## Driver support
