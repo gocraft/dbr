@@ -17,6 +17,8 @@ type DeleteStmt struct {
 	Table      string
 	WhereCond  []Builder
 	LimitCount int64
+
+	comments Comments
 }
 
 type DeleteBuilder = DeleteStmt
@@ -29,6 +31,8 @@ func (b *DeleteStmt) Build(d Dialect, buf Buffer) error {
 	if b.Table == "" {
 		return ErrTableNotSpecified
 	}
+
+	b.comments.Build(d, buf)
 
 	buf.WriteString("DELETE FROM ")
 	buf.WriteString(d.QuoteIdent(b.Table))
@@ -116,6 +120,11 @@ func (b *DeleteStmt) Where(query interface{}, value ...interface{}) *DeleteStmt 
 
 func (b *DeleteStmt) Limit(n uint64) *DeleteStmt {
 	b.LimitCount = int64(n)
+	return b
+}
+
+func (b *DeleteStmt) Comment(comment string) *DeleteStmt {
+	b.comments = b.comments.Append(comment)
 	return b
 }
 

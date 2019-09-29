@@ -19,6 +19,7 @@ type UpdateStmt struct {
 	WhereCond    []Builder
 	ReturnColumn []string
 	LimitCount   int64
+	comments     Comments
 }
 
 type UpdateBuilder = UpdateStmt
@@ -35,6 +36,8 @@ func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
 	if len(b.Value) == 0 {
 		return ErrColumnNotSpecified
 	}
+
+	b.comments.Build(d, buf)
 
 	buf.WriteString("UPDATE ")
 	buf.WriteString(d.QuoteIdent(b.Table))
@@ -170,6 +173,11 @@ func (b *UpdateStmt) SetMap(m map[string]interface{}) *UpdateStmt {
 
 func (b *UpdateStmt) Limit(n uint64) *UpdateStmt {
 	b.LimitCount = int64(n)
+	return b
+}
+
+func (b *UpdateStmt) Comment(comment string) *UpdateStmt {
+	b.comments = b.comments.Append(comment)
 	return b
 }
 

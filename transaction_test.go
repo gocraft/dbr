@@ -16,10 +16,11 @@ func TestTransactionCommit(t *testing.T) {
 
 		id := 1
 
-		result, err := tx.InsertInto("dbr_people").Columns("id", "name", "email").Values(id, "Barack", "obama@whitehouse.gov").Exec()
+		result, err := tx.InsertInto("dbr_people").Columns("id", "name", "email").Values(id, "Barack", "obama@whitehouse.gov").Comment("INSERT TEST").Exec()
 		require.NoError(t, err)
 		require.Len(t, sess.EventReceiver.(*testTraceReceiver).started, 1)
 		require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].eventName, "dbr.exec")
+		require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "/* INSERT TEST */\n")
 		require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "INSERT")
 		require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "dbr_people")
 		require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "name")

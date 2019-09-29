@@ -28,6 +28,8 @@ type SelectStmt struct {
 
 	LimitCount  int64
 	OffsetCount int64
+
+	comments Comments
 }
 
 type SelectBuilder = SelectStmt
@@ -40,6 +42,8 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 	if len(b.Column) == 0 {
 		return ErrColumnNotSpecified
 	}
+
+	b.comments.Build(d, buf)
 
 	buf.WriteString("SELECT ")
 
@@ -301,6 +305,11 @@ func (b *SelectStmt) OrderDir(col string, isAsc bool) *SelectStmt {
 	} else {
 		b.OrderDesc(col)
 	}
+	return b
+}
+
+func (b *SelectStmt) Comment(comment string) *SelectStmt {
+	b.comments = b.comments.Append(comment)
 	return b
 }
 
