@@ -183,10 +183,15 @@ func prepareSelect(a []string) []interface{} {
 // Select creates a SelectStmt.
 func (sess *Session) Select(column ...string) *SelectStmt {
 	b := Select(prepareSelect(column)...)
-	b.runner = sess
-	b.EventReceiver = sess.EventReceiver
-	b.Dialect = sess.Dialect
+	b.Attach(sess)
 	return b
+}
+
+func (s *SelectStmt) Attach(sess *Session) *SelectStmt {
+	s.runner = sess
+	s.EventReceiver = sess.EventReceiver
+	s.Dialect = sess.Dialect
+	return s
 }
 
 // Select creates a SelectStmt.
