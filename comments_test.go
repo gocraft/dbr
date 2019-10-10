@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/gocraft/dbr/v2/dialect"
@@ -40,7 +41,7 @@ func TestComments(t *testing.T) {
 			case dialect.SQLite3:
 				name = "SQLite3"
 			}
-			t.Run(name, func(t *testing.T) {
+			t.Run(fmt.Sprintf("%s/%s", name, test.name), func(t *testing.T) {
 				buf := NewBuffer()
 				err := test.comments.Build(sess.Dialect, buf)
 				require.NoError(t, err)
@@ -48,6 +49,12 @@ func TestComments(t *testing.T) {
 
 				stmt := sess.SelectBySql("SELECT 1")
 				stmt.comments = test.comments
+
+				buf2 := NewBuffer()
+				err = stmt.Build(sess.Dialect, buf2)
+				require.NoError(t, err)
+				require.Equal(t, buf.String()+"SELECT 1", buf2.String())
+
 				one, err := stmt.ReturnInt64()
 				require.NoError(t, err)
 				require.EqualValues(t, 1, one)
