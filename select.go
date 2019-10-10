@@ -43,7 +43,10 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		return ErrColumnNotSpecified
 	}
 
-	b.comments.Build(d, buf)
+	err := b.comments.Build(d, buf)
+	if err != nil {
+		return err
+	}
 
 	buf.WriteString("SELECT ")
 
