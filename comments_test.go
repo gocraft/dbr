@@ -53,7 +53,7 @@ func TestComments(t *testing.T) {
 				buf2 := NewBuffer()
 				err = stmt.Build(sess.Dialect, buf2)
 				require.NoError(t, err)
-				require.Equal(t, buf.String()+"SELECT 1", buf2.String())
+				require.Equal(t, test.expect+"SELECT 1", buf2.String())
 
 				one, err := stmt.ReturnInt64()
 				require.NoError(t, err)

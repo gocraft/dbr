@@ -37,7 +37,10 @@ func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
 		return ErrColumnNotSpecified
 	}
 
-	b.comments.Build(d, buf)
+	err := b.comments.Build(d, buf)
+	if err != nil {
+		return err
+	}
 
 	buf.WriteString("UPDATE ")
 	buf.WriteString(d.QuoteIdent(b.Table))
