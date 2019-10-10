@@ -47,7 +47,7 @@ func TestComments(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, test.expect, buf.String())
 
-				stmt := sess.SelectBySql("SELECT 1")
+				stmt := sess.Select("1")
 				stmt.comments = test.comments
 
 				buf2 := NewBuffer()
