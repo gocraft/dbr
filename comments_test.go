@@ -8,7 +8,6 @@ import (
 )
 
 func TestComments(t *testing.T) {
-	dialects := []Dialect{dialect.MySQL, dialect.PostgreSQL, dialect.SQLite3}
 	for _, test := range []struct {
 		name     string
 		comments Comments
@@ -31,9 +30,9 @@ func TestComments(t *testing.T) {
 		},
 	} {
 
-		for _, d := range dialects {
+		for _, sess := range testSession {
 			name := ""
-			switch d {
+			switch sess.Dialect {
 			case dialect.MySQL:
 				name = "MySQL"
 			case dialect.PostgreSQL:
@@ -41,12 +40,18 @@ func TestComments(t *testing.T) {
 			case dialect.SQLite3:
 				name = "SQLite3"
 			}
-			t.Run(name+" "+test.name, func(t *testing.T) {
+			t.Run(name, func(t *testing.T) {
 				buf := NewBuffer()
-				test.comments.Build(d, buf)
+				err := test.comments.Build(sess.Dialect, buf)
+				require.NoError(t, err)
 				require.Equal(t, test.expect, buf.String())
+
+				stmt := sess.SelectBySql("SELECT 1")
+				stmt.comments = test.comments
+				one, err := stmt.ReturnInt64()
+				require.NoError(t, err)
+				require.EqualValues(t, 1, one)
 			})
 		}
 	}
-
 }
