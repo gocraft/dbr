@@ -47,7 +47,7 @@ func TestInterpolateIgnoreBinary(t *testing.T) {
 			IgnoreBinary: true,
 		}
 
-		err := i.interpolate(test.query, test.value, true)
+		err := i.interpolate(test.query, test.value)
 		require.NoError(t, err)
 
 		require.Equal(t, test.wantQuery, i.String())
