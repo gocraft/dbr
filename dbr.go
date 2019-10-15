@@ -116,7 +116,7 @@ func exec(ctx context.Context, runner runner, log EventReceiver, builder Builder
 		Dialect:      d,
 		IgnoreBinary: true,
 	}
-	err := i.encodePlaceholder(builder)
+	err := i.encodePlaceholder(builder, true)
 	query, value := i.String(), i.Value()
 	if err != nil {
 		return nil, log.EventErrKv("dbr.exec.interpolate", err, kvs{
@@ -159,7 +159,7 @@ func queryRows(ctx context.Context, runner runner, log EventReceiver, builder Bu
 		Dialect:      d,
 		IgnoreBinary: true,
 	}
-	err := i.encodePlaceholder(builder)
+	err := i.encodePlaceholder(builder, true)
 	query, value := i.String(), i.Value()
 	if err != nil {
 		return query, nil, log.EventErrKv("dbr.select.interpolate", err, kvs{

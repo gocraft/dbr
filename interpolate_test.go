@@ -47,7 +47,7 @@ func TestInterpolateIgnoreBinary(t *testing.T) {
 			IgnoreBinary: true,
 		}
 
-		err := i.interpolate(test.query, test.value)
+		err := i.interpolate(test.query, test.value, true)
 		require.NoError(t, err)
 
 		require.Equal(t, test.wantQuery, i.String())
@@ -124,7 +124,9 @@ func TestInterpolateForDialect(t *testing.T) {
 					Select("b").From("table2"),
 				).As("t"),
 			},
-			want: "((SELECT a FROM table1) UNION ALL (SELECT b FROM table2)) AS `t`",
+			// parentheses around union subqueries are not supported in sqlite
+			// but supported in both mysql and postgres.
+			want: "(SELECT a FROM table1 UNION ALL SELECT b FROM table2) AS `t`",
 		},
 		{
 			query: "?",
