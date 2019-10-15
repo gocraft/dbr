@@ -36,7 +36,7 @@ func InterpolateForDialect(query string, value []interface{}, d Dialect) (string
 		Buffer:  NewBuffer(),
 		Dialect: d,
 	}
-	err := i.interpolate(query, value, true)
+	err := i.interpolate(query, value)
 	if err != nil {
 		return "", err
 	}
@@ -45,7 +45,7 @@ func InterpolateForDialect(query string, value []interface{}, d Dialect) (string
 
 var escapedPlaceholder = strings.Repeat(placeholder, 2)
 
-func (i *interpolator) interpolate(query string, value []interface{}, topLevel bool) error {
+func (i *interpolator) interpolate(query string, value []interface{}) error {
 	valueIndex := 0
 
 	for {
@@ -71,7 +71,7 @@ func (i *interpolator) interpolate(query string, value []interface{}, topLevel b
 			i.N++
 			i.WriteValue(value[valueIndex])
 		} else {
-			err := i.encodePlaceholder(value[valueIndex], topLevel)
+			err := i.encodePlaceholder(value[valueIndex])
 			if err != nil {
 				return err
 			}
@@ -94,27 +94,16 @@ var (
 	typeTime = reflect.TypeOf(time.Time{})
 )
 
-func (i *interpolator) encodePlaceholder(value interface{}, topLevel bool) error {
+func (i *interpolator) encodePlaceholder(value interface{}) error {
 	if builder, ok := value.(Builder); ok {
 		pbuf := NewBuffer()
 		err := builder.Build(i.Dialect, pbuf)
 		if err != nil {
 			return err
 		}
-		paren := false
-		switch value.(type) {
-		case *SelectStmt, *union:
-			paren = !topLevel
-		}
-		if paren {
-			i.WriteString("(")
-		}
-		err = i.interpolate(pbuf.String(), pbuf.Value(), false)
+		err = i.interpolate(pbuf.String(), pbuf.Value())
 		if err != nil {
 			return err
-		}
-		if paren {
-			i.WriteString(")")
 		}
 		return nil
 	}
@@ -169,7 +158,7 @@ func (i *interpolator) encodePlaceholder(value interface{}, topLevel bool) error
 			if n > 0 {
 				i.WriteString(",")
 			}
-			err := i.encodePlaceholder(v.Index(n).Interface(), topLevel)
+			err := i.encodePlaceholder(v.Index(n).Interface())
 			if err != nil {
 				return err
 			}
@@ -181,7 +170,7 @@ func (i *interpolator) encodePlaceholder(value interface{}, topLevel bool) error
 			i.WriteString("NULL")
 			return nil
 		}
-		return i.encodePlaceholder(v.Elem().Interface(), topLevel)
+		return i.encodePlaceholder(v.Elem().Interface())
 	}
 	return ErrNotSupported
 }
