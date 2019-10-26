@@ -18,6 +18,7 @@ type InsertStmt struct {
 	Table        string
 	Column       []string
 	Value        [][]interface{}
+	Ignored      bool
 	ReturnColumn []string
 	RecordID     *int64
 	comments     Comments
@@ -43,7 +44,12 @@ func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 		return err
 	}
 
-	buf.WriteString("INSERT INTO ")
+	if b.Ignored {
+		buf.WriteString("INSERT IGNORE INTO ")
+	} else {
+		buf.WriteString("INSERT INTO ")
+	}
+
 	buf.WriteString(d.QuoteIdent(b.Table))
 
 	var placeholderBuf strings.Builder
@@ -144,6 +150,12 @@ func (b *InsertStmt) Columns(column ...string) *InsertStmt {
 // Comment adds a comment to prepended. All multi-line sql comment characters are stripped
 func (b *InsertStmt) Comment(comment string) *InsertStmt {
 	b.comments = b.comments.Append(comment)
+	return b
+}
+
+// Ignore any insertion errors
+func (b *InsertStmt) Ignore() *InsertStmt {
+	b.Ignored = true
 	return b
 }
 
