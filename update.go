@@ -195,13 +195,13 @@ func (b *UpdateStmt) SetMap(m map[string]interface{}) *UpdateStmt {
 }
 
 // Incr increases column by value
-func (b *UpdateStmt) Incr(column string, value interface{}) *UpdateStmt {
+func (b *UpdateStmt) IncrBy(column string, value interface{}) *UpdateStmt {
 	b.Value[column] = opValue{op: "+", val: value}
 	return b
 }
 
 // Decr decreases column by value
-func (b *UpdateStmt) Decr(column string, value interface{}) *UpdateStmt {
+func (b *UpdateStmt) DecrBy(column string, value interface{}) *UpdateStmt {
 	b.Value[column] = opValue{op: "-", val: value}
 	return b
 }
