@@ -6,11 +6,6 @@ import (
 	"strconv"
 )
 
-type opValue struct {
-	op  string
-	val interface{}
-}
-
 // UpdateStmt builds `UPDATE ...`.
 type UpdateStmt struct {
 	runner
@@ -58,23 +53,9 @@ func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
 		}
 		buf.WriteString(d.QuoteIdent(col))
 		buf.WriteString(" = ")
-
-		ov, ok := v.(opValue)
-
-		if ok {
-			buf.WriteString(d.QuoteIdent(col))
-			buf.WriteString(" ")
-			buf.WriteString(ov.op)
-			buf.WriteString(" ")
-		}
-
 		buf.WriteString(placeholder)
 
-		if ok {
-			buf.WriteValue(ov.val)
-		} else {
-			buf.WriteValue(v)
-		}
+		buf.WriteValue(v)
 
 		i++
 	}
@@ -196,13 +177,13 @@ func (b *UpdateStmt) SetMap(m map[string]interface{}) *UpdateStmt {
 
 // Incr increases column by value
 func (b *UpdateStmt) IncrBy(column string, value interface{}) *UpdateStmt {
-	b.Value[column] = opValue{op: "+", val: value}
+	b.Value[column] = Expr("? + ?", I(column), value)
 	return b
 }
 
 // Decr decreases column by value
 func (b *UpdateStmt) DecrBy(column string, value interface{}) *UpdateStmt {
-	b.Value[column] = opValue{op: "-", val: value}
+	b.Value[column] = Expr("? - ?", I(column), value)
 	return b
 }
 
