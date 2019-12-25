@@ -9,4 +9,5 @@ require (
 	github.com/lib/pq v1.2.0
 	github.com/mattn/go-sqlite3 v1.11.0
 	github.com/stretchr/testify v1.4.0
+	go.elastic.co/apm/module/apmsql v1.6.0
 )

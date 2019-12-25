@@ -5,9 +5,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
-
 	"github.com/gocraft/dbr/v2/dialect"
+	"go.elastic.co/apm/module/apmsql"
+	"time"
 )
 
 // Open creates a Connection.
@@ -16,7 +16,7 @@ func Open(driver, dsn string, log EventReceiver) (*Connection, error) {
 	if log == nil {
 		log = nullReceiver
 	}
-	conn, err := sql.Open(driver, dsn)
+	conn, err := apmsql.Open(driver, dsn)
 	if err != nil {
 		return nil, err
 	}
