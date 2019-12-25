@@ -175,13 +175,13 @@ func (b *UpdateStmt) SetMap(m map[string]interface{}) *UpdateStmt {
 	return b
 }
 
-// Incr increases column by value
+// IncrBy increases column by value
 func (b *UpdateStmt) IncrBy(column string, value interface{}) *UpdateStmt {
 	b.Value[column] = Expr("? + ?", I(column), value)
 	return b
 }
 
-// Decr decreases column by value
+// DecrBy decreases column by value
 func (b *UpdateStmt) DecrBy(column string, value interface{}) *UpdateStmt {
 	b.Value[column] = Expr("? - ?", I(column), value)
 	return b
