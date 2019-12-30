@@ -56,6 +56,7 @@ func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
 		buf.WriteString(placeholder)
 
 		buf.WriteValue(v)
+
 		i++
 	}
 
@@ -171,6 +172,18 @@ func (b *UpdateStmt) SetMap(m map[string]interface{}) *UpdateStmt {
 	for col, val := range m {
 		b.Set(col, val)
 	}
+	return b
+}
+
+// IncrBy increases column by value
+func (b *UpdateStmt) IncrBy(column string, value interface{}) *UpdateStmt {
+	b.Value[column] = Expr("? + ?", I(column), value)
+	return b
+}
+
+// DecrBy decreases column by value
+func (b *UpdateStmt) DecrBy(column string, value interface{}) *UpdateStmt {
+	b.Value[column] = Expr("? - ?", I(column), value)
 	return b
 }
 

@@ -48,3 +48,15 @@ func TestPostgresUpdateReturning(t *testing.T) {
 	require.Equal(t, 1, sess.EventReceiver.(*testTraceReceiver).finished)
 	require.Equal(t, 0, sess.EventReceiver.(*testTraceReceiver).errored)
 }
+
+func TestUpdateIncrBy(t *testing.T) {
+	buf := NewBuffer()
+	builder := Update("table").IncrBy("a", 1).Where(Eq("b", 2))
+	err := builder.Build(dialect.MySQL, buf)
+	require.NoError(t, err)
+
+	sqlstr, err := InterpolateForDialect(buf.String(), buf.Value(), dialect.MySQL)
+	require.NoError(t, err)
+
+	require.Equal(t, "UPDATE `table` SET `a` = `a` + 1 WHERE (`b` = 2)", sqlstr)
+}
