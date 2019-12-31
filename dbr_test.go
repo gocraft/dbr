@@ -25,7 +25,7 @@ var (
 )
 
 func createSession(driver, dsn string) *Session {
-	conn, err := Open(driver, dsn, &testTraceReceiver{})
+	conn, err := open(driver, dsn, &testTraceReceiver{}, &testTraceReceiverWithContext{})
 	if err != nil {
 		panic(err)
 	}
@@ -90,6 +90,7 @@ func reset(t *testing.T, sess *Session) {
 	}
 	// clear test data collected by testTraceReceiver
 	sess.EventReceiver = &testTraceReceiver{}
+	sess.EventReceiverWithContext = &testTraceReceiverWithContext{}
 }
 
 func TestBasicCRUD(t *testing.T) {
@@ -199,14 +200,18 @@ func TestTimeout(t *testing.T) {
 
 		_, err = tx.Select("*").From("dbr_people").Load(&people)
 		require.Equal(t, context.DeadlineExceeded, err)
+		require.Equal(t, context.DeadlineExceeded, sess.EventReceiverWithContext.(*testTraceReceiverWithContext).err)
 
 		_, err = tx.InsertInto("dbr_people").Columns("name", "email").Values("test", "test@test.com").Exec()
 		require.Equal(t, context.DeadlineExceeded, err)
+		require.Equal(t, context.DeadlineExceeded, sess.EventReceiverWithContext.(*testTraceReceiverWithContext).err)
 
 		_, err = tx.Update("dbr_people").Set("name", "test1").Exec()
 		require.Equal(t, context.DeadlineExceeded, err)
+		require.Equal(t, context.DeadlineExceeded, sess.EventReceiverWithContext.(*testTraceReceiverWithContext).err)
 
 		_, err = tx.DeleteFrom("dbr_people").Exec()
 		require.Equal(t, context.DeadlineExceeded, err)
+		require.Equal(t, context.DeadlineExceeded, sess.EventReceiverWithContext.(*testTraceReceiverWithContext).err)
 	}
 }

@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"context"
 	"testing"
 
 	"github.com/gocraft/dbr/v2/dialect"
@@ -47,6 +48,7 @@ func TestPostgresUpdateReturning(t *testing.T) {
 	require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "RETURNING")
 	require.Equal(t, 1, sess.EventReceiver.(*testTraceReceiver).finished)
 	require.Equal(t, 0, sess.EventReceiver.(*testTraceReceiver).errored)
+	require.Equal(t, context.Background(), sess.EventReceiverWithContext.(*testTraceReceiverWithContext).ctx)
 }
 
 func TestUpdateIncrBy(t *testing.T) {

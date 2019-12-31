@@ -17,6 +17,21 @@ func ExampleOpen() {
 	sess.Begin()
 }
 
+func ExampleOpenForLogWithContext() {
+	// create a EventReceiverWithContext
+	var log EventReceiverWithContext
+
+	// create a connection (e.g. "postgres", "mysql", or "sqlite3")
+	conn, _ := OpenForLogWithContext("postgres", "...", log)
+	conn.SetMaxOpenConns(10)
+
+	// create a session for each business unit of execution (e.g. a web request or goworkers job)
+	sess := conn.NewSession(nil)
+
+	// create a tx from sessions
+	sess.Begin()
+}
+
 func ExampleSelect() {
 	Select("title", "body").
 		From("suggestions").

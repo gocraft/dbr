@@ -10,6 +10,7 @@ import (
 type DeleteStmt struct {
 	runner
 	EventReceiver
+	EventReceiverWithContext
 	Dialect
 
 	raw
@@ -67,6 +68,7 @@ func (sess *Session) DeleteFrom(table string) *DeleteStmt {
 	b := DeleteFrom(table)
 	b.runner = sess
 	b.EventReceiver = sess.EventReceiver
+	b.EventReceiverWithContext = sess.EventReceiverWithContext
 	b.Dialect = sess.Dialect
 	return b
 }
@@ -76,6 +78,7 @@ func (tx *Tx) DeleteFrom(table string) *DeleteStmt {
 	b := DeleteFrom(table)
 	b.runner = tx
 	b.EventReceiver = tx.EventReceiver
+	b.EventReceiverWithContext = tx.EventReceiverWithContext
 	b.Dialect = tx.Dialect
 	return b
 }
@@ -96,6 +99,7 @@ func (sess *Session) DeleteBySql(query string, value ...interface{}) *DeleteStmt
 	b := DeleteBySql(query, value...)
 	b.runner = sess
 	b.EventReceiver = sess.EventReceiver
+	b.EventReceiverWithContext = sess.EventReceiverWithContext
 	b.Dialect = sess.Dialect
 	return b
 }
@@ -105,6 +109,7 @@ func (tx *Tx) DeleteBySql(query string, value ...interface{}) *DeleteStmt {
 	b := DeleteBySql(query, value...)
 	b.runner = tx
 	b.EventReceiver = tx.EventReceiver
+	b.EventReceiverWithContext = tx.EventReceiverWithContext
 	b.Dialect = tx.Dialect
 	return b
 }
@@ -136,5 +141,5 @@ func (b *DeleteStmt) Exec() (sql.Result, error) {
 }
 
 func (b *DeleteStmt) ExecContext(ctx context.Context) (sql.Result, error) {
-	return exec(ctx, b.runner, b.EventReceiver, b, b.Dialect)
+	return exec(ctx, b.runner, b.EventReceiver, b.EventReceiverWithContext, b, b.Dialect)
 }

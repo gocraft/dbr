@@ -11,6 +11,7 @@ import (
 type InsertStmt struct {
 	runner
 	EventReceiver
+	EventReceiverWithContext
 	Dialect
 
 	raw
@@ -101,6 +102,7 @@ func (sess *Session) InsertInto(table string) *InsertStmt {
 	b := InsertInto(table)
 	b.runner = sess
 	b.EventReceiver = sess.EventReceiver
+	b.EventReceiverWithContext = sess.EventReceiverWithContext
 	b.Dialect = sess.Dialect
 	return b
 }
@@ -110,6 +112,7 @@ func (tx *Tx) InsertInto(table string) *InsertStmt {
 	b := InsertInto(table)
 	b.runner = tx
 	b.EventReceiver = tx.EventReceiver
+	b.EventReceiverWithContext = tx.EventReceiverWithContext
 	b.Dialect = tx.Dialect
 	return b
 }
@@ -129,6 +132,7 @@ func (sess *Session) InsertBySql(query string, value ...interface{}) *InsertStmt
 	b := InsertBySql(query, value...)
 	b.runner = sess
 	b.EventReceiver = sess.EventReceiver
+	b.EventReceiverWithContext = sess.EventReceiverWithContext
 	b.Dialect = sess.Dialect
 	return b
 }
@@ -138,6 +142,7 @@ func (tx *Tx) InsertBySql(query string, value ...interface{}) *InsertStmt {
 	b := InsertBySql(query, value...)
 	b.runner = tx
 	b.EventReceiver = tx.EventReceiver
+	b.EventReceiverWithContext = tx.EventReceiverWithContext
 	b.Dialect = tx.Dialect
 	return b
 }
@@ -225,7 +230,7 @@ func (b *InsertStmt) Exec() (sql.Result, error) {
 }
 
 func (b *InsertStmt) ExecContext(ctx context.Context) (sql.Result, error) {
-	result, err := exec(ctx, b.runner, b.EventReceiver, b, b.Dialect)
+	result, err := exec(ctx, b.runner, b.EventReceiver, b.EventReceiverWithContext, b, b.Dialect)
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +246,7 @@ func (b *InsertStmt) ExecContext(ctx context.Context) (sql.Result, error) {
 }
 
 func (b *InsertStmt) LoadContext(ctx context.Context, value interface{}) error {
-	_, err := query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value)
+	_, err := query(ctx, b.runner, b.EventReceiver, b.EventReceiverWithContext, b, b.Dialect, value)
 	return err
 }
 

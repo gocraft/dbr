@@ -13,8 +13,15 @@ import (
 // Open creates a Connection.
 // log can be nil to ignore logging.
 func Open(driver, dsn string, log EventReceiver) (*Connection, error) {
+	return open(driver, dsn, log, nil)
+}
+
+func open(driver, dsn string, log EventReceiver, logWithContext EventReceiverWithContext) (*Connection, error) {
 	if log == nil {
 		log = nullReceiver
+	}
+	if logWithContext == nil {
+		logWithContext = nullReceiverWithContext
 	}
 	conn, err := sql.Open(driver, dsn)
 	if err != nil {
@@ -31,7 +38,15 @@ func Open(driver, dsn string, log EventReceiver) (*Connection, error) {
 	default:
 		return nil, ErrNotSupported
 	}
-	return &Connection{DB: conn, EventReceiver: log, Dialect: d}, nil
+	return &Connection{DB: conn, EventReceiver: log, EventReceiverWithContext: logWithContext, Dialect: d}, nil
+
+}
+
+// Open creates a Connection.
+// log implements EventReceiverWithContext
+// (can be nil to ignore logging).
+func OpenForLogWithContext(driver, dsn string, log EventReceiverWithContext) (*Connection, error) {
+	return open(driver, dsn, nil, log)
 }
 
 const (
@@ -44,6 +59,7 @@ type Connection struct {
 	*sql.DB
 	Dialect
 	EventReceiver
+	EventReceiverWithContext
 }
 
 // Session represents a business unit of execution.
@@ -58,6 +74,7 @@ type Connection struct {
 type Session struct {
 	*Connection
 	EventReceiver
+	EventReceiverWithContext
 	Timeout time.Duration
 }
 
@@ -72,7 +89,7 @@ func (conn *Connection) NewSession(log EventReceiver) *Session {
 	if log == nil {
 		log = conn.EventReceiver // Use parent instrumentation
 	}
-	return &Session{Connection: conn, EventReceiver: log}
+	return &Session{Connection: conn, EventReceiver: log, EventReceiverWithContext: conn.EventReceiverWithContext}
 }
 
 // Ensure that tx and session are session runner
@@ -103,7 +120,7 @@ type runner interface {
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
-func exec(ctx context.Context, runner runner, log EventReceiver, builder Builder, d Dialect) (sql.Result, error) {
+func exec(ctx context.Context, runner runner, log EventReceiver, logWithContext EventReceiverWithContext, builder Builder, d Dialect) (sql.Result, error) {
 	timeout := runner.GetTimeout()
 	if timeout > 0 {
 		var cancel func()
@@ -119,17 +136,22 @@ func exec(ctx context.Context, runner runner, log EventReceiver, builder Builder
 	err := i.encodePlaceholder(builder, true)
 	query, value := i.String(), i.Value()
 	if err != nil {
-		return nil, log.EventErrKv("dbr.exec.interpolate", err, kvs{
+		eventKvs := kvs{
 			"sql":  query,
 			"args": fmt.Sprint(value),
-		})
+		}
+		eventErrKv := logWithContext.EventErrKvWithContext(ctx, "dbr.exec.interpolate", err, eventKvs)
+		return nil, log.EventErrKv("dbr.exec.interpolate", eventErrKv, eventKvs)
 	}
 
 	startTime := time.Now()
 	defer func() {
-		log.TimingKv("dbr.exec", time.Since(startTime).Nanoseconds(), kvs{
+		timing := time.Since(startTime).Nanoseconds()
+		timingKvs := kvs{
 			"sql": query,
-		})
+		}
+		logWithContext.TimingKvWithContext(ctx, "dbr.exec", timing, timingKvs)
+		log.TimingKv("dbr.exec", timing, timingKvs)
 	}()
 
 	traceImpl, hasTracingImpl := log.(TracingEventReceiver)
@@ -143,14 +165,16 @@ func exec(ctx context.Context, runner runner, log EventReceiver, builder Builder
 		if hasTracingImpl {
 			traceImpl.SpanError(ctx, err)
 		}
-		return result, log.EventErrKv("dbr.exec.exec", err, kvs{
+		eventKvs := kvs{
 			"sql": query,
-		})
+		}
+		eventErrKv := logWithContext.EventErrKvWithContext(ctx, "dbr.exec.exec", err, eventKvs)
+		return result, log.EventErrKv("dbr.exec.exec", eventErrKv, eventKvs)
 	}
 	return result, nil
 }
 
-func queryRows(ctx context.Context, runner runner, log EventReceiver, builder Builder, d Dialect) (string, *sql.Rows, error) {
+func queryRows(ctx context.Context, runner runner, log EventReceiver, logWithContext EventReceiverWithContext, builder Builder, d Dialect) (string, *sql.Rows, error) {
 	// discard the timeout set in the runner, the context should not be canceled
 	// implicitly here but explicitly by the caller since the returned *sql.Rows
 	// may still listening to the context
@@ -162,17 +186,22 @@ func queryRows(ctx context.Context, runner runner, log EventReceiver, builder Bu
 	err := i.encodePlaceholder(builder, true)
 	query, value := i.String(), i.Value()
 	if err != nil {
-		return query, nil, log.EventErrKv("dbr.select.interpolate", err, kvs{
+		eventKvs := kvs{
 			"sql":  query,
 			"args": fmt.Sprint(value),
-		})
+		}
+		eventErrKv := logWithContext.EventErrKvWithContext(ctx, "dbr.select.interpolate", err, eventKvs)
+		return query, nil, log.EventErrKv("dbr.select.interpolate", eventErrKv, eventKvs)
 	}
 
 	startTime := time.Now()
 	defer func() {
-		log.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), kvs{
+		timing := time.Since(startTime).Nanoseconds()
+		timingKvs := kvs{
 			"sql": query,
-		})
+		}
+		logWithContext.TimingKvWithContext(ctx, "dbr.select", timing, timingKvs)
+		log.TimingKv("dbr.select", timing, timingKvs)
 	}()
 
 	traceImpl, hasTracingImpl := log.(TracingEventReceiver)
@@ -186,15 +215,17 @@ func queryRows(ctx context.Context, runner runner, log EventReceiver, builder Bu
 		if hasTracingImpl {
 			traceImpl.SpanError(ctx, err)
 		}
-		return query, nil, log.EventErrKv("dbr.select.load.query", err, kvs{
+		eventKvs := kvs{
 			"sql": query,
-		})
+		}
+		eventErrKv := logWithContext.EventErrKvWithContext(ctx, "dbr.select.load.query", err, eventKvs)
+		return query, nil, log.EventErrKv("dbr.select.load.query", eventErrKv, eventKvs)
 	}
 
 	return query, rows, nil
 }
 
-func query(ctx context.Context, runner runner, log EventReceiver, builder Builder, d Dialect, dest interface{}) (int, error) {
+func query(ctx context.Context, runner runner, log EventReceiver, logWithContext EventReceiverWithContext, builder Builder, d Dialect, dest interface{}) (int, error) {
 	timeout := runner.GetTimeout()
 	if timeout > 0 {
 		var cancel func()
@@ -202,15 +233,17 @@ func query(ctx context.Context, runner runner, log EventReceiver, builder Builde
 		defer cancel()
 	}
 
-	query, rows, err := queryRows(ctx, runner, log, builder, d)
+	query, rows, err := queryRows(ctx, runner, log, logWithContext, builder, d)
 	if err != nil {
 		return 0, err
 	}
 	count, err := Load(rows, dest)
 	if err != nil {
-		return 0, log.EventErrKv("dbr.select.load.scan", err, kvs{
+		eventKvs := kvs{
 			"sql": query,
-		})
+		}
+		eventErrKv := logWithContext.EventErrKvWithContext(ctx, "dbr.select.load.scan", err, eventKvs)
+		return 0, log.EventErrKv("dbr.select.load.scan", eventErrKv, eventKvs)
 	}
 	return count, nil
 }

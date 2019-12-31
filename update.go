@@ -10,6 +10,7 @@ import (
 type UpdateStmt struct {
 	runner
 	EventReceiver
+	EventReceiverWithContext
 	Dialect
 
 	raw
@@ -100,6 +101,7 @@ func (sess *Session) Update(table string) *UpdateStmt {
 	b := Update(table)
 	b.runner = sess
 	b.EventReceiver = sess.EventReceiver
+	b.EventReceiverWithContext = sess.EventReceiverWithContext
 	b.Dialect = sess.Dialect
 	return b
 }
@@ -109,6 +111,7 @@ func (tx *Tx) Update(table string) *UpdateStmt {
 	b := Update(table)
 	b.runner = tx
 	b.EventReceiver = tx.EventReceiver
+	b.EventReceiverWithContext = tx.EventReceiverWithContext
 	b.Dialect = tx.Dialect
 	return b
 }
@@ -130,6 +133,7 @@ func (sess *Session) UpdateBySql(query string, value ...interface{}) *UpdateStmt
 	b := UpdateBySql(query, value...)
 	b.runner = sess
 	b.EventReceiver = sess.EventReceiver
+	b.EventReceiverWithContext = sess.EventReceiverWithContext
 	b.Dialect = sess.Dialect
 	return b
 }
@@ -139,6 +143,7 @@ func (tx *Tx) UpdateBySql(query string, value ...interface{}) *UpdateStmt {
 	b := UpdateBySql(query, value...)
 	b.runner = tx
 	b.EventReceiver = tx.EventReceiver
+	b.EventReceiverWithContext = tx.EventReceiverWithContext
 	b.Dialect = tx.Dialect
 	return b
 }
@@ -202,11 +207,11 @@ func (b *UpdateStmt) Exec() (sql.Result, error) {
 }
 
 func (b *UpdateStmt) ExecContext(ctx context.Context) (sql.Result, error) {
-	return exec(ctx, b.runner, b.EventReceiver, b, b.Dialect)
+	return exec(ctx, b.runner, b.EventReceiver, b.EventReceiverWithContext, b, b.Dialect)
 }
 
 func (b *UpdateStmt) LoadContext(ctx context.Context, value interface{}) error {
-	_, err := query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value)
+	_, err := query(ctx, b.runner, b.EventReceiver, b.EventReceiverWithContext, b, b.Dialect, value)
 	return err
 }
 

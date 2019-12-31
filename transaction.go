@@ -9,9 +9,11 @@ import (
 // Tx is a transaction created by Session.
 type Tx struct {
 	EventReceiver
+	EventReceiverWithContext
 	Dialect
 	*sql.Tx
 	Timeout time.Duration
+	ctx     context.Context
 }
 
 // GetTimeout returns timeout enforced in Tx.
@@ -23,15 +25,19 @@ func (tx *Tx) GetTimeout() time.Duration {
 func (sess *Session) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 	tx, err := sess.Connection.BeginTx(ctx, opts)
 	if err != nil {
-		return nil, sess.EventErr("dbr.begin.error", err)
+		eventErr := sess.EventErrWithContext(ctx, "dbr.begin.error", err)
+		return nil, sess.EventErr("dbr.begin.error", eventErr)
 	}
 	sess.Event("dbr.begin")
+	sess.EventWithContext(ctx, "dbr.begin")
 
 	return &Tx{
-		EventReceiver: sess.EventReceiver,
-		Dialect:       sess.Dialect,
-		Tx:            tx,
-		Timeout:       sess.GetTimeout(),
+		EventReceiver:            sess.EventReceiver,
+		EventReceiverWithContext: sess.EventReceiverWithContext,
+		Dialect:                  sess.Dialect,
+		Tx:                       tx,
+		Timeout:                  sess.GetTimeout(),
+		ctx:                      ctx,
 	}, nil
 }
 
@@ -44,9 +50,11 @@ func (sess *Session) Begin() (*Tx, error) {
 func (tx *Tx) Commit() error {
 	err := tx.Tx.Commit()
 	if err != nil {
-		return tx.EventErr("dbr.commit.error", err)
+		eventErr := tx.EventErrWithContext(tx.ctx, "dbr.commit.error", err)
+		return tx.EventErr("dbr.commit.error", eventErr)
 	}
 	tx.Event("dbr.commit")
+	tx.EventWithContext(tx.ctx, "dbr.commit")
 	return nil
 }
 
@@ -54,9 +62,11 @@ func (tx *Tx) Commit() error {
 func (tx *Tx) Rollback() error {
 	err := tx.Tx.Rollback()
 	if err != nil {
-		return tx.EventErr("dbr.rollback", err)
+		eventErr := tx.EventErrWithContext(tx.ctx, "dbr.commit.error", err)
+		return tx.EventErr("dbr.rollback", eventErr)
 	}
 	tx.Event("dbr.rollback")
+	tx.EventWithContext(tx.ctx, "dbr.rollback")
 	return nil
 }
 
@@ -72,8 +82,10 @@ func (tx *Tx) RollbackUnlessCommitted() {
 	if err == sql.ErrTxDone {
 		// ok
 	} else if err != nil {
+		tx.EventErrWithContext(tx.ctx, "dbr.commit.error", err)
 		tx.EventErr("dbr.rollback_unless_committed", err)
 	} else {
+		tx.EventWithContext(tx.ctx, "dbr.rollback")
 		tx.Event("dbr.rollback")
 	}
 }

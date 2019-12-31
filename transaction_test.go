@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -26,6 +27,7 @@ func TestTransactionCommit(t *testing.T) {
 		require.Contains(t, sess.EventReceiver.(*testTraceReceiver).started[0].query, "name")
 		require.Equal(t, 1, sess.EventReceiver.(*testTraceReceiver).finished)
 		require.Equal(t, 0, sess.EventReceiver.(*testTraceReceiver).errored)
+		require.Equal(t, context.Background(), sess.EventReceiverWithContext.(*testTraceReceiverWithContext).ctx)
 
 		rowsAffected, err := result.RowsAffected()
 		require.NoError(t, err)
@@ -33,11 +35,14 @@ func TestTransactionCommit(t *testing.T) {
 
 		err = tx.Commit()
 		require.NoError(t, err)
+		require.Equal(t, context.Background(), sess.EventReceiverWithContext.(*testTraceReceiverWithContext).ctx)
 
 		var person dbrPerson
 		err = tx.Select("*").From("dbr_people").Where(Eq("id", id)).LoadOne(&person)
 		require.Error(t, err)
 		require.Equal(t, 1, sess.EventReceiver.(*testTraceReceiver).errored)
+		require.Equal(t, context.Background(), sess.EventReceiverWithContext.(*testTraceReceiverWithContext).ctx)
+		require.Equal(t, err, sess.EventReceiverWithContext.(*testTraceReceiverWithContext).err)
 	}
 }
 

@@ -13,9 +13,10 @@ func TestSQLMock(t *testing.T) {
 	require.NoError(t, err)
 
 	conn := &Connection{
-		DB:            db,
-		EventReceiver: &NullEventReceiver{},
-		Dialect:       dialect.MySQL,
+		DB:                       db,
+		EventReceiver:            &NullEventReceiver{},
+		EventReceiverWithContext: &NullEventReceiverWithContext{},
+		Dialect:                  dialect.MySQL,
 	}
 	sess := conn.NewSession(nil)
 

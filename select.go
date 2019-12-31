@@ -10,6 +10,7 @@ import (
 type SelectStmt struct {
 	runner
 	EventReceiver
+	EventReceiverWithContext
 	Dialect
 
 	raw
@@ -175,6 +176,7 @@ func (sess *Session) Select(column ...string) *SelectStmt {
 	b := Select(prepareSelect(column)...)
 	b.runner = sess
 	b.EventReceiver = sess.EventReceiver
+	b.EventReceiverWithContext = sess.EventReceiverWithContext
 	b.Dialect = sess.Dialect
 	return b
 }
@@ -184,6 +186,7 @@ func (tx *Tx) Select(column ...string) *SelectStmt {
 	b := Select(prepareSelect(column)...)
 	b.runner = tx
 	b.EventReceiver = tx.EventReceiver
+	b.EventReceiverWithContext = tx.EventReceiverWithContext
 	b.Dialect = tx.Dialect
 	return b
 }
@@ -205,6 +208,7 @@ func (sess *Session) SelectBySql(query string, value ...interface{}) *SelectStmt
 	b := SelectBySql(query, value...)
 	b.runner = sess
 	b.EventReceiver = sess.EventReceiver
+	b.EventReceiverWithContext = sess.EventReceiverWithContext
 	b.Dialect = sess.Dialect
 	return b
 }
@@ -214,6 +218,7 @@ func (tx *Tx) SelectBySql(query string, value ...interface{}) *SelectStmt {
 	b := SelectBySql(query, value...)
 	b.runner = tx
 	b.EventReceiver = tx.EventReceiver
+	b.EventReceiverWithContext = tx.EventReceiverWithContext
 	b.Dialect = tx.Dialect
 	return b
 }
@@ -355,12 +360,12 @@ func (b *SelectStmt) Rows() (*sql.Rows, error) {
 }
 
 func (b *SelectStmt) RowsContext(ctx context.Context) (*sql.Rows, error) {
-	_, rows, err := queryRows(ctx, b.runner, b.EventReceiver, b, b.Dialect)
+	_, rows, err := queryRows(ctx, b.runner, b.EventReceiver, b.EventReceiverWithContext, b, b.Dialect)
 	return rows, err
 }
 
 func (b *SelectStmt) LoadOneContext(ctx context.Context, value interface{}) error {
-	count, err := query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value)
+	count, err := query(ctx, b.runner, b.EventReceiver, b.EventReceiverWithContext, b, b.Dialect, value)
 	if err != nil {
 		return err
 	}
@@ -379,7 +384,7 @@ func (b *SelectStmt) LoadOne(value interface{}) error {
 }
 
 func (b *SelectStmt) LoadContext(ctx context.Context, value interface{}) (int, error) {
-	return query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value)
+	return query(ctx, b.runner, b.EventReceiver, b.EventReceiverWithContext, b, b.Dialect, value)
 }
 
 // Load loads multi-row SQL result into a slice of go variables.
