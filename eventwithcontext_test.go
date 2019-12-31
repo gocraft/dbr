@@ -6,11 +6,17 @@ import (
 	"testing"
 )
 
+type contextKey int
+
+const (
+	contextKeyID contextKey = iota
+)
+
 func TestEventReceiverWithContextSessionLoad(t *testing.T) {
 	sess := postgresSession
 	reset(t, sess)
 
-	ctx := context.WithValue(context.Background(), "key", "value")
+	ctx := context.WithValue(context.Background(), contextKeyID, "value")
 	var person dbrPerson
 	err := sess.InsertInto("dbr_people").Columns("name").Record(&person).
 		Returning("id").LoadContext(ctx, &person.Id)
@@ -22,7 +28,7 @@ func TestEventReceiverWithContextSessionExec(t *testing.T) {
 	sess := postgresSession
 	reset(t, sess)
 
-	ctx := context.WithValue(context.Background(), "key", "value")
+	ctx := context.WithValue(context.Background(), contextKeyID, "value")
 	var person dbrPerson
 	_, err := sess.InsertInto("dbr_people").Columns("name").Record(&person).
 		ExecContext(ctx)
@@ -34,7 +40,7 @@ func TestEventReceiverWithContextTxLoad(t *testing.T) {
 	sess := postgresSession
 	reset(t, sess)
 
-	ctx := context.WithValue(context.Background(), "key", "value")
+	ctx := context.WithValue(context.Background(), contextKeyID, "value")
 	var person dbrPerson
 	tx, _ := sess.BeginTx(ctx, nil)
 	err := tx.InsertInto("dbr_people").Columns("name").Record(&person).
@@ -50,7 +56,7 @@ func TestEventReceiverWithContextTxExec(t *testing.T) {
 	sess := postgresSession
 	reset(t, sess)
 
-	ctx := context.WithValue(context.Background(), "key", "value")
+	ctx := context.WithValue(context.Background(), contextKeyID, "value")
 	var person dbrPerson
 	tx, _ := sess.BeginTx(ctx, nil)
 	_, err := tx.InsertInto("dbr_people").Columns("name").Record(&person).

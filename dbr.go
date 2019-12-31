@@ -42,7 +42,7 @@ func open(driver, dsn string, log EventReceiver, logWithContext EventReceiverWit
 
 }
 
-// Open creates a Connection.
+// OpenForLogWithContext creates a Connection.
 // log implements EventReceiverWithContext
 // (can be nil to ignore logging).
 func OpenForLogWithContext(driver, dsn string, log EventReceiverWithContext) (*Connection, error) {
