@@ -31,7 +31,7 @@ type SelectStmt struct {
 	LimitByCol   []Builder
 	LimitByCount int64
 
-	commments Comments
+	comments Comments
 }
 
 type SelectBuilder = SelectStmt

@@ -123,7 +123,7 @@ func (b *DeleteStmt) Limit(n uint64) *DeleteStmt {
 }
 
 func (b *DeleteStmt) Comment(comment string) *DeleteStmt {
-	b.comments = b.comments.Append(coment)
+	b.comments = b.comments.Append(comment)
 	return b
 }
 

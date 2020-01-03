@@ -12,9 +12,7 @@ func TestUpdateStmt(t *testing.T) {
 	builder := Update("table").Set("a", 1).Where(Eq("b", 2)).Comment("UPDATE TEST")
 	err := builder.Build(dialect.MySQL, buf)
 	require.NoError(t, err)
-
-	require.Equal(t, "UPDATE `table` SET `a` = ? WHERE (`b` = ?)", buf.String())
-	//	require.Equal(t, "/* UPDATE TEST */\nUPDATE `table` SET `a` = ? WHERE (`b` = ?)", buf.String())
+	require.Equal(t, "/* UPDATE TEST */\nUPDATE `table` SET `a` = ? WHERE (`b` = ?)", buf.String())
 	require.Equal(t, []interface{}{1, 2}, buf.Value())
 }
 

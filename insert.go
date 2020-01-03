@@ -27,7 +27,7 @@ type InsertStmt struct {
 	Value        [][]interface{}
 	ReturnColumn []string
 	RecordID     *int64
-	commments    Comments
+	comments     Comments
 
 	Conflict *ConflictStmt
 }
