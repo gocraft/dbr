@@ -29,6 +29,31 @@ func TestSelectStmt(t *testing.T) {
 	require.Equal(t, 3, len(buf.Value()))
 }
 
+func TestSelectStmtWithSettings(t *testing.T) {
+	buf := NewBuffer()
+	query := Select("a").
+		From("table").
+		Settings("setting_key1", "1")
+
+	err := query.Build(dialect.Clickhouse, buf)
+	require.NoError(t, err)
+	require.Equal(t, "SELECT a FROM table\nSETTINGS setting_key1 = 1", buf.String())
+	// two functions cannot be compared
+	require.Equal(t, 0, len(buf.Value()))
+
+	buf = NewBuffer()
+	outer := Select("a", "b").
+		From(Select("a").From("table")).
+		Settings("setting_key1", "1").
+		Settings("setting_key2", "noop")
+
+	err = outer.Build(dialect.Clickhouse, buf)
+	require.NoError(t, err)
+	require.Equal(t, "SELECT a, b FROM ?\nSETTINGS setting_key1 = 1\nSETTINGS setting_key2 = noop", buf.String())
+	// two functions cannot be compared
+	require.Equal(t, 1, len(buf.Value()))
+}
+
 func BenchmarkSelectSQL(b *testing.B) {
 	buf := NewBuffer()
 	for i := 0; i < b.N; i++ {

@@ -32,6 +32,7 @@ type SelectStmt struct {
 	LimitByCount int64
 
 	comments Comments
+	settings QuerySettings
 }
 
 type SelectBuilder = SelectStmt
@@ -163,6 +164,8 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 			buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
 		}
 	}
+
+	b.settings.Build(d, buf)
 	return nil
 }
 
@@ -334,6 +337,11 @@ func (b *SelectStmt) OrderDir(col string, isAsc bool) *SelectStmt {
 
 func (b *SelectStmt) Comment(comment string) *SelectStmt {
 	b.comments = b.comments.Append(comment)
+	return b
+}
+
+func (b *SelectStmt) Settings(setting, value string) *SelectStmt {
+	b.settings = b.settings.Append(setting, value)
 	return b
 }
 
