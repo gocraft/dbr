@@ -44,11 +44,12 @@ func TestSelectStmtWithSettings(t *testing.T) {
 	buf = NewBuffer()
 	outer := Select("a", "b").
 		From(Select("a").From("table")).
-		Settings("setting_key1", "1")
+		Settings("setting_key1", "1").
+		Settings("setting_key2", "noop")
 
 	err = outer.Build(dialect.Clickhouse, buf)
 	require.NoError(t, err)
-	require.Equal(t, "SELECT a, b FROM ?\nSETTINGS setting_key1 = 1", buf.String())
+	require.Equal(t, "SELECT a, b FROM ?\nSETTINGS setting_key1 = 1\nSETTINGS setting_key2 = noop", buf.String())
 	// two functions cannot be compared
 	require.Equal(t, 1, len(buf.Value()))
 }
