@@ -12,6 +12,8 @@ jobs:
           - MYSQL_DATABASE=circle_test
           - MYSQL_ROOT_PASSWORD=root
       - image: postgres:11-alpine
+        environment:
+          - POSTGRES_PASSWORD=mysecretpassword
 
     working_directory: /go/src/github.com/gocraft/dbr
     steps:
