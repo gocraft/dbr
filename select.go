@@ -72,8 +72,7 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		buf.WriteString(" FROM ")
 		switch table := b.Table.(type) {
 		case string:
-			// FIXME: no quote ident
-			buf.WriteString(table)
+			buf.WriteString(b.QuoteIdent(table))
 		default:
 			buf.WriteString(placeholder)
 			buf.WriteValue(table)
