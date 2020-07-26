@@ -73,6 +73,7 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		switch table := b.Table.(type) {
 		case string:
 			buf.WriteString(b.QuoteIdent(table))
+			buf.WriteString(d.QuoteIdent(table))
 		default:
 			buf.WriteString(placeholder)
 			buf.WriteValue(table)

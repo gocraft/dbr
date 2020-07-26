@@ -104,7 +104,7 @@ func TestInterpolateForDialect(t *testing.T) {
 		{
 			query: "?",
 			value: []interface{}{Select("a").From("table")},
-			want:  "SELECT a FROM table",
+			want:  "SELECT a FROM `table`",
 		},
 		{
 			query: "?",
@@ -114,7 +114,7 @@ func TestInterpolateForDialect(t *testing.T) {
 		{
 			query: "?",
 			value: []interface{}{Select("a").From("table").As("a1")},
-			want:  "(SELECT a FROM table) AS `a1`",
+			want:  "(SELECT a FROM `table`) AS `a1`",
 		},
 		{
 			query: "?",
@@ -126,7 +126,7 @@ func TestInterpolateForDialect(t *testing.T) {
 			},
 			// parentheses around union subqueries are not supported in sqlite
 			// but supported in both mysql and postgres.
-			want: "(SELECT a FROM table1 UNION ALL SELECT b FROM table2) AS `t`",
+			want: "(SELECT a FROM `table1` UNION ALL SELECT b FROM `table2`) AS `t`",
 		},
 		{
 			query: "?",
