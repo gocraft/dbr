@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"strconv"
+
+	"github.com/gocraft/dbr/v2/dialect"
 )
 
 // SelectStmt builds `SELECT ...`.
@@ -130,14 +132,18 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		}
 	}
 
-	if b.LimitCount >= 0 {
-		buf.WriteString(" LIMIT ")
-		buf.WriteString(strconv.FormatInt(b.LimitCount, 10))
-	}
+	if d == dialect.MSSQL {
+		b.addMSSQLLimits(buf)
+	} else {
+		if b.LimitCount >= 0 {
+			buf.WriteString(" LIMIT ")
+			buf.WriteString(strconv.FormatInt(b.LimitCount, 10))
+		}
 
-	if b.OffsetCount >= 0 {
-		buf.WriteString(" OFFSET ")
-		buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
+		if b.OffsetCount >= 0 {
+			buf.WriteString(" OFFSET ")
+			buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
+		}
 	}
 
 	if len(b.Suffixes) > 0 {
@@ -151,6 +157,42 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 	}
 
 	return nil
+}
+
+// https://docs.microsoft.com/en-us/previous-versions/sql/sql-server-2012/ms188385(v=sql.110)
+func (b *SelectStmt) addMSSQLLimits(buf Buffer) {
+	limitCount := b.LimitCount
+	offsetCount := b.OffsetCount
+	if limitCount < 0 && offsetCount < 0 {
+		return
+	}
+	if offsetCount < 0 {
+		offsetCount = 0
+	}
+
+	if len(b.Order) == 0 {
+		// ORDER is required for OFFSET / FETCH
+		buf.WriteString(" ORDER BY ")
+		col := b.Column[0]
+		switch col := col.(type) {
+		case string:
+			// FIXME: no quote ident
+			buf.WriteString(col)
+		default:
+			buf.WriteString(placeholder)
+			buf.WriteValue(col)
+		}
+	}
+
+	buf.WriteString(" OFFSET ")
+	buf.WriteString(strconv.FormatInt(offsetCount, 10))
+	buf.WriteString(" ROWS ")
+
+	if limitCount >= 0 {
+		buf.WriteString(" FETCH FIRST ")
+		buf.WriteString(strconv.FormatInt(limitCount, 10))
+		buf.WriteString(" ROWS ONLY ")
+	}
 }
 
 // Select creates a SelectStmt.

@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"reflect"
 	"strings"
+
+	"github.com/gocraft/dbr/v2/dialect"
 )
 
 // InsertStmt builds `INSERT INTO ...`.
@@ -63,7 +65,19 @@ func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 		buf.WriteString(d.QuoteIdent(col))
 		placeholderBuf.WriteString(placeholder)
 	}
-	buf.WriteString(") VALUES ")
+	buf.WriteString(")")
+
+	if d == dialect.MSSQL && len(b.ReturnColumn) > 0 {
+		buf.WriteString(" OUTPUT ")
+		for i, col := range b.ReturnColumn {
+			if i > 0 {
+				buf.WriteString(",")
+			}
+			buf.WriteString("INSERTED." + d.QuoteIdent(col))
+		}
+	}
+
+	buf.WriteString(" VALUES ")
 	placeholderBuf.WriteString(")")
 	placeholderStr := placeholderBuf.String()
 
@@ -76,7 +90,7 @@ func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 		buf.WriteValue(tuple...)
 	}
 
-	if len(b.ReturnColumn) > 0 {
+	if d != dialect.MSSQL && len(b.ReturnColumn) > 0 {
 		buf.WriteString(" RETURNING ")
 		for i, col := range b.ReturnColumn {
 			if i > 0 {
@@ -199,7 +213,7 @@ func (b *InsertStmt) Record(structValue interface{}) *InsertStmt {
 	return b
 }
 
-// Returning specifies the returning columns for postgres.
+// Returning specifies the returning columns for postgres/mssql.
 func (b *InsertStmt) Returning(column ...string) *InsertStmt {
 	b.ReturnColumn = column
 	return b

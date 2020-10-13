@@ -6,6 +6,7 @@ jobs:
         environment:
           - DBR_TEST_MYSQL_DSN=root:root@tcp(127.0.0.1:3306)/circle_test
           - DBR_TEST_POSTGRES_DSN=postgres://postgres:mysecretpassword@127.0.0.1:5432/postgres?sslmode=disable
+          - DBR_TEST_MSSQL_DSN=sqlserver://sa:qwe123QWE@127.0.0.1/?database=master
           - GO111MODULE=on
       - image: percona:5.7
         environment:
@@ -14,7 +15,10 @@ jobs:
       - image: postgres:11-alpine
         environment:
           - POSTGRES_PASSWORD=mysecretpassword
-
+      - image: mcr.microsoft.com/mssql/server:2019-latest
+        environment:
+          - ACCEPT_EULA=Y
+          - SA_PASSWORD=qwe123QWE
     working_directory: /go/src/github.com/gocraft/dbr
     steps:
       - checkout
@@ -25,5 +29,5 @@ jobs:
             DOCKERIZE_VERSION: v0.3.0
       - run:
           name: Wait for db
-          command: dockerize -wait tcp://127.0.0.1:3306 -wait tcp://127.0.0.1:5432 -timeout 1m
+          command: dockerize -wait tcp://127.0.0.1:3306 -wait tcp://127.0.0.1:5432 -wait tcp://127.0.0.1:1433 -timeout 1m
       - run: go test -v -cover -bench . ./...
