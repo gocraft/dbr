@@ -388,3 +388,31 @@ func (b *SelectStmt) LoadContext(ctx context.Context, value interface{}) (int, e
 func (b *SelectStmt) Load(value interface{}) (int, error) {
 	return b.LoadContext(context.Background(), value)
 }
+
+// Iterate executes the query and returns the Iterator, or any error encountered.
+func (b *SelectStmt) Iterate() (Iterator, error) {
+	return b.IterateContext(context.Background())
+}
+
+// IterateContext executes the query and returns the Iterator, or any error encountered.
+func (b *SelectStmt) IterateContext(ctx context.Context) (Iterator, error) {
+	_, rows, err := queryRows(ctx, b.runner, b.EventReceiver, b, b.Dialect)
+	if err != nil {
+		if rows != nil {
+			rows.Close()
+		}
+		return nil, err
+	}
+	columns, err := rows.Columns()
+	if err != nil {
+		if rows != nil {
+			rows.Close()
+		}
+		return nil, err
+	}
+	iterator := iteratorInternals{
+		rows:    rows,
+		columns: columns,
+	}
+	return &iterator, err
+}
