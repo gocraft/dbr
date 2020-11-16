@@ -11,6 +11,7 @@ import (
 	"github.com/gocraft/dbr/v2/dialect"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,6 +23,7 @@ var (
 	mysqlDSN    = os.Getenv("DBR_TEST_MYSQL_DSN")
 	postgresDSN = os.Getenv("DBR_TEST_POSTGRES_DSN")
 	sqlite3DSN  = ":memory:"
+	mssqlDSN = os.Getenv("DBR_TEST_MSSQL_DSN")
 )
 
 func createSession(driver, dsn string) *Session {
@@ -37,9 +39,10 @@ var (
 	postgresSession       = createSession("postgres", postgresDSN)
 	postgresBinarySession = createSession("postgres", postgresDSN+"&binary_parameters=yes")
 	sqlite3Session        = createSession("sqlite3", sqlite3DSN)
+	mssqlSession          = createSession("mssql", mssqlDSN)
 
 	// all test sessions should be here
-	testSession = []*Session{mysqlSession, postgresSession, sqlite3Session}
+	testSession = []*Session{mysqlSession, postgresSession, sqlite3Session, mssqlSession}
 )
 
 type dbrPerson struct {
@@ -58,14 +61,17 @@ type nullTypedRecord struct {
 }
 
 func reset(t *testing.T, sess *Session) {
-	var autoIncrementType string
+	autoIncrementType := "serial PRIMARY KEY"
+	boolType := "bool"
+	datetimeType := "timestamp"
+
 	switch sess.Dialect {
-	case dialect.MySQL:
-		autoIncrementType = "serial PRIMARY KEY"
-	case dialect.PostgreSQL:
-		autoIncrementType = "serial PRIMARY KEY"
 	case dialect.SQLite3:
 		autoIncrementType = "integer PRIMARY KEY"
+	case dialect.MSSQL:
+		autoIncrementType = "integer IDENTITY PRIMARY KEY"
+		boolType = "BIT"
+		datetimeType = "datetime"
 	}
 	for _, v := range []string{
 		`DROP TABLE IF EXISTS dbr_people`,
@@ -81,9 +87,9 @@ func reset(t *testing.T, sess *Session) {
 			string_val varchar(255) NULL,
 			int64_val integer NULL,
 			float64_val float NULL,
-			time_val timestamp NULL ,
-			bool_val bool NULL
-		)`, autoIncrementType),
+			time_val %s NULL,
+			bool_val %s NULL
+		)`, autoIncrementType, datetimeType, boolType),
 	} {
 		_, err := sess.Exec(v)
 		require.NoError(t, err)
@@ -105,6 +111,10 @@ func TestBasicCRUD(t *testing.T) {
 			jonathan.Id = 1
 			insertColumns = []string{"id", "name", "email"}
 		}
+		if sess.Dialect == dialect.MSSQL {
+			jonathan.Id = 1
+		}
+
 		// insert
 		result, err := sess.InsertInto("dbr_people").Columns(insertColumns...).Record(&jonathan).Exec()
 		require.NoError(t, err)
