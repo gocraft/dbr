@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"strconv"
 
-	"github.com/gocraft/dbr/v2/dialect"
+	"github.com/abiewardani/dbr/v2/dialect"
 )
 
 // SelectStmt builds `SELECT ...`.
@@ -448,7 +448,7 @@ func (b *SelectStmt) LoadOneContext(ctx context.Context, value interface{}) erro
 // LoadOne loads SQL result into go variable that is not a slice.
 // Unlike Load, it returns ErrNotFound if the SQL result row count is 0.
 //
-// See https://godoc.org/github.com/gocraft/dbr#Load.
+// See https://godoc.org/github.com/abiewardani/dbr#Load.
 func (b *SelectStmt) LoadOne(value interface{}) error {
 	return b.LoadOneContext(context.Background(), value)
 }
@@ -459,7 +459,7 @@ func (b *SelectStmt) LoadContext(ctx context.Context, value interface{}) (int, e
 
 // Load loads multi-row SQL result into a slice of go variables.
 //
-// See https://godoc.org/github.com/gocraft/dbr#Load.
+// See https://godoc.org/github.com/abiewardani/dbr#Load.
 func (b *SelectStmt) Load(value interface{}) (int, error) {
 	return b.LoadContext(context.Background(), value)
 }

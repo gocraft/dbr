@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gocraft/dbr/v2/dialect"
+	"github.com/abiewardani/dbr/v2/dialect"
 	"github.com/stretchr/testify/require"
 )
 

@@ -1,13 +1,13 @@
 package dbr
 
 type raw struct {
-	Query string
+	Query  string
 	Select string
-	Value []interface{}
+	Value  []interface{}
 }
 
 // Expr allows raw expression to be used when current SQL syntax is
-// not supported by gocraft/dbr.
+// not supported by abiewardani/dbr.
 func Expr(query string, value ...interface{}) Builder {
 	return &raw{Query: query, Value: value}
 }

@@ -1,18 +1,18 @@
-# gocraft/dbr (database records)
+# abiewardani/dbr (database records)
 
-[![GoDoc](https://godoc.org/github.com/gocraft/dbr?status.png)](https://godoc.org/github.com/gocraft/dbr)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fgocraft%2Fdbr.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fgocraft%2Fdbr?ref=badge_shield)
-[![Go Report Card](https://goreportcard.com/badge/github.com/gocraft/dbr)](https://goreportcard.com/report/github.com/gocraft/dbr)
-[![CircleCI](https://circleci.com/gh/gocraft/dbr.svg?style=svg)](https://circleci.com/gh/gocraft/dbr)
+[![GoDoc](https://godoc.org/github.com/abiewardani/dbr?status.png)](https://godoc.org/github.com/abiewardani/dbr)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fabiewardani%2Fdbr.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fabiewardani%2Fdbr?ref=badge_shield)
+[![Go Report Card](https://goreportcard.com/badge/github.com/abiewardani/dbr)](https://goreportcard.com/report/github.com/abiewardani/dbr)
+[![CircleCI](https://circleci.com/gh/abiewardani/dbr.svg?style=svg)](https://circleci.com/gh/abiewardani/dbr)
 
-gocraft/dbr provides additions to Go's database/sql for super fast performance and convenience.
+abiewardani/dbr provides additions to Go's database/sql for super fast performance and convenience.
 
 ```
-$ go get -u github.com/gocraft/dbr/v2
+$ go get -u github.com/abiewardani/dbr/v2
 ```
 
 ```go
-import "github.com/gocraft/dbr/v2"
+import "github.com/abiewardani/dbr/v2"
 ```
 
 ## Driver support
@@ -24,7 +24,7 @@ import "github.com/gocraft/dbr/v2"
 
 ## Examples
 
-See [godoc](https://godoc.org/github.com/gocraft/dbr) for more examples.
+See [godoc](https://godoc.org/github.com/abiewardani/dbr) for more examples.
 
 ### Open connections
 
@@ -88,4 +88,4 @@ Contributors:
 * Paul Bergeron -- [https://github.com/dinedal](https://github.com/dinedal) - SQLite dialect
 
 ## License
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fgocraft%2Fdbr.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fgocraft%2Fdbr?ref=badge_large)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fabiewardani%2Fdbr.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fabiewardani%2Fdbr?ref=badge_large)
