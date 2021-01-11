@@ -284,7 +284,6 @@ func (sess *Session) SelectRaw(selectQuery string) *SelectStmt {
 	return b
 }
 
-
 // SelectRaw creates a SelectStmt from raw select query.
 func (tx *Tx) SelectRaw(selectQuery string) *SelectStmt {
 	b := SelectRaw(selectQuery)
