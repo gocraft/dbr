@@ -145,12 +145,20 @@ sess.InsertInto("suggestions").
 
 ```go
 
-
+var suggestions []Suggestion
 sess := mysqlSession
 ids := []int64{1, 2, 3, 4, 5}
-sess.SelectRaw("SELECT * FROM suggestion").Where("id IN ?", ids)
+sess.SelectRaw("SELECT * FROM suggestion").Where("id IN ?", ids).Load(&suggestions)
 ```
 
+// if load one
+```go
+
+var suggestions Suggestion{}
+sess := mysqlSession
+ids := []int64{1, 2, 3, 4, 5}
+sess.SelectRaw("SELECT * FROM suggestion").Where("id IN ?", ids).LoadOne(&suggestions)
+```
 
 ## Benchmark (2018-05-11)
 
