@@ -50,7 +50,11 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		return err
 	}
 
-	buf.WriteString("SELECT ")
+	if b.raw.Select != "" {
+		buf.WriteString(b.raw.Select)
+	} else {
+		buf.WriteString("SELECT ")
+	}
 
 	if b.IsDistinct {
 		buf.WriteString("DISTINCT ")
@@ -254,6 +258,36 @@ func (sess *Session) SelectBySql(query string, value ...interface{}) *SelectStmt
 // SelectBySql creates a SelectStmt from raw query.
 func (tx *Tx) SelectBySql(query string, value ...interface{}) *SelectStmt {
 	b := SelectBySql(query, value...)
+	b.runner = tx
+	b.EventReceiver = tx.EventReceiver
+	b.Dialect = tx.Dialect
+	return b
+}
+
+// SelectBySql creates a SelectStmt from raw select query.
+func SelectRaw(selectQuery string) *SelectStmt {
+	return &SelectStmt{
+		raw: raw{
+			Select: selectQuery,
+		},
+		LimitCount:  -1,
+		OffsetCount: -1,
+	}
+}
+
+// SelectBySql creates a SelectStmt from raw select query.
+func (sess *Session) SelectRaw(selectQuery string) *SelectStmt {
+	b := SelectRaw(selectQuery)
+	b.runner = sess
+	b.EventReceiver = sess.EventReceiver
+	b.Dialect = sess.Dialect
+	return b
+}
+
+
+// SelectRaw creates a SelectStmt from raw select query.
+func (tx *Tx) SelectRaw(selectQuery string) *SelectStmt {
+	b := SelectRaw(selectQuery)
 	b.runner = tx
 	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect

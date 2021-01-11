@@ -2,6 +2,7 @@ package dbr
 
 type raw struct {
 	Query string
+	Select string
 	Value []interface{}
 }
 
