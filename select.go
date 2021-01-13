@@ -41,10 +41,6 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		return b.raw.Build(d, buf)
 	}
 
-	if len(b.Column) == 0 {
-		return ErrColumnNotSpecified
-	}
-
 	err := b.comments.Build(d, buf)
 	if err != nil {
 		return err
@@ -54,6 +50,9 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		buf.WriteString(b.raw.Select)
 	} else {
 		buf.WriteString("SELECT ")
+		if len(b.Column) == 0 {
+			return ErrColumnNotSpecified
+		}
 	}
 
 	if b.IsDistinct {
