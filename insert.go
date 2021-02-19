@@ -184,13 +184,30 @@ func (b *InsertStmt) Values(value ...interface{}) *InsertStmt {
 //
 // If there is a field called "Id" or "ID" in the struct,
 // it will be set to LastInsertId.
+//
+// If no Columns are specified, the columns will be set by the
+// struct fields excluding non exported fields.
 func (b *InsertStmt) Record(structValue interface{}) *InsertStmt {
 	v := reflect.Indirect(reflect.ValueOf(structValue))
 
 	if v.Kind() == reflect.Struct {
-		found := make([]interface{}, len(b.Column)+1)
-		// ID is recommended by golint here
 		s := newTagStore()
+
+		// We still have no columns specified
+		// Use the struct fields excluding non exported fields
+		if len(b.Column) == 0 {
+			fields := s.get(v.Type())
+			var i int
+			for x := 0; x < len(fields); x++ {
+				if fields[x] != "" {
+					fields[i] = fields[x]
+					i++
+				}
+			}
+			b.Columns(fields[:i]...)
+		}
+
+		found := make([]interface{}, len(b.Column)+1)
 		s.findValueByName(v, append(b.Column, "id"), found, false)
 
 		value := found[:len(found)-1]
