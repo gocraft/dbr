@@ -1,21 +1,37 @@
 package dialect
 
-import "strings"
+import (
+	"strings"
+	"time"
+)
 
 var (
 	// MySQL dialect
-	MySQL = mysql{}
+	MySQL Dialect = mysql{}
 	// PostgreSQL dialect
-	PostgreSQL = postgreSQL{}
+	PostgreSQL Dialect = postgreSQL{}
 	// SQLite3 dialect
-	SQLite3 = sqlite3{}
+	SQLite3 Dialect = sqlite3{}
 	// MSSQL dialect
-	MSSQL = mssql{}
+	MSSQL Dialect = mssql{}
 )
 
 const (
 	timeFormat = "2006-01-02 15:04:05.000000"
 )
+
+// Dialect abstracts database driver differences in encoding
+// types, and placeholders.
+type Dialect interface {
+	QuoteIdent(id string) string
+
+	EncodeString(s string) string
+	EncodeBool(b bool) string
+	EncodeTime(t time.Time) string
+	EncodeBytes(b []byte) string
+
+	Placeholder(n int) string
+}
 
 func quoteIdent(s, quote string) string {
 	part := strings.SplitN(s, ".", 2)
