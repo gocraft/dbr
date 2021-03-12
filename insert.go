@@ -205,6 +205,19 @@ func (b *InsertStmt) Record(structValue interface{}) *InsertStmt {
 			case reflect.Value:
 				if idField.Kind() == reflect.Int64 {
 					b.RecordID = idField.Addr().Interface().(*int64)
+					// try to add returning id in PostgreSQL
+					if b.Dialect == dialect.PostgreSQL {
+						found := false
+						for _, column := range b.ReturnColumn {
+							if strings.ToLower(column) == "id" {
+								found = true
+								break
+							}
+						}
+						if !found {
+							b.ReturnColumn = append(b.ReturnColumn, "id")
+						}
+					}
 				}
 			}
 		}
