@@ -3,9 +3,9 @@ package dbr
 import (
 	"testing"
 
+	"github.com/jiyeyuran/dbr/v2/dialect"
 	"github.com/lib/pq"
 
-	"github.com/gocraft/dbr/v2/dialect"
 	"github.com/stretchr/testify/require"
 )
 
