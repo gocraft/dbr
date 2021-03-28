@@ -199,6 +199,9 @@ func (b *InsertStmt) Record(structValue interface{}) *InsertStmt {
 			fields := s.get(v.Type())
 			var i int
 			for x := 0; x < len(fields); x++ {
+				if fields[x] == "id" && v.IsZero() {
+					continue
+				}
 				if fields[x] != "" {
 					fields[i] = fields[x]
 					i++
