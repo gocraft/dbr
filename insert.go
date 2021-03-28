@@ -197,17 +197,16 @@ func (b *InsertStmt) Record(structValue interface{}) *InsertStmt {
 		// Use the struct fields excluding non exported fields
 		if len(b.Column) == 0 {
 			fields := s.get(v.Type())
-			var i int
-			for x := 0; x < len(fields); x++ {
-				if fields[x] == "id" && v.IsZero() {
-					continue
+			for i, field := range fields {
+				if field == "id" {
+					if idField := v.Field(i); idField.IsZero() {
+						continue
+					}
 				}
-				if fields[x] != "" {
-					fields[i] = fields[x]
-					i++
+				if field != "" {
+					b.Column = append(b.Column, field)
 				}
 			}
-			b.Columns(fields[:i]...)
 		}
 
 		found := make([]interface{}, len(b.Column)+1)
