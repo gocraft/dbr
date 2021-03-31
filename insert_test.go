@@ -9,6 +9,7 @@ import (
 
 type insertTest struct {
 	A int
+	D string `db:"-"`
 	C string `db:"b"`
 	u int
 }
