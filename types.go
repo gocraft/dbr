@@ -245,3 +245,28 @@ func parseDateTime(str string, loc *time.Location) (time.Time, error) {
 
 	return t, err
 }
+
+func (ni *NullTime) SetValue(params time.Time)  {
+	ni.Valid = true
+	ni.Time = params
+}
+
+func (ni *NullString) SetValue(params string)  {
+	ni.Valid = true
+	ni.String = params
+}
+
+func (ni *NullFloat64) SetValue(params float64)  {
+	ni.Valid = true
+	ni.Float64 = params
+}
+
+func (ni *NullBool) SetValue(params bool)  {
+	ni.Valid = true
+	ni.Bool = params
+}
+
+func (ni *NullInt64) SetValue(params int64)  {
+	ni.Valid = true
+	ni.Int64 = params
+}
