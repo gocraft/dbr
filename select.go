@@ -3,6 +3,7 @@ package dbr
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strconv"
 
 	"github.com/abiewardani/dbr/v2/dialect"
@@ -489,4 +490,17 @@ func (b *SelectStmt) IterateContext(ctx context.Context) (Iterator, error) {
 		columns: columns,
 	}
 	return &iterator, err
+}
+
+func (b *SelectStmt) PrintSql() {
+	i := interpolator{
+		Buffer:       NewBuffer(),
+		Dialect:      b.Dialect,
+		IgnoreBinary: true,
+	}
+	err := i.encodePlaceholder(b, true)
+	query, value := i.String(), i.Value()
+	if err == nil {
+		fmt.Println(query, value)
+	}
 }
