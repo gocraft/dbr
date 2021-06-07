@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+var loc, _ = time.LoadLocation(`Asia/Jakarta`)
+
 //
 // Your app can use these Null types instead of the defaults. The sole benefit you get is a MarshalJSON method that is not retarded.
 //
@@ -207,11 +209,11 @@ func (n *NullTime) Scan(value interface{}) error {
 		n.Time, n.Valid = v, true
 		return nil
 	case []byte:
-		n.Time, err = parseDateTime(string(v), time.UTC)
+		n.Time, err = parseDateTime(string(v), loc)
 		n.Valid = (err == nil)
 		return err
 	case string:
-		n.Time, err = parseDateTime(v, time.UTC)
+		n.Time, err = parseDateTime(v, loc)
 		n.Valid = (err == nil)
 		return err
 	}
@@ -284,4 +286,27 @@ func (ni *NullInt64) SetValue(params int64) {
 	}
 	ni.Valid = true
 	ni.Int64 = params
+}
+
+func SetNullInt64(params int64) NullInt64 {
+	return NullInt64{sql.NullInt64{Int64: params, Valid: true}}
+}
+
+func SetNullString(params string) NullString {
+	return NullString{sql.NullString{String: params, Valid: true}}
+}
+
+func SetNullFloat64(params float64) NullFloat64 {
+	return NullFloat64{sql.NullFloat64{Float64: params, Valid: true}}
+}
+
+func SetNullBool(params bool) NullBool {
+	return NullBool{sql.NullBool{Bool: params, Valid: true}}
+}
+
+func SetNullTime(params time.Time) NullTime {
+	sqlTime := sql.NullTime{}
+	sqlTime.Time = params
+	sqlTime.Valid = true
+	return NullTime(sqlTime)
 }
