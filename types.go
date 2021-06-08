@@ -3,7 +3,6 @@ package dbr
 import (
 	"bytes"
 	"database/sql"
-	"database/sql/driver"
 	"encoding/json"
 	"time"
 )
@@ -36,11 +35,47 @@ type NullTime struct {
 }
 
 // Value implements the driver Valuer interface.
-func (n NullTime) Value() (driver.Value, error) {
+func (n NullTime) Value() *time.Time {
 	if !n.Valid {
-		return nil, nil
+		return nil
 	}
-	return n.Time, nil
+	return &n.Time
+}
+
+// Return string value
+func (n NullString) Value() string {
+	if !n.Valid {
+		return ``
+	}
+
+	return n.String
+}
+
+// Return int64 value
+func (n NullInt64) Value() int64 {
+	if !n.Valid {
+		return 0
+	}
+
+	return n.Int64
+}
+
+// Return float64 value
+func (n NullFloat64) Value() float64 {
+	if !n.Valid {
+		return 0.0
+	}
+
+	return n.Float64
+}
+
+// Return bool value
+func (n NullBool) Value() bool {
+	if !n.Valid {
+		return false
+	}
+
+	return n.Bool
 }
 
 // NullBool is a type that can be null or a bool.
