@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/abiewardani/dbr/v2/dialect"
+	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/gocraft/dbr/v2/dialect"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
-	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,7 +23,7 @@ var (
 	mysqlDSN    = os.Getenv("DBR_TEST_MYSQL_DSN")
 	postgresDSN = os.Getenv("DBR_TEST_POSTGRES_DSN")
 	sqlite3DSN  = ":memory:"
-	mssqlDSN = os.Getenv("DBR_TEST_MSSQL_DSN")
+	mssqlDSN    = os.Getenv("DBR_TEST_MSSQL_DSN")
 )
 
 func createSession(driver, dsn string) *Session {

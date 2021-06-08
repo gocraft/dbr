@@ -24,7 +24,7 @@ type interpolator struct {
 // under the hood, the mysql driver will create a prepared statement,
 // execute it, and then throw it away. This has a big performance cost.
 //
-// gocraft/dbr doesn't use prepared statements.
+// abiewardani/dbr doesn't use prepared statements.
 // We ported mysql's query escape functionality directly into our package,
 // which means we interpolate all of those question marks with
 // their arguments before they get to MySQL.
@@ -152,6 +152,38 @@ func (i *interpolator) encodePlaceholder(value interface{}, topLevel bool) error
 	case reflect.Struct:
 		if v.Type() == typeTime {
 			i.WriteString(i.EncodeTime(v.Interface().(time.Time)))
+			return nil
+		}
+		if v.Type() == typeTime {
+			i.WriteString(i.EncodeTime(v.Interface().(time.Time)))
+			return nil
+		}
+		switch v.Type() {
+		case reflect.TypeOf(NullString{}):
+			a := v.Interface().(NullString)
+			i.WriteString(i.EncodeString(a.Value()))
+			return nil
+		case reflect.TypeOf(NullFloat64{}):
+			a := v.Interface().(NullFloat64)
+			i.WriteString(i.EncodeString(strconv.FormatFloat(a.Value(), 'f', -1, 64)))
+			return nil
+		case reflect.TypeOf(NullInt64{}):
+			a := v.Interface().(NullInt64)
+			i.WriteString(strconv.FormatInt(a.Value(), 10))
+			return nil
+		case reflect.TypeOf(NullBool{}):
+			a := v.Interface().(NullBool)
+			i.WriteString(i.EncodeBool(a.Value()))
+			return nil
+		case reflect.TypeOf(NullTime{}):
+			a := v.Interface().(NullTime)
+			if a.Value() == nil {
+				i.WriteString(i.EncodeTime(time.Now()))
+			}
+			i.WriteString(i.EncodeTime(*a.Value()))
+			return nil
+		default:
+			i.WriteString(``)
 			return nil
 		}
 	case reflect.Slice:

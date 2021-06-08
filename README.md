@@ -141,6 +141,24 @@ sess.InsertInto("suggestions").
 	Pair("body", "I love go.")
 ```
 
+### (UPDATE) Select Raw And Where Dinamic
+
+```go
+
+var suggestions []Suggestion
+sess := mysqlSession
+ids := []int64{1, 2, 3, 4, 5}
+sess.SelectRaw("SELECT * FROM suggestion").Where("id IN ?", ids).Load(&suggestions)
+```
+
+
+```go
+// if load return one value
+var suggestions Suggestion{}
+sess := mysqlSession
+ids := []int64{1, 2, 3, 4, 5}
+sess.SelectRaw("SELECT * FROM suggestion").Where("id IN ?", ids).LoadOne(&suggestions)
+```
 
 ## Benchmark (2018-05-11)
 

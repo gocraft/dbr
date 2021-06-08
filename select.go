@@ -3,9 +3,10 @@ package dbr
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strconv"
 
-	"github.com/gocraft/dbr/v2/dialect"
+	"github.com/abiewardani/dbr/v2/dialect"
 )
 
 // SelectStmt builds `SELECT ...`.
@@ -41,16 +42,19 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		return b.raw.Build(d, buf)
 	}
 
-	if len(b.Column) == 0 {
-		return ErrColumnNotSpecified
-	}
-
 	err := b.comments.Build(d, buf)
 	if err != nil {
 		return err
 	}
 
-	buf.WriteString("SELECT ")
+	if b.raw.Select != "" {
+		buf.WriteString(b.raw.Select)
+	} else {
+		buf.WriteString("SELECT ")
+		if len(b.Column) == 0 {
+			return ErrColumnNotSpecified
+		}
+	}
 
 	if b.IsDistinct {
 		buf.WriteString("DISTINCT ")
@@ -260,6 +264,35 @@ func (tx *Tx) SelectBySql(query string, value ...interface{}) *SelectStmt {
 	return b
 }
 
+// SelectBySql creates a SelectStmt from raw select query.
+func SelectRaw(selectQuery string) *SelectStmt {
+	return &SelectStmt{
+		raw: raw{
+			Select: selectQuery,
+		},
+		LimitCount:  -1,
+		OffsetCount: -1,
+	}
+}
+
+// SelectBySql creates a SelectStmt from raw select query.
+func (sess *Session) SelectRaw(selectQuery string) *SelectStmt {
+	b := SelectRaw(selectQuery)
+	b.runner = sess
+	b.EventReceiver = sess.EventReceiver
+	b.Dialect = sess.Dialect
+	return b
+}
+
+// SelectRaw creates a SelectStmt from raw select query.
+func (tx *Tx) SelectRaw(selectQuery string) *SelectStmt {
+	b := SelectRaw(selectQuery)
+	b.runner = tx
+	b.EventReceiver = tx.EventReceiver
+	b.Dialect = tx.Dialect
+	return b
+}
+
 // From specifies table to select from.
 // table can be Builder like SelectStmt, or string.
 func (b *SelectStmt) From(table interface{}) *SelectStmt {
@@ -415,7 +448,7 @@ func (b *SelectStmt) LoadOneContext(ctx context.Context, value interface{}) erro
 // LoadOne loads SQL result into go variable that is not a slice.
 // Unlike Load, it returns ErrNotFound if the SQL result row count is 0.
 //
-// See https://godoc.org/github.com/gocraft/dbr#Load.
+// See https://godoc.org/github.com/abiewardani/dbr#Load.
 func (b *SelectStmt) LoadOne(value interface{}) error {
 	return b.LoadOneContext(context.Background(), value)
 }
@@ -426,7 +459,7 @@ func (b *SelectStmt) LoadContext(ctx context.Context, value interface{}) (int, e
 
 // Load loads multi-row SQL result into a slice of go variables.
 //
-// See https://godoc.org/github.com/gocraft/dbr#Load.
+// See https://godoc.org/github.com/abiewardani/dbr#Load.
 func (b *SelectStmt) Load(value interface{}) (int, error) {
 	return b.LoadContext(context.Background(), value)
 }
@@ -457,4 +490,17 @@ func (b *SelectStmt) IterateContext(ctx context.Context) (Iterator, error) {
 		columns: columns,
 	}
 	return &iterator, err
+}
+
+func (b *SelectStmt) PrintSql() {
+	i := interpolator{
+		Buffer:       NewBuffer(),
+		Dialect:      b.Dialect,
+		IgnoreBinary: true,
+	}
+	err := i.encodePlaceholder(b, true)
+	query, value := i.String(), i.Value()
+	if err == nil {
+		fmt.Println(query, value)
+	}
 }

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gocraft/dbr/v2/dialect"
+	"github.com/abiewardani/dbr/v2/dialect"
 )
 
 // Open creates a Connection.
@@ -50,7 +50,7 @@ type Connection struct {
 
 // Session represents a business unit of execution.
 //
-// All queries in gocraft/dbr are made in the context of a session.
+// All queries in abiewardani/dbr are made in the context of a session.
 // This is because when instrumenting your app, it's important
 // to understand which business action the query took place in.
 //

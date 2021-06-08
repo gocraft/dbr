@@ -3,10 +3,11 @@ package dbr
 import (
 	"bytes"
 	"database/sql"
-	"database/sql/driver"
 	"encoding/json"
 	"time"
 )
+
+var loc, _ = time.LoadLocation(`Asia/Jakarta`)
 
 //
 // Your app can use these Null types instead of the defaults. The sole benefit you get is a MarshalJSON method that is not retarded.
@@ -34,11 +35,47 @@ type NullTime struct {
 }
 
 // Value implements the driver Valuer interface.
-func (n NullTime) Value() (driver.Value, error) {
+func (n NullTime) Value() *time.Time {
 	if !n.Valid {
-		return nil, nil
+		return nil
 	}
-	return n.Time, nil
+	return &n.Time
+}
+
+// Return string value
+func (n NullString) Value() string {
+	if !n.Valid {
+		return ``
+	}
+
+	return n.String
+}
+
+// Return int64 value
+func (n NullInt64) Value() int64 {
+	if !n.Valid {
+		return 0
+	}
+
+	return n.Int64
+}
+
+// Return float64 value
+func (n NullFloat64) Value() float64 {
+	if !n.Valid {
+		return 0.0
+	}
+
+	return n.Float64
+}
+
+// Return bool value
+func (n NullBool) Value() bool {
+	if !n.Valid {
+		return false
+	}
+
+	return n.Bool
 }
 
 // NullBool is a type that can be null or a bool.
@@ -207,11 +244,11 @@ func (n *NullTime) Scan(value interface{}) error {
 		n.Time, n.Valid = v, true
 		return nil
 	case []byte:
-		n.Time, err = parseDateTime(string(v), time.UTC)
+		n.Time, err = parseDateTime(string(v), loc)
 		n.Valid = (err == nil)
 		return err
 	case string:
-		n.Time, err = parseDateTime(v, time.UTC)
+		n.Time, err = parseDateTime(v, loc)
 		n.Valid = (err == nil)
 		return err
 	}
@@ -244,4 +281,67 @@ func parseDateTime(str string, loc *time.Location) (time.Time, error) {
 	}
 
 	return t, err
+}
+
+func (ni *NullTime) SetValue(params time.Time) {
+	if ni == nil {
+		return
+	}
+	ni.Valid = true
+	ni.Time = params
+}
+
+func (ni *NullString) SetValue(params string) {
+	if ni == nil {
+		return
+	}
+	ni.Valid = true
+	ni.String = params
+}
+
+func (ni *NullFloat64) SetValue(params float64) {
+	if ni == nil {
+		return
+	}
+	ni.Valid = true
+	ni.Float64 = params
+}
+
+func (ni *NullBool) SetValue(params bool) {
+	if ni == nil {
+		return
+	}
+	ni.Valid = true
+	ni.Bool = params
+}
+
+func (ni *NullInt64) SetValue(params int64) {
+	if ni == nil {
+		return
+	}
+	ni.Valid = true
+	ni.Int64 = params
+}
+
+func SetNullInt64(params int64) NullInt64 {
+	return NullInt64{sql.NullInt64{Int64: params, Valid: true}}
+}
+
+func SetNullString(params string) NullString {
+	return NullString{sql.NullString{String: params, Valid: true}}
+}
+
+func SetNullFloat64(params float64) NullFloat64 {
+	return NullFloat64{sql.NullFloat64{Float64: params, Valid: true}}
+}
+
+func SetNullBool(params bool) NullBool {
+	return NullBool{sql.NullBool{Bool: params, Valid: true}}
+}
+
+func SetNullTime(params time.Time) NullTime {
+	sqlTime := sql.NullTime{}
+	sqlTime.Time = params
+	sqlTime.Valid = true
+	return NullTime(sqlTime)
 }

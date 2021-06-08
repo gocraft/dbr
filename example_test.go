@@ -38,7 +38,7 @@ func ExampleSelectStmt_Load() {
 		secret string     // ignored
 	}
 
-	// By default gocraft/dbr converts CamelCase property names to snake_case column_names.
+	// By default abiewardani/dbr converts CamelCase property names to snake_case column_names.
 	// You can override this with struct tags, just like with JSON tags.
 	// This is especially helpful while migrating from legacy systems.
 	var suggestions []Suggestion
@@ -49,7 +49,7 @@ func ExampleSelectStmt_Load() {
 func ExampleSelectStmt_Where() {
 	// database/sql uses prepared statements, which means each argument
 	// in an IN clause needs its own question mark.
-	// gocraft/dbr, on the other hand, handles interpolation itself
+	// abiewardani/dbr, on the other hand, handles interpolation itself
 	// so that you can easily use a single question mark paired with a
 	// dynamically sized slice.
 

@@ -19,7 +19,7 @@ jobs:
         environment:
           - ACCEPT_EULA=Y
           - SA_PASSWORD=qwe123QWE
-    working_directory: /go/src/github.com/gocraft/dbr
+    working_directory: /go/src/github.com/abiewardani/dbr
     steps:
       - checkout
       - run:
