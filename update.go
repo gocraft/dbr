@@ -20,6 +20,7 @@ type UpdateStmt struct {
 	ReturnColumn []string
 	LimitCount   int64
 	comments     Comments
+	indexHints   []Builder
 }
 
 type UpdateBuilder = UpdateStmt
@@ -44,6 +45,12 @@ func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
 
 	buf.WriteString("UPDATE ")
 	buf.WriteString(d.QuoteIdent(b.Table))
+	for _, hint := range b.indexHints {
+		buf.WriteString(" ")
+		if err := hint.Build(d, buf); err != nil {
+			return err
+		}
+	}
 	buf.WriteString(" SET ")
 
 	i := 0
@@ -212,4 +219,18 @@ func (b *UpdateStmt) LoadContext(ctx context.Context, value interface{}) error {
 
 func (b *UpdateStmt) Load(value interface{}) error {
 	return b.LoadContext(context.Background(), value)
+}
+
+// IndexHint adds a index hint.
+// hint can be Builder or string.
+func (b *UpdateStmt) IndexHint(hints ...interface{}) *UpdateStmt {
+	for _, hint := range hints {
+		switch hint := hint.(type) {
+		case string:
+			b.indexHints = append(b.indexHints, Expr(hint))
+		case Builder:
+			b.indexHints = append(b.indexHints, hint)
+		}
+	}
+	return b
 }

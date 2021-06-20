@@ -32,6 +32,8 @@ type SelectStmt struct {
 	OffsetCount int64
 
 	comments Comments
+
+	indexHints []Builder
 }
 
 type SelectBuilder = SelectStmt
@@ -80,6 +82,14 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 			buf.WriteString(placeholder)
 			buf.WriteValue(table)
 		}
+
+		for _, hint := range b.indexHints {
+			buf.WriteString(" ")
+			if err := hint.Build(d, buf); err != nil {
+				return err
+			}
+		}
+
 		if len(b.JoinTable) > 0 {
 			for _, join := range b.JoinTable {
 				err := join.Build(d, buf)
@@ -457,4 +467,18 @@ func (b *SelectStmt) IterateContext(ctx context.Context) (Iterator, error) {
 		columns: columns,
 	}
 	return &iterator, err
+}
+
+// IndexHint adds a index hint.
+// hint can be Builder or string.
+func (b *SelectStmt) IndexHint(hints ...interface{}) *SelectStmt {
+	for _, hint := range hints {
+		switch hint := hint.(type) {
+		case string:
+			b.indexHints = append(b.indexHints, Expr(hint))
+		case Builder:
+			b.indexHints = append(b.indexHints, hint)
+		}
+	}
+	return b
 }

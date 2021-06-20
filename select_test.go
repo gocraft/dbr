@@ -22,11 +22,14 @@ func TestSelectStmt(t *testing.T) {
 		Limit(3).
 		Offset(4).
 		Suffix("FOR UPDATE").
-		Comment("SELECT TEST")
+		Comment("SELECT TEST").
+		IndexHint(UseIndex("idx_c_d").ForGroupBy(), "USE INDEX(idx_e_f)").
+		IndexHint(IgnoreIndex("idx_a_b"))
 
 	err := builder.Build(dialect.MySQL, buf)
 	require.NoError(t, err)
-	require.Equal(t, "/* SELECT TEST */\nSELECT DISTINCT a, b FROM ? LEFT JOIN `table2` ON table.a1 = table.a2 WHERE (`c` = ?) GROUP BY d HAVING (`e` = ?) ORDER BY f ASC LIMIT 3 OFFSET 4 FOR UPDATE", buf.String())
+	require.Equal(t, "/* SELECT TEST */\nSELECT DISTINCT a, b FROM ? USE INDEX FOR GROUP BY(`idx_c_d`) USE INDEX(idx_e_f) IGNORE INDEX(`idx_a_b`) "+
+		"LEFT JOIN `table2` ON table.a1 = table.a2 WHERE (`c` = ?) GROUP BY d HAVING (`e` = ?) ORDER BY f ASC LIMIT 3 OFFSET 4 FOR UPDATE", buf.String())
 	// two functions cannot be compared
 	require.Equal(t, 3, len(buf.Value()))
 }

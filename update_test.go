@@ -9,11 +9,12 @@ import (
 
 func TestUpdateStmt(t *testing.T) {
 	buf := NewBuffer()
-	builder := Update("table").Set("a", 1).Where(Eq("b", 2)).Comment("UPDATE TEST")
+	builder := Update("table").Set("a", 1).Where(Eq("b", 2)).Comment("UPDATE TEST").
+		IndexHint(ForceIndex("idx_a_b"))
 	err := builder.Build(dialect.MySQL, buf)
 	require.NoError(t, err)
 
-	require.Equal(t, "/* UPDATE TEST */\nUPDATE `table` SET `a` = ? WHERE (`b` = ?)", buf.String())
+	require.Equal(t, "/* UPDATE TEST */\nUPDATE `table` FORCE INDEX(`idx_a_b`) SET `a` = ? WHERE (`b` = ?)", buf.String())
 	require.Equal(t, []interface{}{1, 2}, buf.Value())
 }
 
