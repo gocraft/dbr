@@ -58,6 +58,7 @@ func TestSliceWithSQLScannerSelect(t *testing.T) {
 			Values("test2", "test2@test.com").
 			Values("test3", "test3@test.com").
 			Exec()
+		require.NoError(t, err)
 
 		//plain string slice (original behavior)
 		var stringSlice []string
@@ -87,6 +88,7 @@ func TestMaps(t *testing.T) {
 			Values("test2", "test2@test.com").
 			Values("test2", "test3@test.com").
 			Exec()
+		require.NoError(t, err)
 
 		var m map[string]string
 		cnt, err := sess.Select("email, name").From("dbr_people").Load(&m)
@@ -133,6 +135,7 @@ func TestSelectRows(t *testing.T) {
 			Values("test2", "test2@test.com").
 			Values("test3", "test3@test.com").
 			Exec()
+		require.NoError(t, err)
 
 		rows, err := sess.Select("*").From("dbr_people").OrderAsc("id").Rows()
 		require.NoError(t, err)
@@ -166,6 +169,7 @@ func TestInterfaceLoader(t *testing.T) {
 			Values("test2", "test2@test.com").
 			Values("test2", "test3@test.com").
 			Exec()
+		require.NoError(t, err)
 
 		var m []interface{}
 		cnt, err := sess.Select("*").From("dbr_people").Load(InterfaceLoader(&m, dbrPerson{}))
