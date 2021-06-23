@@ -129,8 +129,13 @@ func exec(ctx context.Context, runner runner, log EventReceiver, builder Builder
 
 	startTime := time.Now()
 	defer func() {
+		pbuf := NewBuffer()
+		_=builder.Build(i.Dialect, pbuf)
+		
 		log.TimingKv("dbr.exec", time.Since(startTime).Nanoseconds(), kvs{
 			"sql": query,
+			"args": fmt.Sprint(pbuf.Value()),
+			"prepareSql":pbuf.String(),
 		})
 	}()
 
@@ -172,8 +177,13 @@ func queryRows(ctx context.Context, runner runner, log EventReceiver, builder Bu
 
 	startTime := time.Now()
 	defer func() {
+		pbuf := NewBuffer()
+		_=builder.Build(i.Dialect, pbuf)
+		
 		log.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), kvs{
 			"sql": query,
+			"args": fmt.Sprint(pbuf.Value()),
+			"prepareSql":pbuf.String(),
 		})
 	}()
 
