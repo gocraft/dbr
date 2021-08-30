@@ -36,13 +36,31 @@ func Or(cond ...Builder) Builder {
 }
 
 func buildCmp(d Dialect, buf Buffer, pred string, column string, value interface{}) error {
-	buf.WriteString(d.QuoteIdent(column))
-	buf.WriteString(" ")
-	buf.WriteString(pred)
-	buf.WriteString(" ")
-	buf.WriteString(placeholder)
+	err := buf.WriteString(d.QuoteIdent(column))
+	if err != nil {
+		return err
+	}
+	err = buf.WriteString(" ")
+	if err != nil {
+		return err
+	}
+	err = buf.WriteString(pred)
+	if err != nil {
+		return err
+	}
+	err = buf.WriteString(" ")
+	if err != nil {
+		return err
+	}
+	err = buf.WriteString(placeholder)
+	if err != nil {
+		return err
+	}
 
-	buf.WriteValue(value)
+	err = buf.WriteValue(value)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
