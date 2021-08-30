@@ -5,18 +5,34 @@ import (
 )
 
 func buildCond(d Dialect, buf Buffer, pred string, cond ...Builder) error {
+	var err error
 	for i, c := range cond {
 		if i > 0 {
-			buf.WriteString(" ")
-			buf.WriteString(pred)
-			buf.WriteString(" ")
+			err = buf.WriteString(" ")
+			if err != nil {
+				return err
+			}
+			err = buf.WriteString(pred)
+			if err != nil {
+				return err
+			}
+			err = buf.WriteString(" ")
+			if err != nil {
+				return err
+			}
 		}
-		buf.WriteString("(")
-		err := c.Build(d, buf)
+		err = buf.WriteString("(")
 		if err != nil {
 			return err
 		}
-		buf.WriteString(")")
+		err = c.Build(d, buf)
+		if err != nil {
+			return err
+		}
+		err = buf.WriteString(")")
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -70,15 +86,25 @@ func buildCmp(d Dialect, buf Buffer, pred string, column string, value interface
 // Otherwise it will be translated to `=`.
 func Eq(column string, value interface{}) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
+		var err error
 		if value == nil {
-			buf.WriteString(d.QuoteIdent(column))
-			buf.WriteString(" IS NULL")
+			err = buf.WriteString(d.QuoteIdent(column))
+			if err != nil {
+				return err
+			}
+			err = buf.WriteString(" IS NULL")
+			if err != nil {
+				return err
+			}
 			return nil
 		}
 		v := reflect.ValueOf(value)
 		if v.Kind() == reflect.Slice {
 			if v.Len() == 0 {
-				buf.WriteString(d.EncodeBool(false))
+				err = buf.WriteString(d.EncodeBool(false))
+				if err != nil {
+					return err
+				}
 				return nil
 			}
 			return buildCmp(d, buf, "IN", column, value)
@@ -93,15 +119,26 @@ func Eq(column string, value interface{}) Builder {
 // Otherwise it will be translated to `!=`.
 func Neq(column string, value interface{}) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
+		var err error
+
 		if value == nil {
-			buf.WriteString(d.QuoteIdent(column))
-			buf.WriteString(" IS NOT NULL")
+			err = buf.WriteString(d.QuoteIdent(column))
+			if err != nil {
+				return err
+			}
+			err = buf.WriteString(" IS NOT NULL")
+			if err != nil {
+				return err
+			}
 			return nil
 		}
 		v := reflect.ValueOf(value)
 		if v.Kind() == reflect.Slice {
 			if v.Len() == 0 {
-				buf.WriteString(d.EncodeBool(true))
+				err = buf.WriteString(d.EncodeBool(true))
+				if err != nil {
+					return err
+				}
 				return nil
 			}
 			return buildCmp(d, buf, "NOT IN", column, value)
