@@ -97,6 +97,26 @@ func TestFindValueByName(t *testing.T) {
 			name: []string{"test2"},
 			want: []string{"test2"},
 		},
+		{
+			in: struct {
+				Test1 struct {
+					Test2 int `db:"test2"`
+				} `db:"test1"`
+			}{},
+			name: []string{"test1.test2"},
+			want: []string{"test1.test2"},
+		},
+		{
+			in: struct {
+				Test1 struct {
+					Test2 struct {
+						Test3 int `db:"test3"`
+					} `db:"test2"`
+				} `db:"test1"`
+			}{},
+			name: []string{"test1.test2.test3"},
+			want: []string{"test1.test2.test3"},
+		},
 	} {
 		found := make([]interface{}, len(test.name))
 		s := newTagStore()

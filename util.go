@@ -124,6 +124,10 @@ func (s *tagStore) findValueByName(value reflect.Value, name []string, ret []int
 			}
 			fieldValue := value.Field(i)
 			for i, want := range name {
+				if strings.HasPrefix(want, tag+".") {
+					s.findValueByName(fieldValue, []string{strings.TrimPrefix(want, tag+".")}, ret[i:], retPtr)
+					continue
+				}
 				if want != tag {
 					continue
 				}

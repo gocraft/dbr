@@ -81,6 +81,12 @@ func reset(t *testing.T, sess *Session) {
 			email varchar(255)
 		)`, autoIncrementType),
 
+		`DROP TABLE IF EXISTS dbr_friend`,
+		fmt.Sprintf(`CREATE TABLE dbr_friend (
+			one integer NOT NULL,
+			another integer NOT NULL
+		)`),
+
 		`DROP TABLE IF EXISTS null_types`,
 		fmt.Sprintf(`CREATE TABLE null_types (
 			id %s,
@@ -106,13 +112,19 @@ func TestBasicCRUD(t *testing.T) {
 			Name:  "jonathan",
 			Email: "jonathan@uservoice.com",
 		}
+		bamiyan := dbrPerson{
+			Name:  "bamiyan",
+			Email: "bamiyan@uservoice.com",
+		}
 		insertColumns := []string{"name", "email"}
 		if sess.Dialect == dialect.PostgreSQL {
 			jonathan.Id = 1
+			bamiyan.Id = 2
 			insertColumns = []string{"id", "name", "email"}
 		}
 		if sess.Dialect == dialect.MSSQL {
 			jonathan.Id = 1
+			bamiyan.Id = 2
 		}
 
 		// insert
@@ -124,6 +136,13 @@ func TestBasicCRUD(t *testing.T) {
 		require.Equal(t, int64(1), rowsAffected)
 
 		require.True(t, jonathan.Id > 0)
+
+		result, err = sess.InsertInto("dbr_people").Columns(insertColumns...).Record(&bamiyan).Exec()
+		require.NoError(t, err)
+
+		result, err = sess.InsertInto("dbr_friend").Pair("one", jonathan.Id).Pair("another", bamiyan.Id).Exec()
+		require.NoError(t, err)
+
 		// select
 		var people []dbrPerson
 		count, err := sess.Select("*").From("dbr_people").Where(Eq("id", jonathan.Id)).Load(&people)
@@ -136,12 +155,38 @@ func TestBasicCRUD(t *testing.T) {
 		// select id
 		ids, err := sess.Select("id").From("dbr_people").ReturnInt64s()
 		require.NoError(t, err)
-		require.Equal(t, 1, len(ids))
+		require.Equal(t, 2, len(ids))
 
 		// select id limit
 		ids, err = sess.Select("id").From("dbr_people").Limit(1).ReturnInt64s()
 		require.NoError(t, err)
 		require.Equal(t, 1, len(ids))
+
+		friends := struct {
+			One struct {
+				Id    int64  `db:"id"`
+				Name  string `db:"name"`
+				Email string `db:"email"`
+			} `db:"one"`
+			Another struct {
+				Id    int64  `db:"id"`
+				Name  string `db:"name"`
+				Email string `db:"email"`
+			} `db:"another"`
+		}{}
+
+		err = sess.Select("one.id AS \"one.id\"", "one.name AS \"one.name\"", "one.email AS \"one.email\"", "another.id AS \"another.id\"", "another.name AS \"another.name\"", "another.email AS \"another.email\"").
+			From(I("dbr_people").As("one")).
+			Join("dbr_friend", "one.id = dbr_friend.one").
+			Join(I("dbr_people").As("another"), "another.id = dbr_friend.another").
+			LoadOne(&friends)
+		require.NoError(t, err)
+		require.Equal(t, jonathan.Id, friends.One.Id)
+		require.Equal(t, jonathan.Name, friends.One.Name)
+		require.Equal(t, jonathan.Name, friends.One.Name)
+		require.Equal(t, bamiyan.Id, friends.Another.Id)
+		require.Equal(t, bamiyan.Name, friends.Another.Name)
+		require.Equal(t, bamiyan.Name, friends.Another.Name)
 
 		// update
 		result, err = sess.Update("dbr_people").Where(Eq("id", jonathan.Id)).Set("name", "jonathan1").Exec()
@@ -166,7 +211,7 @@ func TestBasicCRUD(t *testing.T) {
 		// select id
 		ids, err = sess.Select("id").From("dbr_people").ReturnInt64s()
 		require.NoError(t, err)
-		require.Equal(t, 0, len(ids))
+		require.Equal(t, 1, len(ids))
 	}
 }
 
