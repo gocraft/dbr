@@ -13,16 +13,16 @@ analyze:
     target: github.com/gocraft/dbr/v2
     path: .
     options:
-      allow-external-vendor: false
+      modules-vendor: true
   - name: github.com/gocraft/dbr/v2/dialect
     type: go
     target: github.com/gocraft/dbr/v2/dialect
     path: dialect
     options:
-      allow-external-vendor: false
+      modules-vendor: true
   - name: github.com/gocraft/dbr/v2/opentracing
     type: go
     target: github.com/gocraft/dbr/v2/opentracing
     path: opentracing
     options:
-      allow-external-vendor: false
+      modules-vendor: true

@@ -21,8 +21,12 @@ jobs:
           - SA_PASSWORD=qwe123QWE
     working_directory: /go/src/github.com/gocraft/dbr
     steps:
+      - run: |
+          curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | bash
       - checkout
+      - run: fossa analyze
       - run:
           name: Wait for db
           command: dockerize -wait tcp://127.0.0.1:3306 -wait tcp://127.0.0.1:5432 -wait tcp://127.0.0.1:1433 -timeout 1m
       - run: go test -v -cover -bench . ./...
+      - run: fossa test
