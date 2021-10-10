@@ -12,11 +12,17 @@ analyze:
     type: go
     target: github.com/gocraft/dbr/v2
     path: .
+    options:
+      modules-vendor: true
   - name: github.com/gocraft/dbr/v2/dialect
     type: go
     target: github.com/gocraft/dbr/v2/dialect
     path: dialect
+    options:
+      modules-vendor: true
   - name: github.com/gocraft/dbr/v2/opentracing
     type: go
     target: github.com/gocraft/dbr/v2/opentracing
     path: opentracing
+    options:
+      modules-vendor: true
