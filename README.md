@@ -156,6 +156,7 @@ BenchmarkLoadValues/dbr_10000-8       	     100	  16150062 ns/op	 2394698 B/op	 
 BenchmarkLoadValues/sqlx_100000-8     	      10	 170068209 ns/op	31679944 B/op	 1400053 allocs/op
 BenchmarkLoadValues/dbr_100000-8      	      10	 147202536 ns/op	23680625 B/op	  900061 allocs/op
 ```
+Further benchmarks can be found here: [dbeval](https://github.com/davars/dbeval) and here: [gobenchorm](https://github.com/derkan/gobenchorm)
 
 ## Thanks & Authors
 Inspiration from these excellent libraries:
