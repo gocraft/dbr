@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.16
+      - image: circleci/golang:1.17
         environment:
           - DBR_TEST_MYSQL_DSN=root:root@tcp(127.0.0.1:3306)/circle_test
           - DBR_TEST_POSTGRES_DSN=postgres://postgres:mysecretpassword@127.0.0.1:5432/postgres?sslmode=disable
