@@ -219,5 +219,5 @@ func TestScopedSelectStmt(t *testing.T) {
 
 	sqlstr, err := InterpolateForDialect(buf.String(), buf.Value(), dialect.MySQL)
 	require.NoError(t, err)
-	require.Equal(t, "SELECT a, b FROM test_table WHERE (aa = 'bb')", sqlstr)
+	require.Equal(t, "SELECT `a`, `b` FROM `test_table` WHERE (`aa` = 'bb')", sqlstr)
 }
