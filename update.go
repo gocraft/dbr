@@ -150,6 +150,15 @@ func (tx *Tx) UpdateBySql(query string, value ...interface{}) *UpdateStmt {
 	return b
 }
 
+// Scope adds scope(s) to the query.
+func (b *UpdateStmt) Scope(scopes ...func(b *UpdateStmt) *UpdateStmt) *UpdateStmt {
+	for _, scope := range scopes {
+		b = scope(b)
+	}
+
+	return b
+}
+
 // Where adds a where condition.
 // query can be Builder or string. value is used only if query type is string.
 func (b *UpdateStmt) Where(query interface{}, value ...interface{}) *UpdateStmt {

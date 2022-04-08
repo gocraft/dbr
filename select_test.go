@@ -206,3 +206,18 @@ func TestPostgresArray(t *testing.T) {
 
 	require.Equal(t, []int64{1, 2, 3}, ns)
 }
+
+func TestScopedSelectStmt(t *testing.T) {
+	buf := NewBuffer()
+	builder := Select("a", "b").
+		From("test_table").
+		Scope(func(b *SelectStmt) *SelectStmt {
+			return b.Where("aa = ?", "bb")
+		})
+	err := builder.Build(dialect.MySQL, buf)
+	require.NoError(t, err)
+
+	sqlstr, err := InterpolateForDialect(buf.String(), buf.Value(), dialect.MySQL)
+	require.NoError(t, err)
+	require.Equal(t, "SELECT a, b FROM test_table WHERE (aa = 'bb')", sqlstr)
+}

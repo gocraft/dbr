@@ -282,6 +282,15 @@ func (b *SelectStmt) Distinct() *SelectStmt {
 	return b
 }
 
+// Scope adds scope(s) to the query.
+func (b *SelectStmt) Scope(scopes ...func(b *SelectStmt) *SelectStmt) *SelectStmt {
+	for _, scope := range scopes {
+		b = scope(b)
+	}
+
+	return b
+}
+
 // Where adds a where condition.
 // query can be Builder or string. value is used only if query type is string.
 func (b *SelectStmt) Where(query interface{}, value ...interface{}) *SelectStmt {

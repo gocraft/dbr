@@ -61,3 +61,24 @@ func TestUpdateIncrBy(t *testing.T) {
 
 	require.Equal(t, "UPDATE `table` SET `a` = `a` + 1 WHERE (`b` = 2)", sqlstr)
 }
+
+func TestScopedUpdateStmt(t *testing.T) {
+	scopeWithParameters := func(names ...string) func(b *UpdateStmt) *UpdateStmt {
+		return func(b *UpdateStmt) *UpdateStmt {
+			return b.Where("name in (?)", names)
+		}
+	}
+
+	buf := NewBuffer()
+	builder := Update("test_table").
+		Set("b", "c").
+		Scope(func(b *UpdateStmt) *UpdateStmt {
+			return b.Where("aa = ?", "bb")
+		}, scopeWithParameters("alpha", "bravo"))
+	err := builder.Build(dialect.MySQL, buf)
+	require.NoError(t, err)
+
+	sqlstr, err := InterpolateForDialect(buf.String(), buf.Value(), dialect.MySQL)
+	require.NoError(t, err)
+	require.Equal(t, "UPDATE `test_table` SET `b` = 'c' WHERE (aa = 'bb') AND (name in ('alpha', 'bravo'))", sqlstr)
+}

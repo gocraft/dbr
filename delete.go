@@ -109,6 +109,15 @@ func (tx *Tx) DeleteBySql(query string, value ...interface{}) *DeleteStmt {
 	return b
 }
 
+// Scope adds scope(s) to the query.
+func (b *DeleteStmt) Scope(scopes ...func(b *DeleteStmt) *DeleteStmt) *DeleteStmt {
+	for _, scope := range scopes {
+		b = scope(b)
+	}
+
+	return b
+}
+
 // Where adds a where condition.
 // query can be Builder or string. value is used only if query type is string.
 func (b *DeleteStmt) Where(query interface{}, value ...interface{}) *DeleteStmt {
