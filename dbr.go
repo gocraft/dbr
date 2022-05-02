@@ -99,13 +99,13 @@ type SessionRunner interface {
 	DeleteBySql(query string, value ...interface{}) *DeleteBuilder
 }
 
-type runner interface {
+type Runner interface {
 	GetTimeout() time.Duration
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
-func exec(ctx context.Context, runner runner, log EventReceiver, builder Builder, d Dialect) (sql.Result, error) {
+func exec(ctx context.Context, runner Runner, log EventReceiver, builder Builder, d Dialect) (sql.Result, error) {
 	timeout := runner.GetTimeout()
 	if timeout > 0 {
 		var cancel func()
@@ -152,7 +152,7 @@ func exec(ctx context.Context, runner runner, log EventReceiver, builder Builder
 	return result, nil
 }
 
-func queryRows(ctx context.Context, runner runner, log EventReceiver, builder Builder, d Dialect) (string, *sql.Rows, error) {
+func queryRows(ctx context.Context, runner Runner, log EventReceiver, builder Builder, d Dialect) (string, *sql.Rows, error) {
 	// discard the timeout set in the runner, the context should not be canceled
 	// implicitly here but explicitly by the caller since the returned *sql.Rows
 	// may still listening to the context
@@ -196,7 +196,7 @@ func queryRows(ctx context.Context, runner runner, log EventReceiver, builder Bu
 	return query, rows, nil
 }
 
-func query(ctx context.Context, runner runner, log EventReceiver, builder Builder, d Dialect, dest interface{}) (int, error) {
+func query(ctx context.Context, runner Runner, log EventReceiver, builder Builder, d Dialect, dest interface{}) (int, error) {
 	timeout := runner.GetTimeout()
 	if timeout > 0 {
 		var cancel func()
