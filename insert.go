@@ -11,7 +11,7 @@ import (
 
 // InsertStmt builds `INSERT INTO ...`.
 type InsertStmt struct {
-	runner
+	Runner
 	EventReceiver
 	Dialect
 
@@ -113,7 +113,7 @@ func InsertInto(table string) *InsertStmt {
 // InsertInto creates an InsertStmt.
 func (sess *Session) InsertInto(table string) *InsertStmt {
 	b := InsertInto(table)
-	b.runner = sess
+	b.Runner = sess
 	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
 	return b
@@ -122,7 +122,7 @@ func (sess *Session) InsertInto(table string) *InsertStmt {
 // InsertInto creates an InsertStmt.
 func (tx *Tx) InsertInto(table string) *InsertStmt {
 	b := InsertInto(table)
-	b.runner = tx
+	b.Runner = tx
 	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
 	return b
@@ -141,7 +141,7 @@ func InsertBySql(query string, value ...interface{}) *InsertStmt {
 // InsertBySql creates an InsertStmt from raw query.
 func (sess *Session) InsertBySql(query string, value ...interface{}) *InsertStmt {
 	b := InsertBySql(query, value...)
-	b.runner = sess
+	b.Runner = sess
 	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
 	return b
@@ -150,7 +150,7 @@ func (sess *Session) InsertBySql(query string, value ...interface{}) *InsertStmt
 // InsertBySql creates an InsertStmt from raw query.
 func (tx *Tx) InsertBySql(query string, value ...interface{}) *InsertStmt {
 	b := InsertBySql(query, value...)
-	b.runner = tx
+	b.Runner = tx
 	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
 	return b
@@ -239,7 +239,7 @@ func (b *InsertStmt) Exec() (sql.Result, error) {
 }
 
 func (b *InsertStmt) ExecContext(ctx context.Context) (sql.Result, error) {
-	result, err := exec(ctx, b.runner, b.EventReceiver, b, b.Dialect)
+	result, err := exec(ctx, b.Runner, b.EventReceiver, b, b.Dialect)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +255,7 @@ func (b *InsertStmt) ExecContext(ctx context.Context) (sql.Result, error) {
 }
 
 func (b *InsertStmt) LoadContext(ctx context.Context, value interface{}) error {
-	_, err := query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value)
+	_, err := query(ctx, b.Runner, b.EventReceiver, b, b.Dialect, value)
 	return err
 }
 

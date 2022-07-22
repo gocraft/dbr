@@ -8,7 +8,7 @@ import (
 
 // UpdateStmt builds `UPDATE ...`.
 type UpdateStmt struct {
-	runner
+	Runner
 	EventReceiver
 	Dialect
 
@@ -105,7 +105,7 @@ func Update(table string) *UpdateStmt {
 // Update creates an UpdateStmt.
 func (sess *Session) Update(table string) *UpdateStmt {
 	b := Update(table)
-	b.runner = sess
+	b.Runner = sess
 	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
 	return b
@@ -114,7 +114,7 @@ func (sess *Session) Update(table string) *UpdateStmt {
 // Update creates an UpdateStmt.
 func (tx *Tx) Update(table string) *UpdateStmt {
 	b := Update(table)
-	b.runner = tx
+	b.Runner = tx
 	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
 	return b
@@ -135,7 +135,7 @@ func UpdateBySql(query string, value ...interface{}) *UpdateStmt {
 // UpdateBySql creates an UpdateStmt with raw query.
 func (sess *Session) UpdateBySql(query string, value ...interface{}) *UpdateStmt {
 	b := UpdateBySql(query, value...)
-	b.runner = sess
+	b.Runner = sess
 	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
 	return b
@@ -144,7 +144,7 @@ func (sess *Session) UpdateBySql(query string, value ...interface{}) *UpdateStmt
 // UpdateBySql creates an UpdateStmt with raw query.
 func (tx *Tx) UpdateBySql(query string, value ...interface{}) *UpdateStmt {
 	b := UpdateBySql(query, value...)
-	b.runner = tx
+	b.Runner = tx
 	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
 	return b
@@ -209,11 +209,11 @@ func (b *UpdateStmt) Exec() (sql.Result, error) {
 }
 
 func (b *UpdateStmt) ExecContext(ctx context.Context) (sql.Result, error) {
-	return exec(ctx, b.runner, b.EventReceiver, b, b.Dialect)
+	return exec(ctx, b.Runner, b.EventReceiver, b, b.Dialect)
 }
 
 func (b *UpdateStmt) LoadContext(ctx context.Context, value interface{}) error {
-	_, err := query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value)
+	_, err := query(ctx, b.Runner, b.EventReceiver, b, b.Dialect, value)
 	return err
 }
 

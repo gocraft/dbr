@@ -10,7 +10,7 @@ import (
 
 // SelectStmt builds `SELECT ...`.
 type SelectStmt struct {
-	runner
+	Runner
 	EventReceiver
 	Dialect
 
@@ -225,7 +225,7 @@ func prepareSelect(a []string) []interface{} {
 // Select creates a SelectStmt.
 func (sess *Session) Select(column ...string) *SelectStmt {
 	b := Select(prepareSelect(column)...)
-	b.runner = sess
+	b.Runner = sess
 	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
 	return b
@@ -234,7 +234,7 @@ func (sess *Session) Select(column ...string) *SelectStmt {
 // Select creates a SelectStmt.
 func (tx *Tx) Select(column ...string) *SelectStmt {
 	b := Select(prepareSelect(column)...)
-	b.runner = tx
+	b.Runner = tx
 	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
 	return b
@@ -255,7 +255,7 @@ func SelectBySql(query string, value ...interface{}) *SelectStmt {
 // SelectBySql creates a SelectStmt from raw query.
 func (sess *Session) SelectBySql(query string, value ...interface{}) *SelectStmt {
 	b := SelectBySql(query, value...)
-	b.runner = sess
+	b.Runner = sess
 	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
 	return b
@@ -264,7 +264,7 @@ func (sess *Session) SelectBySql(query string, value ...interface{}) *SelectStmt
 // SelectBySql creates a SelectStmt from raw query.
 func (tx *Tx) SelectBySql(query string, value ...interface{}) *SelectStmt {
 	b := SelectBySql(query, value...)
-	b.runner = tx
+	b.Runner = tx
 	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
 	return b
@@ -407,12 +407,12 @@ func (b *SelectStmt) Rows() (*sql.Rows, error) {
 }
 
 func (b *SelectStmt) RowsContext(ctx context.Context) (*sql.Rows, error) {
-	_, rows, err := queryRows(ctx, b.runner, b.EventReceiver, b, b.Dialect)
+	_, rows, err := queryRows(ctx, b.Runner, b.EventReceiver, b, b.Dialect)
 	return rows, err
 }
 
 func (b *SelectStmt) LoadOneContext(ctx context.Context, value interface{}) error {
-	count, err := query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value)
+	count, err := query(ctx, b.Runner, b.EventReceiver, b, b.Dialect, value)
 	if err != nil {
 		return err
 	}
@@ -431,7 +431,7 @@ func (b *SelectStmt) LoadOne(value interface{}) error {
 }
 
 func (b *SelectStmt) LoadContext(ctx context.Context, value interface{}) (int, error) {
-	return query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value)
+	return query(ctx, b.Runner, b.EventReceiver, b, b.Dialect, value)
 }
 
 // Load loads multi-row SQL result into a slice of go variables.
@@ -448,7 +448,7 @@ func (b *SelectStmt) Iterate() (Iterator, error) {
 
 // IterateContext executes the query and returns the Iterator, or any error encountered.
 func (b *SelectStmt) IterateContext(ctx context.Context) (Iterator, error) {
-	_, rows, err := queryRows(ctx, b.runner, b.EventReceiver, b, b.Dialect)
+	_, rows, err := queryRows(ctx, b.Runner, b.EventReceiver, b, b.Dialect)
 	if err != nil {
 		if rows != nil {
 			rows.Close()
