@@ -58,6 +58,13 @@ func Eq(column string, value interface{}) Builder {
 			return nil
 		}
 		v := reflect.ValueOf(value)
+		if v.Kind() == reflect.Pointer {
+			if v.IsNil() {
+				buf.WriteString(d.QuoteIdent(column))
+				buf.WriteString(" IS NULL")
+				return nil
+			}
+		}
 		if v.Kind() == reflect.Slice {
 			if v.Len() == 0 {
 				buf.WriteString(d.EncodeBool(false))
