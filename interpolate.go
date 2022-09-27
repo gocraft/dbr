@@ -94,6 +94,20 @@ var (
 	typeTime = reflect.TypeOf(time.Time{})
 )
 
+func isInterfaceInvalidOrNil(value interface{}) bool {
+	v := reflect.ValueOf(value)
+	if !v.IsValid() {
+		return true
+	}
+
+	switch v.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Map, reflect.Ptr, reflect.UnsafePointer, reflect.Interface, reflect.Slice:
+		return v.IsNil()
+	default:
+		return false
+	}
+}
+
 func (i *interpolator) encodePlaceholder(value interface{}, topLevel bool) error {
 	if builder, ok := value.(Builder); ok {
 		pbuf := NewBuffer()
@@ -120,9 +134,13 @@ func (i *interpolator) encodePlaceholder(value interface{}, topLevel bool) error
 	}
 
 	if valuer, ok := value.(driver.Valuer); ok {
-		// get driver.Valuer's data
 		var err error
-		value, err = valuer.Value()
+		if isInterfaceInvalidOrNil(valuer) {
+			value = nil
+		} else {
+			// get driver.Valuer's data
+			value, err = valuer.Value()
+		}
 		if err != nil {
 			return err
 		}
