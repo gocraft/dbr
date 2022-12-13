@@ -1,6 +1,9 @@
 package dialect
 
-import "strings"
+import (
+	"strings"
+	"time"
+)
 
 var (
 	// MySQL dialect
@@ -14,7 +17,7 @@ var (
 )
 
 const (
-	timeFormat = "2006-01-02 15:04:05.000000"
+	timeFormat = time.RFC3339Nano
 )
 
 func quoteIdent(s, quote string) string {
