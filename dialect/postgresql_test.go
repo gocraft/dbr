@@ -28,6 +28,6 @@ func TestEncodeTime(t *testing.T) {
 			want: `'2009-11-10T23:45:59.123456789Z'`,
 		},
 	} {
-		require.Equal(t, test.want, MySQL.EncodeTime(test.in))
+		require.Equal(t, test.want, PostgreSQL.EncodeTime(test.in))
 	}
 }

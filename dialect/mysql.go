@@ -54,7 +54,7 @@ func (d mysql) EncodeBool(b bool) string {
 }
 
 func (d mysql) EncodeTime(t time.Time) string {
-	return `'` + t.Format(timeFormat) + `'`
+	return `'` + t.UTC().Format(timeFormat) + `'`
 }
 
 func (d mysql) EncodeBytes(b []byte) string {
