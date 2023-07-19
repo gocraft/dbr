@@ -370,29 +370,29 @@ func (b *SelectStmt) Comment(comment string) *SelectStmt {
 
 // Join add inner-join.
 // on can be Builder or string.
-func (b *SelectStmt) Join(table, on interface{}) *SelectStmt {
-	b.JoinTable = append(b.JoinTable, join(inner, table, on))
+func (b *SelectStmt) Join(table, on interface{}, indexHints ...Builder) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, join(inner, table, on, indexHints))
 	return b
 }
 
 // LeftJoin add left-join.
 // on can be Builder or string.
-func (b *SelectStmt) LeftJoin(table, on interface{}) *SelectStmt {
-	b.JoinTable = append(b.JoinTable, join(left, table, on))
+func (b *SelectStmt) LeftJoin(table, on interface{}, indexHints ...Builder) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, join(left, table, on, indexHints))
 	return b
 }
 
 // RightJoin add right-join.
 // on can be Builder or string.
-func (b *SelectStmt) RightJoin(table, on interface{}) *SelectStmt {
-	b.JoinTable = append(b.JoinTable, join(right, table, on))
+func (b *SelectStmt) RightJoin(table, on interface{}, indexHints ...Builder) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, join(right, table, on, indexHints))
 	return b
 }
 
 // FullJoin add full-join.
 // on can be Builder or string.
-func (b *SelectStmt) FullJoin(table, on interface{}) *SelectStmt {
-	b.JoinTable = append(b.JoinTable, join(full, table, on))
+func (b *SelectStmt) FullJoin(table, on interface{}, indexHints ...Builder) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, join(full, table, on, indexHints))
 	return b
 }
 
