@@ -25,7 +25,7 @@ func (d postgreSQL) EncodeBool(b bool) string {
 }
 
 func (d postgreSQL) EncodeTime(t time.Time) string {
-	return MySQL.EncodeTime(t)
+	return `'` + t.Format(time.RFC3339Nano) + `'`
 }
 
 func (d postgreSQL) EncodeBytes(b []byte) string {
