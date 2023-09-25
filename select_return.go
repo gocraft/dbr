@@ -88,7 +88,7 @@ func (b *SelectStmt) ReturnStrings() ([]string, error) {
 
 // ReturnStringsContext executes the SelectStmt and returns the value as a slice of strings.
 // The given context is passed into the query runner.
-func (b *SelectStmt) ReturnStringsContext(cxt context.Context) ([]string, error) {
+func (b *SelectStmt) ReturnStringsContext(ctx context.Context) ([]string, error) {
 	var v []string
 	_, err := b.LoadContext(ctx, &v)
 	return v, err
