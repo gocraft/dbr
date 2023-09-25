@@ -125,7 +125,7 @@ sugg := &Suggestion{
 sess := mysqlSession
 sess.InsertInto("suggestions").
 	Columns("title").
-	Record(&sugg).
+	Record(sugg).
 	Exec()
 
 // id is set automatically
