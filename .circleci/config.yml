@@ -8,6 +8,7 @@ jobs:
           - DBR_TEST_POSTGRES_DSN=postgres://postgres:mysecretpassword@127.0.0.1:5432/postgres?sslmode=disable
           - DBR_TEST_MSSQL_DSN=sqlserver://sa:qwe123QWE@127.0.0.1/?database=master
           - GO111MODULE=on
+          - FOSSA_API_KEY=486be1298513b278ba3916aa63975d7c
       - image: percona:5.7
         environment:
           - MYSQL_DATABASE=circle_test
