@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"database/sql/driver"
 	"strings"
 	"testing"
 	"time"
@@ -8,6 +9,13 @@ import (
 	"github.com/gocraft/dbr/v2/dialect"
 	"github.com/stretchr/testify/require"
 )
+
+type TestValuer struct {
+}
+
+func (m TestValuer) Value() (driver.Value, error) {
+	return nil, nil
+}
 
 func TestInterpolateIgnoreBinary(t *testing.T) {
 	for _, test := range []struct {
@@ -20,6 +28,12 @@ func TestInterpolateIgnoreBinary(t *testing.T) {
 			query:     "?",
 			value:     []interface{}{1},
 			wantQuery: "1",
+			wantValue: nil,
+		},
+		{
+			query:     "?",
+			value:     []interface{}{(*TestValuer)(nil)},
+			wantQuery: "NULL",
 			wantValue: nil,
 		},
 		{
