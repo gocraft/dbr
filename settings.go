@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/embrace-io/dbr/v2/dialect"
+	"github.com/gocraft/dbr/v2/dialect"
 )
 
 var (
