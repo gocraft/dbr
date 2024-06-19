@@ -169,7 +169,7 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 				buf.WriteString(" LIMIT ")
 				if b.OffsetCount >= 0 {
 					buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
-					buf.WriteString(" , ")
+					buf.WriteString(", ")
 				}
 				buf.WriteString(strconv.FormatInt(b.LimitCount, 10))
 			}

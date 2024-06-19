@@ -24,7 +24,8 @@ func TestSelectStmt(t *testing.T) {
 		Suffix("FOR UPDATE").
 		Comment("SELECT TEST").
 		IndexHint(UseIndex("idx_c_d").ForGroupBy(), "USE INDEX(idx_e_f)").
-		IndexHint(IgnoreIndex("idx_a_b"))
+		IndexHint(IgnoreIndex("idx_a_b")).
+		Settings("setting_key1", "1") // Settings should be ignored for MySQL dialect.
 
 	err := builder.Build(dialect.MySQL, buf)
 	require.NoError(t, err)
@@ -34,27 +35,34 @@ func TestSelectStmt(t *testing.T) {
 	require.Equal(t, 3, len(buf.Value()))
 }
 
-func TestSelectStmtWithSettings(t *testing.T) {
+func TestClickhouseSelectStmt(t *testing.T) {
 	buf := NewBuffer()
 	query := Select("a").
 		From("table").
+		AnyLeftJoin("table2", "table.a1 = table.a2", UseIndex("idx_table2")).
+		LimitBy(5, "a").
+		Limit(3).
 		Settings("setting_key1", "1")
 
 	err := query.Build(dialect.Clickhouse, buf)
 	require.NoError(t, err)
-	require.Equal(t, "SELECT a FROM table\nSETTINGS setting_key1 = 1", buf.String())
+	require.Equal(t, "SELECT a FROM table ANY LEFT JOIN `table2` USE INDEX(`idx_table2`) USING table.a1 = table.a2 LIMIT 5 BY a LIMIT 3\nSETTINGS setting_key1 = 1", buf.String())
 	// two functions cannot be compared
 	require.Equal(t, 0, len(buf.Value()))
 
 	buf = NewBuffer()
 	outer := Select("a", "b").
 		From(Select("a").From("table")).
+		AllFullJoin("table2", "table.a1 = table.a2", UseIndex("idx_table2")).
+		LimitBy(5, "a").
+		Offset(2).
+		Limit(3).
 		Settings("setting_key1", "1").
 		Settings("setting_key2", "noop")
 
 	err = outer.Build(dialect.Clickhouse, buf)
 	require.NoError(t, err)
-	require.Equal(t, "SELECT a, b FROM ?\nSETTINGS setting_key1 = 1\nSETTINGS setting_key2 = noop", buf.String())
+	require.Equal(t, "SELECT a, b FROM ? ALL FULL JOIN `table2` USE INDEX(`idx_table2`) USING table.a1 = table.a2 LIMIT 5 BY a LIMIT 2, 3\nSETTINGS setting_key1 = 1\nSETTINGS setting_key2 = noop", buf.String())
 	// two functions cannot be compared
 	require.Equal(t, 1, len(buf.Value()))
 }

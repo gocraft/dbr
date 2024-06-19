@@ -18,6 +18,16 @@ func TestUpdateStmt(t *testing.T) {
 	require.Equal(t, []interface{}{1, 2}, buf.Value())
 }
 
+func TestClickhouseUpdateStmt(t *testing.T) {
+	buf := NewBuffer()
+	builder := Update("table").Set("a", 1).Where(Eq("b", 2)).Comment("UPDATE TEST")
+	err := builder.Build(dialect.Clickhouse, buf)
+	require.NoError(t, err)
+
+	require.Equal(t, "/* UPDATE TEST */\nALTER TABLE `table` UPDATE `a` = ? WHERE (`b` = ?)", buf.String())
+	require.Equal(t, []interface{}{1, 2}, buf.Value())
+}
+
 func BenchmarkUpdateValuesSQL(b *testing.B) {
 	buf := NewBuffer()
 	for i := 0; i < b.N; i++ {
