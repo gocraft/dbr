@@ -107,13 +107,24 @@ func TestMaps(t *testing.T) {
 	for _, sess := range testSession {
 		reset(t, sess)
 
-		_, err := sess.InsertInto("dbr_people").
-			Columns("name", "email").
-			Values("test1", "test1@test.com").
-			Values("test2", "test2@test.com").
-			Values("test2", "test3@test.com").
-			Exec()
-		require.NoError(t, err)
+		if sess.Dialect == dialect.Clickhouse {
+			// ClickHouse does not have autoincrement, so we explicitly set it here.
+			_, err := sess.InsertInto("dbr_people").
+				Columns("id", "name", "email").
+				Values(1, "test1", "test1@test.com").
+				Values(2, "test2", "test2@test.com").
+				Values(3, "test2", "test3@test.com").
+				Exec()
+			require.NoError(t, err)
+		} else {
+			_, err := sess.InsertInto("dbr_people").
+				Columns("name", "email").
+				Values("test1", "test1@test.com").
+				Values("test2", "test2@test.com").
+				Values("test2", "test3@test.com").
+				Exec()
+			require.NoError(t, err)
+		}
 
 		var m map[string]string
 		cnt, err := sess.Select("email, name").From("dbr_people").Load(&m)
