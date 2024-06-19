@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/embrace-io/dbr/dialect"
+	"github.com/embrace-io/dbr/v2/dialect"
 
-	"github.com/gocraft/dbr/v2/dialect"
 	"github.com/stretchr/testify/require"
 )
 

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/embrace-io/dbr/dialect"
+	"github.com/embrace-io/dbr/v2/dialect"
 )
 
 // Open creates a Connection.
