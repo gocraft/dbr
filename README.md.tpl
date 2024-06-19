@@ -1,14 +1,14 @@
 # gocraft/dbr (database records)
 
 [![GoDoc](https://godoc.org/github.com/gocraft/dbr?status.png)](https://godoc.org/github.com/gocraft/dbr)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fgocraft%2Fdbr.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fgocraft%2Fdbr?ref=badge_shield)
+[![FOSSA Status](https://app.fossa.com/api/projects/custom%2B4257%2Fgit%40github.com%3Agocraft%2Fdbr.git.svg?type=shield)](https://app.fossa.com/projects/custom%2B4257%2Fgit%40github.com%3Agocraft%2Fdbr.git?ref=badge_shield)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gocraft/dbr)](https://goreportcard.com/report/github.com/gocraft/dbr)
 [![CircleCI](https://circleci.com/gh/gocraft/dbr.svg?style=svg)](https://circleci.com/gh/gocraft/dbr)
 
 gocraft/dbr provides additions to Go's database/sql for super fast performance and convenience.
 
 ```
-$ go get -u github.com/gocraft/dbr
+$ go get -u github.com/gocraft/dbr/v2
 ```
 
 ```go
@@ -20,6 +20,7 @@ import "github.com/embrace-io/dbr"
 * MySQL
 * PostgreSQL
 * SQLite3
+* MsSQL
 
 ## Examples
 
@@ -87,4 +88,4 @@ Contributors:
 * Paul Bergeron -- [https://github.com/dinedal](https://github.com/dinedal) - SQLite dialect
 
 ## License
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fgocraft%2Fdbr.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fgocraft%2Fdbr?ref=badge_large)
+[![FOSSA Status](https://app.fossa.com/api/projects/custom%2B4257%2Fgit%40github.com%3Agocraft%2Fdbr.git.svg?type=large)](https://app.fossa.com/projects/custom%2B4257%2Fgit%40github.com%3Agocraft%2Fdbr.git?ref=badge_large)

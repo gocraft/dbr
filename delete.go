@@ -8,7 +8,7 @@ import (
 
 // DeleteStmt builds `DELETE ...`.
 type DeleteStmt struct {
-	runner
+	Runner
 	EventReceiver
 	Dialect
 
@@ -32,6 +32,11 @@ func (b *DeleteStmt) Build(d Dialect, buf Buffer) error {
 		return ErrTableNotSpecified
 	}
 	b.comments.Build(d, buf)
+
+	err := b.comments.Build(d, buf)
+	if err != nil {
+		return err
+	}
 
 	buf.WriteString("DELETE FROM ")
 	buf.WriteString(d.QuoteIdent(b.Table))
@@ -61,7 +66,7 @@ func DeleteFrom(table string) *DeleteStmt {
 // DeleteFrom creates a DeleteStmt.
 func (sess *Session) DeleteFrom(table string) *DeleteStmt {
 	b := DeleteFrom(table)
-	b.runner = sess
+	b.Runner = sess
 	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
 	return b
@@ -70,7 +75,7 @@ func (sess *Session) DeleteFrom(table string) *DeleteStmt {
 // DeleteFrom creates a DeleteStmt.
 func (tx *Tx) DeleteFrom(table string) *DeleteStmt {
 	b := DeleteFrom(table)
-	b.runner = tx
+	b.Runner = tx
 	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
 	return b
@@ -90,7 +95,7 @@ func DeleteBySql(query string, value ...interface{}) *DeleteStmt {
 // DeleteBySql creates a DeleteStmt from raw query.
 func (sess *Session) DeleteBySql(query string, value ...interface{}) *DeleteStmt {
 	b := DeleteBySql(query, value...)
-	b.runner = sess
+	b.Runner = sess
 	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
 	return b
@@ -99,7 +104,7 @@ func (sess *Session) DeleteBySql(query string, value ...interface{}) *DeleteStmt
 // DeleteBySql creates a DeleteStmt from raw query.
 func (tx *Tx) DeleteBySql(query string, value ...interface{}) *DeleteStmt {
 	b := DeleteBySql(query, value...)
-	b.runner = tx
+	b.Runner = tx
 	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
 	return b
@@ -132,5 +137,5 @@ func (b *DeleteStmt) Exec() (sql.Result, error) {
 }
 
 func (b *DeleteStmt) ExecContext(ctx context.Context) (sql.Result, error) {
-	return exec(ctx, b.runner, b.EventReceiver, b, b.Dialect)
+	return exec(ctx, b.Runner, b.EventReceiver, b, b.Dialect)
 }

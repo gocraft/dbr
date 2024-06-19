@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/embrace-io/dbr/dialect"
+	"github.com/gocraft/dbr/v2/dialect"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,8 +32,18 @@ func TestNullTypesScanning(t *testing.T) {
 		for _, sess := range testSession {
 			reset(t, sess)
 
+			tx, err := sess.Begin()
+			require.NoError(t, err)
+
+			if sess.Dialect == dialect.MSSQL {
+				tx.UpdateBySql("SET IDENTITY_INSERT null_types ON;").Exec()
+			}
+
 			test.in.Id = 1
-			_, err := sess.InsertInto("null_types").Columns("id", "string_val", "int64_val", "float64_val", "time_val", "bool_val").Record(test.in).Exec()
+			_, err = tx.InsertInto("null_types").Columns("id", "string_val", "int64_val", "float64_val", "time_val", "bool_val").Record(test.in).Exec()
+			require.NoError(t, err)
+
+			err = tx.Commit()
 			require.NoError(t, err)
 
 			var record nullTypedRecord

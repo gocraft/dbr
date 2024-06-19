@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/embrace-io/dbr/dialect"
+	"github.com/gocraft/dbr/v2/dialect"
 	"github.com/stretchr/testify/require"
 )
 
@@ -124,7 +125,9 @@ func TestInterpolateForDialect(t *testing.T) {
 					Select("b").From("table2"),
 				).As("t"),
 			},
-			want: "((SELECT a FROM table1) UNION ALL (SELECT b FROM table2)) AS `t`",
+			// parentheses around union subqueries are not supported in sqlite
+			// but supported in both mysql and postgres.
+			want: "(SELECT a FROM table1 UNION ALL SELECT b FROM table2) AS `t`",
 		},
 		{
 			query: "?",

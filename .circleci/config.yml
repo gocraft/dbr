@@ -2,26 +2,32 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.10
+      - image: circleci/golang:1.17
         environment:
           - DBR_TEST_MYSQL_DSN=root:root@tcp(127.0.0.1:3306)/circle_test
           - DBR_TEST_POSTGRES_DSN=postgres://postgres:mysecretpassword@127.0.0.1:5432/postgres?sslmode=disable
-      - image: percona:5.7.20
+          - DBR_TEST_MSSQL_DSN=sqlserver://sa:qwe123QWE@127.0.0.1/?database=master
+          - GO111MODULE=on
+          - FOSSA_API_KEY=486be1298513b278ba3916aa63975d7c
+      - image: percona:5.7
         environment:
           - MYSQL_DATABASE=circle_test
           - MYSQL_ROOT_PASSWORD=root
-      - image: postgres:9.6-alpine
-
+      - image: postgres:13-alpine
+        environment:
+          - POSTGRES_PASSWORD=mysecretpassword
+      - image: mcr.microsoft.com/mssql/server:2019-latest
+        environment:
+          - ACCEPT_EULA=Y
+          - SA_PASSWORD=qwe123QWE
     working_directory: /go/src/github.com/gocraft/dbr
     steps:
+      - run: |
+          curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install-latest.sh | bash
       - checkout
-      - run:
-          name: Install dockerize
-          command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
-          environment:
-            DOCKERIZE_VERSION: v0.3.0
+      - run: fossa analyze
       - run:
           name: Wait for db
-          command: dockerize -wait tcp://127.0.0.1:3306 -wait tcp://127.0.0.1:5432 -timeout 1m
-      - run: go get -t ./...
+          command: dockerize -wait tcp://127.0.0.1:3306 -wait tcp://127.0.0.1:5432 -wait tcp://127.0.0.1:1433 -timeout 1m
       - run: go test -v -cover -bench . ./...
+      - run: fossa test

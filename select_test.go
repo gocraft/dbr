@@ -3,17 +3,17 @@ package dbr
 import (
 	"testing"
 
-	"github.com/lib/pq"
-
 	"github.com/embrace-io/dbr/dialect"
 	"github.com/stretchr/testify/require"
+
+	"github.com/gocraft/dbr/v2/dialect"
 )
 
 func TestSelectStmt(t *testing.T) {
 	buf := NewBuffer()
 	builder := Select("a", "b").
 		From(Select("a").From("table")).
-		LeftJoin("table2", "table.a1 = table.a2").
+		LeftJoin("table2", "table.a1 = table.a2", UseIndex("idx_table2")).
 		Distinct().
 		Where(Eq("c", 1)).
 		GroupBy("d").
@@ -21,10 +21,15 @@ func TestSelectStmt(t *testing.T) {
 		OrderAsc("f").
 		Limit(3).
 		Offset(4).
-		Comment("SELECT TEST")
+		Suffix("FOR UPDATE").
+		Comment("SELECT TEST").
+		IndexHint(UseIndex("idx_c_d").ForGroupBy(), "USE INDEX(idx_e_f)").
+		IndexHint(IgnoreIndex("idx_a_b"))
+
 	err := builder.Build(dialect.MySQL, buf)
 	require.NoError(t, err)
-	require.Equal(t, "/* SELECT TEST */\nSELECT DISTINCT a, b FROM ? LEFT JOIN `table2` ON table.a1 = table.a2 WHERE (`c` = ?) GROUP BY d HAVING (`e` = ?) ORDER BY f ASC LIMIT 3 OFFSET 4", buf.String())
+	require.Equal(t, "/* SELECT TEST */\nSELECT DISTINCT a, b FROM ? USE INDEX FOR GROUP BY(`idx_c_d`) USE INDEX(idx_e_f) IGNORE INDEX(`idx_a_b`) "+
+		"LEFT JOIN `table2` USE INDEX(`idx_table2`) ON table.a1 = table.a2 WHERE (`c` = ?) GROUP BY d HAVING (`e` = ?) ORDER BY f ASC LIMIT 3 OFFSET 4 FOR UPDATE", buf.String())
 	// two functions cannot be compared
 	require.Equal(t, 3, len(buf.Value()))
 }
@@ -78,6 +83,7 @@ func TestSliceWithSQLScannerSelect(t *testing.T) {
 			Values("test2", "test2@test.com").
 			Values("test3", "test3@test.com").
 			Exec()
+		require.NoError(t, err)
 
 		//plain string slice (original behavior)
 		var stringSlice []string
@@ -107,6 +113,7 @@ func TestMaps(t *testing.T) {
 			Values("test2", "test2@test.com").
 			Values("test2", "test3@test.com").
 			Exec()
+		require.NoError(t, err)
 
 		var m map[string]string
 		cnt, err := sess.Select("email, name").From("dbr_people").Load(&m)
@@ -153,6 +160,7 @@ func TestSelectRows(t *testing.T) {
 			Values("test2", "test2@test.com").
 			Values("test3", "test3@test.com").
 			Exec()
+		require.NoError(t, err)
 
 		rows, err := sess.Select("*").From("dbr_people").OrderAsc("id").Rows()
 		require.NoError(t, err)
@@ -186,6 +194,7 @@ func TestInterfaceLoader(t *testing.T) {
 			Values("test2", "test2@test.com").
 			Values("test2", "test3@test.com").
 			Exec()
+		require.NoError(t, err)
 
 		var m []interface{}
 		cnt, err := sess.Select("*").From("dbr_people").Load(InterfaceLoader(&m, dbrPerson{}))

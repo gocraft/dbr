@@ -4,11 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"strconv"
+
+	"github.com/gocraft/dbr/v2/dialect"
 )
 
 // SelectStmt builds `SELECT ...`.
 type SelectStmt struct {
-	runner
+	Runner
 	EventReceiver
 	Dialect
 
@@ -24,6 +26,7 @@ type SelectStmt struct {
 	Group      []Builder
 	HavingCond []Builder
 	Order      []Builder
+	Suffixes   []Builder
 
 	LimitCount  int64
 	OffsetCount int64
@@ -33,6 +36,8 @@ type SelectStmt struct {
 
 	comments Comments
 	settings QuerySettings
+
+	indexHints []Builder
 }
 
 type SelectBuilder = SelectStmt
@@ -46,6 +51,11 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		return ErrColumnNotSpecified
 	}
 	b.comments.Build(d, buf)
+
+	err := b.comments.Build(d, buf)
+	if err != nil {
+		return err
+	}
 
 	buf.WriteString("SELECT ")
 
@@ -77,6 +87,14 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 			buf.WriteString(placeholder)
 			buf.WriteValue(table)
 		}
+
+		for _, hint := range b.indexHints {
+			buf.WriteString(" ")
+			if err := hint.Build(d, buf); err != nil {
+				return err
+			}
+		}
+
 		if len(b.JoinTable) > 0 {
 			for _, join := range b.JoinTable {
 				err := join.Build(d, buf)
@@ -144,29 +162,78 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		}
 	}
 
-	if d.CombinedOffset() {
-		if b.LimitCount >= 0 {
-			buf.WriteString(" LIMIT ")
-			if b.OffsetCount >= 0 {
-				buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
-				buf.WriteString(" , ")
-			}
-			buf.WriteString(strconv.FormatInt(b.LimitCount, 10))
-		}
+	if d == dialect.MSSQL {
+		b.addMSSQLLimits(buf)
 	} else {
-		if b.LimitCount >= 0 {
-			buf.WriteString(" LIMIT ")
-			buf.WriteString(strconv.FormatInt(b.LimitCount, 10))
-		}
+		if d.CombinedOffset() {
+			if b.LimitCount >= 0 {
+				buf.WriteString(" LIMIT ")
+				if b.OffsetCount >= 0 {
+					buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
+					buf.WriteString(" , ")
+				}
+				buf.WriteString(strconv.FormatInt(b.LimitCount, 10))
+			}
+		} else {
+			if b.LimitCount >= 0 {
+				buf.WriteString(" LIMIT ")
+				buf.WriteString(strconv.FormatInt(b.LimitCount, 10))
+			}
 
-		if b.OffsetCount >= 0 {
-			buf.WriteString(" OFFSET ")
-			buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
+			if b.OffsetCount >= 0 {
+				buf.WriteString(" OFFSET ")
+				buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
+			}
+		}
+	}
+
+	if len(b.Suffixes) > 0 {
+		for _, suffix := range b.Suffixes {
+			buf.WriteString(" ")
+			err := suffix.Build(d, buf)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
 	b.settings.Build(d, buf)
-	return nil
+}
+
+// https://docs.microsoft.com/en-us/previous-versions/sql/sql-server-2012/ms188385(v=sql.110)
+func (b *SelectStmt) addMSSQLLimits(buf Buffer) {
+	limitCount := b.LimitCount
+	offsetCount := b.OffsetCount
+	if limitCount < 0 && offsetCount < 0 {
+		return
+	}
+	if offsetCount < 0 {
+		offsetCount = 0
+	}
+
+	if len(b.Order) == 0 {
+		// ORDER is required for OFFSET / FETCH
+		buf.WriteString(" ORDER BY ")
+		col := b.Column[0]
+		switch col := col.(type) {
+		case string:
+			// FIXME: no quote ident
+			buf.WriteString(col)
+		default:
+			buf.WriteString(placeholder)
+			buf.WriteValue(col)
+		}
+	}
+
+	buf.WriteString(" OFFSET ")
+	buf.WriteString(strconv.FormatInt(offsetCount, 10))
+	buf.WriteString(" ROWS ")
+
+	if limitCount >= 0 {
+		buf.WriteString(" FETCH FIRST ")
+		buf.WriteString(strconv.FormatInt(limitCount, 10))
+		buf.WriteString(" ROWS ONLY ")
+	}
 }
 
 // Select creates a SelectStmt.
@@ -189,7 +256,9 @@ func prepareSelect(a []string) []interface{} {
 // Select creates a SelectStmt.
 func (sess *Session) Select(column ...string) *SelectStmt {
 	b := Select(prepareSelect(column)...)
-	b.Attach(sess)
+	b.Runner = sess
+	b.EventReceiver = sess.EventReceiver
+	b.Dialect = sess.Dialect
 	return b
 }
 
@@ -203,7 +272,7 @@ func (s *SelectStmt) Attach(sess *Session) *SelectStmt {
 // Select creates a SelectStmt.
 func (tx *Tx) Select(column ...string) *SelectStmt {
 	b := Select(prepareSelect(column)...)
-	b.runner = tx
+	b.Runner = tx
 	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
 	return b
@@ -224,7 +293,7 @@ func SelectBySql(query string, value ...interface{}) *SelectStmt {
 // SelectBySql creates a SelectStmt from raw query.
 func (sess *Session) SelectBySql(query string, value ...interface{}) *SelectStmt {
 	b := SelectBySql(query, value...)
-	b.runner = sess
+	b.Runner = sess
 	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
 	return b
@@ -233,7 +302,7 @@ func (sess *Session) SelectBySql(query string, value ...interface{}) *SelectStmt
 // SelectBySql creates a SelectStmt from raw query.
 func (tx *Tx) SelectBySql(query string, value ...interface{}) *SelectStmt {
 	b := SelectBySql(query, value...)
-	b.runner = tx
+	b.Runner = tx
 	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
 	return b
@@ -318,6 +387,12 @@ func (b *SelectStmt) Offset(n uint64) *SelectStmt {
 	return b
 }
 
+// Suffix adds an expression to the end of the query. This is useful to add dialect-specific clauses like FOR UPDATE
+func (b *SelectStmt) Suffix(suffix string, value ...interface{}) *SelectStmt {
+	b.Suffixes = append(b.Suffixes, Expr(suffix, value...))
+	return b
+}
+
 // Paginate fetches a page in a naive way for a small set of data.
 func (b *SelectStmt) Paginate(page, perPage uint64) *SelectStmt {
 	b.Limit(perPage)
@@ -347,15 +422,15 @@ func (b *SelectStmt) Settings(setting, value string) *SelectStmt {
 
 // Join add inner-join.
 // on can be Builder or string.
-func (b *SelectStmt) Join(table, on interface{}) *SelectStmt {
-	b.JoinTable = append(b.JoinTable, join(inner, table, on))
+func (b *SelectStmt) Join(table, on interface{}, indexHints ...Builder) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, join(inner, table, on, indexHints))
 	return b
 }
 
 // LeftJoin add left-join.
 // on can be Builder or string.
-func (b *SelectStmt) LeftJoin(table, on interface{}) *SelectStmt {
-	b.JoinTable = append(b.JoinTable, join(left, table, on))
+func (b *SelectStmt) LeftJoin(table, on interface{}, indexHints ...Builder) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, join(left, table, on, indexHints))
 	return b
 }
 
@@ -375,15 +450,15 @@ func (b *SelectStmt) AllFullJoin(table, on interface{}) *SelectStmt {
 
 // RightJoin add right-join.
 // on can be Builder or string.
-func (b *SelectStmt) RightJoin(table, on interface{}) *SelectStmt {
-	b.JoinTable = append(b.JoinTable, join(right, table, on))
+func (b *SelectStmt) RightJoin(table, on interface{}, indexHints ...Builder) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, join(right, table, on, indexHints))
 	return b
 }
 
 // FullJoin add full-join.
 // on can be Builder or string.
-func (b *SelectStmt) FullJoin(table, on interface{}) *SelectStmt {
-	b.JoinTable = append(b.JoinTable, join(full, table, on))
+func (b *SelectStmt) FullJoin(table, on interface{}, indexHints ...Builder) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, join(full, table, on, indexHints))
 	return b
 }
 
@@ -398,12 +473,12 @@ func (b *SelectStmt) Rows() (*sql.Rows, error) {
 }
 
 func (b *SelectStmt) RowsContext(ctx context.Context) (*sql.Rows, error) {
-	_, rows, err := queryRows(ctx, b.runner, b.EventReceiver, b, b.Dialect)
+	_, rows, err := queryRows(ctx, b.Runner, b.EventReceiver, b, b.Dialect)
 	return rows, err
 }
 
 func (b *SelectStmt) LoadOneContext(ctx context.Context, value interface{}) error {
-	count, err := query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value)
+	count, err := query(ctx, b.Runner, b.EventReceiver, b, b.Dialect, value)
 	if err != nil {
 		return err
 	}
@@ -422,7 +497,7 @@ func (b *SelectStmt) LoadOne(value interface{}) error {
 }
 
 func (b *SelectStmt) LoadContext(ctx context.Context, value interface{}) (int, error) {
-	return query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value)
+	return query(ctx, b.Runner, b.EventReceiver, b, b.Dialect, value)
 }
 
 // Load loads multi-row SQL result into a slice of go variables.
@@ -430,4 +505,46 @@ func (b *SelectStmt) LoadContext(ctx context.Context, value interface{}) (int, e
 // See https://godoc.org/github.com/gocraft/dbr#Load.
 func (b *SelectStmt) Load(value interface{}) (int, error) {
 	return b.LoadContext(context.Background(), value)
+}
+
+// Iterate executes the query and returns the Iterator, or any error encountered.
+func (b *SelectStmt) Iterate() (Iterator, error) {
+	return b.IterateContext(context.Background())
+}
+
+// IterateContext executes the query and returns the Iterator, or any error encountered.
+func (b *SelectStmt) IterateContext(ctx context.Context) (Iterator, error) {
+	_, rows, err := queryRows(ctx, b.Runner, b.EventReceiver, b, b.Dialect)
+	if err != nil {
+		if rows != nil {
+			rows.Close()
+		}
+		return nil, err
+	}
+	columns, err := rows.Columns()
+	if err != nil {
+		if rows != nil {
+			rows.Close()
+		}
+		return nil, err
+	}
+	iterator := iteratorInternals{
+		rows:    rows,
+		columns: columns,
+	}
+	return &iterator, err
+}
+
+// IndexHint adds a index hint.
+// hint can be Builder or string.
+func (b *SelectStmt) IndexHint(hints ...interface{}) *SelectStmt {
+	for _, hint := range hints {
+		switch hint := hint.(type) {
+		case string:
+			b.indexHints = append(b.indexHints, Expr(hint))
+		case Builder:
+			b.indexHints = append(b.indexHints, hint)
+		}
+	}
+	return b
 }

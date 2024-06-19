@@ -2,6 +2,7 @@ package dbr
 
 import (
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -97,7 +98,7 @@ func ExampleInsertStmt_Record() {
 	}
 	sess := mysqlSession
 	sess.InsertInto("suggestions").
-		Columns("id", "title").
+		Columns("title").
 		Record(&sugg).
 		Exec()
 
@@ -159,4 +160,27 @@ func ExampleUnionAll() {
 		Select("*"),
 		Select("*"),
 	).As("subquery")
+}
+
+func ExampleIterator() {
+	type Book struct {
+		ID   int
+		Name string
+	}
+	sess := mysqlSession
+	// Iterate results
+	iter, err := sess.Select("*").From("books").Limit(10).Iterate()
+	if err != nil {
+		log.Fatalf("iter err %v", err)
+	}
+	for iter.Next() {
+		r := new(Book)
+		if err = iter.Scan(r); err != nil {
+			log.Fatalf("scan err %v", err)
+		}
+		fmt.Printf("%#v\n", r)
+	}
+	if err = iter.Close(); err != nil {
+		log.Fatalf("iter close err %v", err)
+	}
 }

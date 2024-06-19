@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/gocraft/dbr/v2/dialect"
 )
 
 // ConflictStmt is ` ON CONFLICT ...` part of InsertStmt
@@ -16,7 +18,7 @@ type ConflictStmt struct {
 
 // InsertStmt builds `INSERT INTO ...`.
 type InsertStmt struct {
-	runner
+	Runner
 	EventReceiver
 	Dialect
 
@@ -25,6 +27,7 @@ type InsertStmt struct {
 	Table        string
 	Column       []string
 	Value        [][]interface{}
+	Ignored      bool
 	ReturnColumn []string
 	RecordID     *int64
 	comments     Comments
@@ -56,7 +59,17 @@ func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 	}
 	b.comments.Build(d, buf)
 
-	buf.WriteString("INSERT INTO ")
+	err := b.comments.Build(d, buf)
+	if err != nil {
+		return err
+	}
+
+	if b.Ignored {
+		buf.WriteString("INSERT IGNORE INTO ")
+	} else {
+		buf.WriteString("INSERT INTO ")
+	}
+
 	buf.WriteString(d.QuoteIdent(b.Table))
 
 	var placeholderBuf strings.Builder
@@ -70,7 +83,19 @@ func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 		buf.WriteString(d.QuoteIdent(col))
 		placeholderBuf.WriteString(placeholder)
 	}
-	buf.WriteString(") VALUES ")
+	buf.WriteString(")")
+
+	if d == dialect.MSSQL && len(b.ReturnColumn) > 0 {
+		buf.WriteString(" OUTPUT ")
+		for i, col := range b.ReturnColumn {
+			if i > 0 {
+				buf.WriteString(",")
+			}
+			buf.WriteString("INSERTED." + d.QuoteIdent(col))
+		}
+	}
+
+	buf.WriteString(" VALUES ")
 	placeholderBuf.WriteString(")")
 	placeholderStr := placeholderBuf.String()
 
@@ -106,7 +131,7 @@ func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 		}
 	}
 
-	if len(b.ReturnColumn) > 0 {
+	if d != dialect.MSSQL && len(b.ReturnColumn) > 0 {
 		buf.WriteString(" RETURNING ")
 		for i, col := range b.ReturnColumn {
 			if i > 0 {
@@ -129,7 +154,7 @@ func InsertInto(table string) *InsertStmt {
 // InsertInto creates an InsertStmt.
 func (sess *Session) InsertInto(table string) *InsertStmt {
 	b := InsertInto(table)
-	b.runner = sess
+	b.Runner = sess
 	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
 	return b
@@ -138,7 +163,7 @@ func (sess *Session) InsertInto(table string) *InsertStmt {
 // InsertInto creates an InsertStmt.
 func (tx *Tx) InsertInto(table string) *InsertStmt {
 	b := InsertInto(table)
-	b.runner = tx
+	b.Runner = tx
 	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
 	return b
@@ -157,7 +182,7 @@ func InsertBySql(query string, value ...interface{}) *InsertStmt {
 // InsertBySql creates an InsertStmt from raw query.
 func (sess *Session) InsertBySql(query string, value ...interface{}) *InsertStmt {
 	b := InsertBySql(query, value...)
-	b.runner = sess
+	b.Runner = sess
 	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
 	return b
@@ -166,7 +191,7 @@ func (sess *Session) InsertBySql(query string, value ...interface{}) *InsertStmt
 // InsertBySql creates an InsertStmt from raw query.
 func (tx *Tx) InsertBySql(query string, value ...interface{}) *InsertStmt {
 	b := InsertBySql(query, value...)
-	b.runner = tx
+	b.Runner = tx
 	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
 	return b
@@ -180,6 +205,12 @@ func (b *InsertStmt) Columns(column ...string) *InsertStmt {
 // Comment adds a comment to prepended. All multi-line sql comment characters are stripped
 func (b *InsertStmt) Comment(comment string) *InsertStmt {
 	b.comments = b.comments.Append(comment)
+	return b
+}
+
+// Ignore any insertion errors
+func (b *InsertStmt) Ignore() *InsertStmt {
+	b.Ignored = true
 	return b
 }
 
@@ -223,7 +254,7 @@ func (b *InsertStmt) Record(structValue interface{}) *InsertStmt {
 	return b
 }
 
-// Returning specifies the returning columns for postgres.
+// Returning specifies the returning columns for postgres/mssql.
 func (b *InsertStmt) Returning(column ...string) *InsertStmt {
 	b.ReturnColumn = column
 	return b
@@ -249,7 +280,7 @@ func (b *InsertStmt) Exec() (sql.Result, error) {
 }
 
 func (b *InsertStmt) ExecContext(ctx context.Context) (sql.Result, error) {
-	result, err := exec(ctx, b.runner, b.EventReceiver, b, b.Dialect)
+	result, err := exec(ctx, b.Runner, b.EventReceiver, b, b.Dialect)
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +296,7 @@ func (b *InsertStmt) ExecContext(ctx context.Context) (sql.Result, error) {
 }
 
 func (b *InsertStmt) LoadContext(ctx context.Context, value interface{}) error {
-	_, err := query(ctx, b.runner, b.EventReceiver, b, b.Dialect, value)
+	_, err := query(ctx, b.Runner, b.EventReceiver, b, b.Dialect, value)
 	return err
 }
 

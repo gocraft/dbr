@@ -11,7 +11,7 @@ const (
 	anyLeft
 )
 
-func join(t joinType, table interface{}, on interface{}) Builder {
+func join(t joinType, table interface{}, on interface{}, indexHints []Builder) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
 		buf.WriteString(" ")
 		switch t {
@@ -33,6 +33,12 @@ func join(t joinType, table interface{}, on interface{}) Builder {
 		default:
 			buf.WriteString(placeholder)
 			buf.WriteValue(table)
+		}
+		for _, hint := range indexHints {
+			buf.WriteString(" ")
+			if err := hint.Build(d, buf); err != nil {
+				return err
+			}
 		}
 		if d.SupportsOn() {
 			buf.WriteString(" ON ")
