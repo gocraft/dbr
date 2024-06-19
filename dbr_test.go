@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	_ "github.com/ClickHouse/clickhouse-go/v2"
 	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gocraft/dbr/v2/dialect"

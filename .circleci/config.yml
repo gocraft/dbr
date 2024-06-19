@@ -7,6 +7,7 @@ jobs:
           - DBR_TEST_MYSQL_DSN=root:root@tcp(127.0.0.1:3306)/circle_test
           - DBR_TEST_POSTGRES_DSN=postgres://postgres:mysecretpassword@127.0.0.1:5432/postgres?sslmode=disable
           - DBR_TEST_MSSQL_DSN=sqlserver://sa:qwe123QWE@127.0.0.1/?database=master
+          - DBR_TEST_CLICKHOUSE_DSN=clickhouse://127.0.0.1:9000
           - GO111MODULE=on
           - FOSSA_API_KEY=486be1298513b278ba3916aa63975d7c
       - image: percona:5.7
@@ -20,7 +21,9 @@ jobs:
         environment:
           - ACCEPT_EULA=Y
           - SA_PASSWORD=qwe123QWE
-      # TODO add clickhouse.
+      - image: clickhouse/clickhouse-server:23.8.15
+        environment:
+          - CLICKHOUSE_DO_NOT_CHOWN=1
     working_directory: /go/src/github.com/gocraft/dbr
     steps:
       - run: |
@@ -29,6 +32,6 @@ jobs:
       - run: fossa analyze
       - run:
           name: Wait for db
-          command: dockerize -wait tcp://127.0.0.1:3306 -wait tcp://127.0.0.1:5432 -wait tcp://127.0.0.1:1433 -timeout 1m
+          command: dockerize -wait tcp://127.0.0.1:3306 -wait tcp://127.0.0.1:5432 -wait tcp://127.0.0.1:1433 -wait tcp://127.0.0.1:9000 -timeout 1m
       - run: go test -v -cover -bench . ./...
       - run: fossa test

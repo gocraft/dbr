@@ -196,7 +196,14 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		}
 	}
 
-	return b.settings.Build(d, buf)
+	if len(b.settings) > 0 {
+		err := b.settings.Build(d, buf)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // https://docs.microsoft.com/en-us/previous-versions/sql/sql-server-2012/ms188385(v=sql.110)
