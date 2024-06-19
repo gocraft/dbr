@@ -24,7 +24,6 @@ jobs:
       - image: clickhouse/clickhouse-server:23.8.15
         environment:
           - CLICKHOUSE_DO_NOT_CHOWN=1
-    working_directory: /go/src/github.com/gocraft/dbr
     steps:
       - run: |
           curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install-latest.sh | bash
