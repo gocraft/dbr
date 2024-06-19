@@ -162,8 +162,7 @@ BenchmarkLoadValues/dbr_100000-8      	      10	 147202536 ns/op	23680625 B/op	 
 Inspiration from these excellent libraries:
 * [sqlx](https://github.com/jmoiron/sqlx) - various useful tools and utils for interacting with database/sql.
 * [Squirrel](https://github.com/lann/squirrel) - simple fluent query builder.
-
-Upsert functionality shamelessly and gratefully adapted from [mailru/dbr](https://github.com/mailru/dbr)
+* [mailru/dbr](https://github.com/mailru/dbr) - upsert functionality shamelessly and gratefully adapted from this lib.
 
 Authors:
 * Jonathan Novak -- [https://github.com/cypriss](https://github.com/cypriss)
