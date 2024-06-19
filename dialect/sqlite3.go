@@ -38,3 +38,19 @@ func (d sqlite3) EncodeBytes(b []byte) string {
 func (d sqlite3) Placeholder(_ int) string {
 	return "?"
 }
+
+func (d sqlite3) SupportsOn() bool {
+	return true
+}
+
+func (d sqlite3) CombinedOffset() bool {
+	return false
+}
+
+func (d sqlite3) OnConflict(_ string) string {
+	return ""
+}
+
+func (d sqlite3) Proposed(_ string) string {
+	return ""
+}

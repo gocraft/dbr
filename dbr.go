@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gocraft/dbr/v2/dialect"
+	"github.com/embrace-io/dbr/v2/dialect"
 )
 
 // Open creates a Connection.
@@ -22,6 +22,8 @@ func Open(driver, dsn string, log EventReceiver) (*Connection, error) {
 	}
 	var d Dialect
 	switch driver {
+	case "clickhouse":
+		d = dialect.Clickhouse
 	case "mysql":
 		d = dialect.MySQL
 	case "postgres", "pgx":

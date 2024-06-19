@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
-	"github.com/gocraft/dbr/v2/dialect"
+	"github.com/embrace-io/dbr/v2/dialect"
 	"github.com/stretchr/testify/require"
 )
 

@@ -37,6 +37,7 @@ func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
 	if len(b.Value) == 0 {
 		return ErrColumnNotSpecified
 	}
+	b.comments.Build(d, buf)
 
 	err := b.comments.Build(d, buf)
 	if err != nil {

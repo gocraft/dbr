@@ -3,6 +3,8 @@ package dialect
 import "strings"
 
 var (
+	// Clickhouse dialect
+	Clickhouse = clickhouse{}
 	// MySQL dialect
 	MySQL = mysql{}
 	// PostgreSQL dialect

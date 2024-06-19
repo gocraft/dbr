@@ -20,6 +20,7 @@ jobs:
         environment:
           - ACCEPT_EULA=Y
           - SA_PASSWORD=qwe123QWE
+      # TODO add clickhouse.
     working_directory: /go/src/github.com/gocraft/dbr
     steps:
       - run: |

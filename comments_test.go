@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gocraft/dbr/v2/dialect"
+	"github.com/embrace-io/dbr/v2/dialect"
 	"github.com/stretchr/testify/require"
 )
 
@@ -40,6 +40,8 @@ func TestComments(t *testing.T) {
 				name = "PostgreSQL"
 			case dialect.SQLite3:
 				name = "SQLite3"
+			case dialect.Clickhouse:
+				name = "ClickHouse"
 			}
 			t.Run(fmt.Sprintf("%s/%s", name, test.name), func(t *testing.T) {
 				buf := NewBuffer()

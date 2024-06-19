@@ -43,6 +43,20 @@ func InterpolateForDialect(query string, value []interface{}, d Dialect) (string
 	return i.String(), nil
 }
 
+// InterpolateForDialectFromBuilder is used to render the query string that is produced by a
+// Builder. This is only intended to be used for testing purposes.
+func InterpolateForDialectFromBuilder(builder Builder, d Dialect) (string, error) {
+	i := interpolator{
+		Buffer:  NewBuffer(),
+		Dialect: d,
+	}
+	err := i.encodePlaceholder(builder, true)
+	if err != nil {
+		return "", err
+	}
+	return i.String(), nil
+}
+
 var escapedPlaceholder = strings.Repeat(placeholder, 2)
 
 func (i *interpolator) interpolate(query string, value []interface{}, topLevel bool) error {

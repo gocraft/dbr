@@ -4,15 +4,21 @@ type joinType uint8
 
 const (
 	inner joinType = iota
+	allFull
 	left
 	right
 	full
+	anyLeft
 )
 
 func join(t joinType, table interface{}, on interface{}, indexHints []Builder) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
 		buf.WriteString(" ")
 		switch t {
+		case anyLeft:
+			buf.WriteString("ANY LEFT ")
+		case allFull:
+			buf.WriteString("ALL FULL ")
 		case left:
 			buf.WriteString("LEFT ")
 		case right:
@@ -34,7 +40,11 @@ func join(t joinType, table interface{}, on interface{}, indexHints []Builder) B
 				return err
 			}
 		}
-		buf.WriteString(" ON ")
+		if d.SupportsOn() {
+			buf.WriteString(" ON ")
+		} else {
+			buf.WriteString(" USING ")
+		}
 		switch on := on.(type) {
 		case string:
 			buf.WriteString(on)

@@ -34,3 +34,19 @@ func (d mssql) EncodeBytes(b []byte) string {
 func (d mssql) Placeholder(n int) string {
 	return fmt.Sprintf("@p%d", n+1)
 }
+
+func (d mssql) SupportsOn() bool {
+	return true
+}
+
+func (d mssql) CombinedOffset() bool {
+	return false
+}
+
+func (d mssql) OnConflict(_ string) string {
+	return "ON DUPLICATE KEY UPDATE"
+}
+
+func (d mssql) Proposed(column string) string {
+	return fmt.Sprintf("VALUES(%s)", d.QuoteIdent(column))
+}

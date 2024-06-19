@@ -3,10 +3,8 @@ package dbr
 import (
 	"testing"
 
-	"github.com/lib/pq"
+	"github.com/embrace-io/dbr/v2/dialect"
 	"github.com/stretchr/testify/require"
-
-	"github.com/gocraft/dbr/v2/dialect"
 )
 
 func TestSelectStmt(t *testing.T) {
@@ -32,6 +30,31 @@ func TestSelectStmt(t *testing.T) {
 		"LEFT JOIN `table2` USE INDEX(`idx_table2`) ON table.a1 = table.a2 WHERE (`c` = ?) GROUP BY d HAVING (`e` = ?) ORDER BY f ASC LIMIT 3 OFFSET 4 FOR UPDATE", buf.String())
 	// two functions cannot be compared
 	require.Equal(t, 3, len(buf.Value()))
+}
+
+func TestSelectStmtWithSettings(t *testing.T) {
+	buf := NewBuffer()
+	query := Select("a").
+		From("table").
+		Settings("setting_key1", "1")
+
+	err := query.Build(dialect.Clickhouse, buf)
+	require.NoError(t, err)
+	require.Equal(t, "SELECT a FROM table\nSETTINGS setting_key1 = 1", buf.String())
+	// two functions cannot be compared
+	require.Equal(t, 0, len(buf.Value()))
+
+	buf = NewBuffer()
+	outer := Select("a", "b").
+		From(Select("a").From("table")).
+		Settings("setting_key1", "1").
+		Settings("setting_key2", "noop")
+
+	err = outer.Build(dialect.Clickhouse, buf)
+	require.NoError(t, err)
+	require.Equal(t, "SELECT a, b FROM ?\nSETTINGS setting_key1 = 1\nSETTINGS setting_key2 = noop", buf.String())
+	// two functions cannot be compared
+	require.Equal(t, 1, len(buf.Value()))
 }
 
 func BenchmarkSelectSQL(b *testing.B) {

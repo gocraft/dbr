@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"strconv"
 
-	"github.com/gocraft/dbr/v2/dialect"
+	"github.com/embrace-io/dbr/v2/dialect"
 )
 
 // SelectStmt builds `SELECT ...`.
@@ -31,7 +31,11 @@ type SelectStmt struct {
 	LimitCount  int64
 	OffsetCount int64
 
+	LimitByCol   []Builder
+	LimitByCount int64
+
 	comments Comments
+	settings QuerySettings
 
 	indexHints []Builder
 }
@@ -142,17 +146,43 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		}
 	}
 
+	if b.LimitByCount > 0 {
+		buf.WriteString(" LIMIT ")
+		buf.WriteString(strconv.FormatInt(b.LimitByCount, 10))
+		buf.WriteString(" BY ")
+		for i, limit := range b.LimitByCol {
+			if i > 0 {
+				buf.WriteString(", ")
+			}
+			err := limit.Build(d, buf)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	if d == dialect.MSSQL {
 		b.addMSSQLLimits(buf)
 	} else {
-		if b.LimitCount >= 0 {
-			buf.WriteString(" LIMIT ")
-			buf.WriteString(strconv.FormatInt(b.LimitCount, 10))
-		}
+		if d.CombinedOffset() {
+			if b.LimitCount >= 0 {
+				buf.WriteString(" LIMIT ")
+				if b.OffsetCount >= 0 {
+					buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
+					buf.WriteString(" , ")
+				}
+				buf.WriteString(strconv.FormatInt(b.LimitCount, 10))
+			}
+		} else {
+			if b.LimitCount >= 0 {
+				buf.WriteString(" LIMIT ")
+				buf.WriteString(strconv.FormatInt(b.LimitCount, 10))
+			}
 
-		if b.OffsetCount >= 0 {
-			buf.WriteString(" OFFSET ")
-			buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
+			if b.OffsetCount >= 0 {
+				buf.WriteString(" OFFSET ")
+				buf.WriteString(strconv.FormatInt(b.OffsetCount, 10))
+			}
 		}
 	}
 
@@ -166,7 +196,7 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		}
 	}
 
-	return nil
+	return b.settings.Build(d, buf)
 }
 
 // https://docs.microsoft.com/en-us/previous-versions/sql/sql-server-2012/ms188385(v=sql.110)
@@ -229,6 +259,13 @@ func (sess *Session) Select(column ...string) *SelectStmt {
 	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
 	return b
+}
+
+func (s *SelectStmt) Attach(sess *Session) *SelectStmt {
+	s.Runner = sess
+	s.EventReceiver = sess.EventReceiver
+	s.Dialect = sess.Dialect
+	return s
 }
 
 // Select creates a SelectStmt.
@@ -330,6 +367,15 @@ func (b *SelectStmt) OrderBy(col string) *SelectStmt {
 	return b
 }
 
+func (b *SelectStmt) LimitBy(n uint64, col ...string) *SelectStmt {
+	b.LimitByCount = int64(n)
+	b.LimitByCol = []Builder{}
+	for _, limit := range col {
+		b.LimitByCol = append(b.LimitByCol, Expr(limit))
+	}
+	return b
+}
+
 func (b *SelectStmt) Limit(n uint64) *SelectStmt {
 	b.LimitCount = int64(n)
 	return b
@@ -368,6 +414,11 @@ func (b *SelectStmt) Comment(comment string) *SelectStmt {
 	return b
 }
 
+func (b *SelectStmt) Settings(setting, value string) *SelectStmt {
+	b.settings = b.settings.Append(setting, value)
+	return b
+}
+
 // Join add inner-join.
 // on can be Builder or string.
 func (b *SelectStmt) Join(table, on interface{}, indexHints ...Builder) *SelectStmt {
@@ -379,6 +430,20 @@ func (b *SelectStmt) Join(table, on interface{}, indexHints ...Builder) *SelectS
 // on can be Builder or string.
 func (b *SelectStmt) LeftJoin(table, on interface{}, indexHints ...Builder) *SelectStmt {
 	b.JoinTable = append(b.JoinTable, join(left, table, on, indexHints))
+	return b
+}
+
+// AnyLeftJoin add any left-join.
+// on can be Builder or string.
+func (b *SelectStmt) AnyLeftJoin(table, on interface{}, indexHints ...Builder) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, join(anyLeft, table, on, indexHints))
+	return b
+}
+
+// AllFullJoin add all-full.
+// on can be Builder or string.
+func (b *SelectStmt) AllFullJoin(table, on interface{}, indexHints ...Builder) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, join(allFull, table, on, indexHints))
 	return b
 }
 
