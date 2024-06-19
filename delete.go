@@ -31,7 +31,6 @@ func (b *DeleteStmt) Build(d Dialect, buf Buffer) error {
 	if b.Table == "" {
 		return ErrTableNotSpecified
 	}
-	b.comments.Build(d, buf)
 
 	err := b.comments.Build(d, buf)
 	if err != nil {

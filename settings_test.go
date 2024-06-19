@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/gocraft/dbr/v2/dialect"
@@ -8,7 +9,6 @@ import (
 )
 
 func TestQuerySettings(t *testing.T) {
-	dialects := []Dialect{dialect.MySQL, dialect.PostgreSQL, dialect.SQLite3, dialect.Clickhouse}
 	for _, test := range []struct {
 		name     string
 		settings QuerySettings
@@ -30,9 +30,10 @@ func TestQuerySettings(t *testing.T) {
 			expect:   "\nSETTINGS key_needs_trimming = value_needs_trimming",
 		},
 	} {
-		for _, d := range dialects {
+
+		for _, sess := range testSession {
 			name := ""
-			switch d {
+			switch sess.Dialect {
 			case dialect.MySQL:
 				name = "MySQL"
 			case dialect.PostgreSQL:
@@ -42,11 +43,13 @@ func TestQuerySettings(t *testing.T) {
 			case dialect.Clickhouse:
 				name = "ClickHouse"
 			}
-			t.Run(name+" "+test.name, func(t *testing.T) {
+			t.Run(fmt.Sprintf("%s/%s", name, test.name), func(t *testing.T) {
 				buf := NewBuffer()
-				test.settings.Build(d, buf)
+				err := test.settings.Build(sess.Dialect, buf)
+				require.NoError(t, err)
+
 				actual := buf.String()
-				if d == dialect.Clickhouse {
+				if sess.Dialect == dialect.Clickhouse {
 					require.Equal(t, test.expect, actual)
 				} else {
 					require.Equal(t, "", actual)
@@ -54,5 +57,4 @@ func TestQuerySettings(t *testing.T) {
 			})
 		}
 	}
-
 }

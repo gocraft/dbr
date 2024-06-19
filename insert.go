@@ -57,7 +57,6 @@ func (b *InsertStmt) Build(d Dialect, buf Buffer) error {
 	if len(b.Column) == 0 {
 		return ErrColumnNotSpecified
 	}
-	b.comments.Build(d, buf)
 
 	err := b.comments.Build(d, buf)
 	if err != nil {
