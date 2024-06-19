@@ -43,6 +43,10 @@ func (d mssql) CombinedOffset() bool {
 	return false
 }
 
+func (d mssql) UpdateStmts() (string, string) {
+	return "UPDATE", "SET"
+}
+
 func (d mssql) OnConflict(_ string) string {
 	return "ON DUPLICATE KEY UPDATE"
 }

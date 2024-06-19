@@ -47,6 +47,10 @@ func (d sqlite3) CombinedOffset() bool {
 	return false
 }
 
+func (d sqlite3) UpdateStmts() (string, string) {
+	return "UPDATE", "SET"
+}
+
 func (d sqlite3) OnConflict(_ string) string {
 	return ""
 }

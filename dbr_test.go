@@ -63,10 +63,35 @@ type nullTypedRecord struct {
 	BoolVal    NullBool
 }
 
+func testSessionName(sess *Session) string {
+	switch sess.Dialect {
+	case dialect.MySQL:
+		return "MySQL"
+	case dialect.PostgreSQL:
+		return "PostgreSQL"
+	case dialect.SQLite3:
+		return "SQLite3"
+	case dialect.MSSQL:
+		return "MSSQL"
+	case dialect.Clickhouse:
+		return "ClickHouse"
+	}
+	return ""
+}
+
+func dialectExpectedRowsAffected(sess *Session, expectedRows int64) int64 {
+	if sess.Dialect == dialect.Clickhouse {
+		// ClickHouse does not support returning rows affected, it always returns 0.
+		return 0
+	}
+	return expectedRows
+}
+
 func reset(t *testing.T, sess *Session) {
 	autoIncrementType := "serial PRIMARY KEY"
 	boolType := "bool"
 	datetimeType := "timestamp"
+	engine := ""
 
 	switch sess.Dialect {
 	case dialect.SQLite3:
@@ -75,6 +100,9 @@ func reset(t *testing.T, sess *Session) {
 		autoIncrementType = "integer IDENTITY PRIMARY KEY"
 		boolType = "BIT"
 		datetimeType = "datetime"
+	case dialect.Clickhouse:
+		autoIncrementType = "integer"
+		engine = "ENGINE = MergeTree ORDER BY id"
 	}
 	for _, v := range []string{
 		`DROP TABLE IF EXISTS dbr_people`,
@@ -82,7 +110,7 @@ func reset(t *testing.T, sess *Session) {
 			id %s,
 			name varchar(255) NOT NULL,
 			email varchar(255)
-		)`, autoIncrementType),
+		) %s`, autoIncrementType, engine),
 
 		`DROP TABLE IF EXISTS null_types`,
 		fmt.Sprintf(`CREATE TABLE null_types (
@@ -92,7 +120,7 @@ func reset(t *testing.T, sess *Session) {
 			float64_val float NULL,
 			time_val %s NULL,
 			bool_val %s NULL
-		)`, autoIncrementType, datetimeType, boolType),
+		) %s`, autoIncrementType, datetimeType, boolType, engine),
 	} {
 		_, err := sess.Exec(v)
 		require.NoError(t, err)
@@ -103,73 +131,78 @@ func reset(t *testing.T, sess *Session) {
 
 func TestBasicCRUD(t *testing.T) {
 	for _, sess := range testSession {
-		reset(t, sess)
+		t.Run(testSessionName(sess), func(t *testing.T) {
+			reset(t, sess)
 
-		jonathan := dbrPerson{
-			Name:  "jonathan",
-			Email: "jonathan@uservoice.com",
-		}
-		insertColumns := []string{"name", "email"}
-		if sess.Dialect == dialect.PostgreSQL {
-			jonathan.Id = 1
-			insertColumns = []string{"id", "name", "email"}
-		}
-		if sess.Dialect == dialect.MSSQL {
-			jonathan.Id = 1
-		}
+			jonathan := dbrPerson{
+				Name:  "jonathan",
+				Email: "jonathan@uservoice.com",
+			}
+			insertColumns := []string{"name", "email"}
+			if sess.Dialect == dialect.PostgreSQL || sess.Dialect == dialect.Clickhouse {
+				jonathan.Id = 1
+				insertColumns = []string{"id", "name", "email"}
+			}
+			if sess.Dialect == dialect.MSSQL {
+				jonathan.Id = 1
+			}
 
-		// insert
-		result, err := sess.InsertInto("dbr_people").Columns(insertColumns...).Record(&jonathan).Exec()
-		require.NoError(t, err)
+			// insert
+			result, err := sess.InsertInto("dbr_people").Columns(insertColumns...).Record(&jonathan).Exec()
+			require.NoError(t, err)
 
-		rowsAffected, err := result.RowsAffected()
-		require.NoError(t, err)
-		require.Equal(t, int64(1), rowsAffected)
+			rowsAffected, err := result.RowsAffected()
+			require.NoError(t, err)
+			require.Equal(t, dialectExpectedRowsAffected(sess, 1), rowsAffected)
 
-		require.True(t, jonathan.Id > 0)
-		// select
-		var people []dbrPerson
-		count, err := sess.Select("*").From("dbr_people").Where(Eq("id", jonathan.Id)).Load(&people)
-		require.NoError(t, err)
-		require.Equal(t, 1, count)
-		require.Equal(t, jonathan.Id, people[0].Id)
-		require.Equal(t, jonathan.Name, people[0].Name)
-		require.Equal(t, jonathan.Email, people[0].Email)
+			require.True(t, jonathan.Id > 0)
+			// select
+			var people []dbrPerson
+			count, err := sess.Select("*").From("dbr_people").Where(Eq("id", jonathan.Id)).Load(&people)
+			require.NoError(t, err)
+			require.Equal(t, 1, count)
+			require.Equal(t, jonathan.Id, people[0].Id)
+			require.Equal(t, jonathan.Name, people[0].Name)
+			require.Equal(t, jonathan.Email, people[0].Email)
 
-		// select id
-		ids, err := sess.Select("id").From("dbr_people").ReturnInt64s()
-		require.NoError(t, err)
-		require.Equal(t, 1, len(ids))
+			// select id
+			ids, err := sess.Select("id").From("dbr_people").ReturnInt64s()
+			require.NoError(t, err)
+			require.Equal(t, 1, len(ids))
 
-		// select id limit
-		ids, err = sess.Select("id").From("dbr_people").Limit(1).ReturnInt64s()
-		require.NoError(t, err)
-		require.Equal(t, 1, len(ids))
+			// select id limit
+			ids, err = sess.Select("id").From("dbr_people").Limit(1).ReturnInt64s()
+			require.NoError(t, err)
+			require.Equal(t, 1, len(ids))
 
-		// update
-		result, err = sess.Update("dbr_people").Where(Eq("id", jonathan.Id)).Set("name", "jonathan1").Exec()
-		require.NoError(t, err)
+			// update
+			updateStmt := sess.Update("dbr_people").Where(Eq("id", jonathan.Id)).Set("name", "jonathan1")
+			updateStmt.Settings("mutations_sync", "2") // This is for clickhouse to make sure the mutation is done before the select
+			result, err = updateStmt.Exec()
+			require.NoError(t, err)
 
-		rowsAffected, err = result.RowsAffected()
-		require.NoError(t, err)
-		require.Equal(t, int64(1), rowsAffected)
+			rowsAffected, err = result.RowsAffected()
+			require.NoError(t, err)
+			require.Equal(t, dialectExpectedRowsAffected(sess, 1), rowsAffected)
 
-		var n NullInt64
-		sess.Select("count(*)").From("dbr_people").Where("name = ?", "jonathan1").LoadOne(&n)
-		require.Equal(t, int64(1), n.Int64)
+			var n NullInt64
+			err = sess.Select("count(*)").From("dbr_people").Where("name = ?", "jonathan1").LoadOne(&n)
+			require.NoError(t, err)
+			require.Equal(t, int64(1), n.Int64)
 
-		// delete
-		result, err = sess.DeleteFrom("dbr_people").Where(Eq("id", jonathan.Id)).Exec()
-		require.NoError(t, err)
+			// delete
+			result, err = sess.DeleteFrom("dbr_people").Where(Eq("id", jonathan.Id)).Exec()
+			require.NoError(t, err)
 
-		rowsAffected, err = result.RowsAffected()
-		require.NoError(t, err)
-		require.Equal(t, int64(1), rowsAffected)
+			rowsAffected, err = result.RowsAffected()
+			require.NoError(t, err)
+			require.Equal(t, dialectExpectedRowsAffected(sess, 1), rowsAffected)
 
-		// select id
-		ids, err = sess.Select("id").From("dbr_people").ReturnInt64s()
-		require.NoError(t, err)
-		require.Equal(t, 0, len(ids))
+			// select id
+			ids, err = sess.Select("id").From("dbr_people").ReturnInt64s()
+			require.NoError(t, err)
+			require.Equal(t, 0, len(ids))
+		})
 	}
 }
 
@@ -226,18 +259,22 @@ func TestTimeout(t *testing.T) {
 
 func TestOnConflict(t *testing.T) {
 	for _, sess := range testSession {
-		if sess.Dialect == dialect.SQLite3 || sess.Dialect == dialect.Clickhouse {
-			continue
-		}
-		for i := 0; i < 2; i++ {
-			b := sess.InsertInto("dbr_keys").Columns("key_value", "val_value").Values("key", "value")
-			b.OnConflict("dbr_keys_pkey").Action("val_value", Expr("CONCAT(?, 2)", Proposed("val_value")))
-			_, err := b.Exec()
+		t.Run(testSessionName(sess), func(t *testing.T) {
+			if sess.Dialect == dialect.SQLite3 || sess.Dialect == dialect.Clickhouse || sess.Dialect == dialect.MSSQL {
+				t.Skip()
+			}
+
+			reset(t, sess)
+			for i := 0; i < 2; i++ {
+				b := sess.InsertInto("dbr_people").Columns("id", "name", "email").Values(1, "test", "test@test.com")
+				b.OnConflict("dbr_people_pkey").Action("email", Expr("CONCAT(?, 2)", Proposed("email")))
+				_, err := b.Exec()
+				require.NoError(t, err)
+			}
+			var value string
+			_, err := sess.SelectBySql("SELECT email FROM dbr_people WHERE id=?", "1").Load(&value)
 			require.NoError(t, err)
-		}
-		var value string
-		_, err := sess.SelectBySql("SELECT val_value FROM dbr_keys WHERE key_value=?", "key").Load(&value)
-		require.NoError(t, err)
-		require.Equal(t, "value2", value)
+			require.Equal(t, "test@test.com2", value)
+		})
 	}
 }

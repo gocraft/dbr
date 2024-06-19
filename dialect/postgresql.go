@@ -44,6 +44,10 @@ func (d postgreSQL) CombinedOffset() bool {
 	return false
 }
 
+func (d postgreSQL) UpdateStmts() (string, string) {
+	return "UPDATE", "SET"
+}
+
 func (d postgreSQL) OnConflict(constraint string) string {
 	return fmt.Sprintf("ON CONFLICT ON CONSTRAINT %s DO UPDATE SET", d.QuoteIdent(constraint))
 }

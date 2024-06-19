@@ -24,6 +24,10 @@ func (d clickhouse) CombinedOffset() bool {
 	return true
 }
 
+func (d clickhouse) UpdateStmts() (string, string) {
+	return "ALTER TABLE", "UPDATE"
+}
+
 func (d clickhouse) OnConflict(_ string) string {
 	return ""
 }

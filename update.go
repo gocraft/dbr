@@ -20,6 +20,7 @@ type UpdateStmt struct {
 	ReturnColumn []string
 	LimitCount   int64
 	comments     Comments
+	settings     QuerySettings
 	indexHints   []Builder
 }
 
@@ -43,7 +44,10 @@ func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
 		return err
 	}
 
-	buf.WriteString("UPDATE ")
+	updateStmt, setStmt := d.UpdateStmts()
+	buf.WriteString(updateStmt)
+	buf.WriteString(" ")
+
 	buf.WriteString(d.QuoteIdent(b.Table))
 	for _, hint := range b.indexHints {
 		buf.WriteString(" ")
@@ -51,7 +55,10 @@ func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
 			return err
 		}
 	}
-	buf.WriteString(" SET ")
+
+	buf.WriteString(" ")
+	buf.WriteString(setStmt)
+	buf.WriteString(" ")
 
 	i := 0
 	for col, v := range b.Value {
@@ -88,6 +95,13 @@ func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
 	if b.LimitCount >= 0 {
 		buf.WriteString(" LIMIT ")
 		buf.WriteString(strconv.FormatInt(b.LimitCount, 10))
+	}
+
+	if len(b.settings) > 0 {
+		err := b.settings.Build(d, buf)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -201,6 +215,11 @@ func (b *UpdateStmt) Limit(n uint64) *UpdateStmt {
 
 func (b *UpdateStmt) Comment(comment string) *UpdateStmt {
 	b.comments = b.comments.Append(comment)
+	return b
+}
+
+func (b *UpdateStmt) Settings(setting, value string) *UpdateStmt {
+	b.settings = b.settings.Append(setting, value)
 	return b
 }
 

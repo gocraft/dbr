@@ -73,6 +73,10 @@ func (d mysql) CombinedOffset() bool {
 	return false
 }
 
+func (d mysql) UpdateStmts() (string, string) {
+	return "UPDATE", "SET"
+}
+
 func (d mysql) OnConflict(_ string) string {
 	return "ON DUPLICATE KEY UPDATE"
 }

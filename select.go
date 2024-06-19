@@ -268,11 +268,11 @@ func (sess *Session) Select(column ...string) *SelectStmt {
 	return b
 }
 
-func (s *SelectStmt) Attach(sess *Session) *SelectStmt {
-	s.Runner = sess
-	s.EventReceiver = sess.EventReceiver
-	s.Dialect = sess.Dialect
-	return s
+func (b *SelectStmt) Attach(sess *Session) *SelectStmt {
+	b.Runner = sess
+	b.EventReceiver = sess.EventReceiver
+	b.Dialect = sess.Dialect
+	return b
 }
 
 // Select creates a SelectStmt.

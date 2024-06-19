@@ -35,7 +35,7 @@ func TestTransactionCommit(t *testing.T) {
 
 		rowsAffected, err := result.RowsAffected()
 		require.NoError(t, err)
-		require.Equal(t, int64(1), rowsAffected)
+		require.Equal(t, dialectExpectedRowsAffected(sess, 1), rowsAffected)
 
 		err = tx.Commit()
 		require.NoError(t, err)
@@ -65,7 +65,7 @@ func TestTransactionRollback(t *testing.T) {
 
 		rowsAffected, err := result.RowsAffected()
 		require.NoError(t, err)
-		require.Equal(t, int64(1), rowsAffected)
+		require.Equal(t, dialectExpectedRowsAffected(sess, 1), rowsAffected)
 
 		err = tx.Rollback()
 		require.NoError(t, err)
