@@ -50,7 +50,6 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 	if len(b.Column) == 0 {
 		return ErrColumnNotSpecified
 	}
-	b.comments.Build(d, buf)
 
 	err := b.comments.Build(d, buf)
 	if err != nil {
@@ -197,7 +196,7 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		}
 	}
 
-	b.settings.Build(d, buf)
+	return b.settings.Build(d, buf)
 }
 
 // https://docs.microsoft.com/en-us/previous-versions/sql/sql-server-2012/ms188385(v=sql.110)
@@ -263,7 +262,7 @@ func (sess *Session) Select(column ...string) *SelectStmt {
 }
 
 func (s *SelectStmt) Attach(sess *Session) *SelectStmt {
-	s.runner = sess
+	s.Runner = sess
 	s.EventReceiver = sess.EventReceiver
 	s.Dialect = sess.Dialect
 	return s
@@ -434,17 +433,17 @@ func (b *SelectStmt) LeftJoin(table, on interface{}, indexHints ...Builder) *Sel
 	return b
 }
 
-// LeftJoin add left-join.
+// AnyLeftJoin add any left-join.
 // on can be Builder or string.
-func (b *SelectStmt) AnyLeftJoin(table, on interface{}) *SelectStmt {
-	b.JoinTable = append(b.JoinTable, join(anyLeft, table, on))
+func (b *SelectStmt) AnyLeftJoin(table, on interface{}, indexHints ...Builder) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, join(anyLeft, table, on, indexHints))
 	return b
 }
 
 // AllFullJoin add all-full.
 // on can be Builder or string.
-func (b *SelectStmt) AllFullJoin(table, on interface{}) *SelectStmt {
-	b.JoinTable = append(b.JoinTable, join(allFull, table, on))
+func (b *SelectStmt) AllFullJoin(table, on interface{}, indexHints ...Builder) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, join(allFull, table, on, indexHints))
 	return b
 }
 
