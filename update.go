@@ -98,8 +98,7 @@ func (b *UpdateStmt) Build(d Dialect, buf Buffer) error {
 	}
 
 	if len(b.settings) > 0 {
-		err := b.settings.Build(d, buf)
-		if err != nil {
+		if err := b.settings.Build(d, buf); err != nil {
 			return err
 		}
 	}

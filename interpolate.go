@@ -50,8 +50,7 @@ func InterpolateForDialectFromBuilder(builder Builder, d Dialect) (string, error
 		Buffer:  NewBuffer(),
 		Dialect: d,
 	}
-	err := i.encodePlaceholder(builder, true)
-	if err != nil {
+	if err := i.encodePlaceholder(builder, true); err != nil {
 		return "", err
 	}
 	return i.String(), nil

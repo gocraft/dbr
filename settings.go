@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/gocraft/dbr/v2/dialect"
@@ -11,7 +12,7 @@ type QuerySettings []string
 func (qs QuerySettings) Append(setting, value string) QuerySettings {
 	setting = strings.TrimSpace(setting)
 	value = strings.TrimSpace(value)
-	qs = append(qs, setting+" = "+value)
+	qs = append(qs, fmt.Sprintf("%s = %s", setting, value))
 	return qs
 }
 

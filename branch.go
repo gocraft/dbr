@@ -5,19 +5,13 @@ package dbr
 func When(cond Builder, value interface{}) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
 		buf.WriteString("WHEN (")
-		err := cond.Build(d, buf)
-		if err != nil {
+		if err := cond.Build(d, buf); err != nil {
 			return err
 		}
 		buf.WriteString(") THEN ")
 
-		builder, ok := value.(Builder)
-		if ok {
-			err = builder.Build(d, buf)
-			if err != nil {
-				return err
-			}
-			return nil
+		if builder, ok := value.(Builder); ok {
+			return builder.Build(d, buf)
 		}
 
 		buf.WriteString(placeholder)
@@ -31,10 +25,7 @@ func Else(value interface{}) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
 		buf.WriteString("ELSE ")
 		if builder, ok := value.(Builder); ok {
-			if err := builder.Build(d, buf); err != nil {
-				return err
-			}
-			return nil
+			return builder.Build(d, buf)
 		}
 		buf.WriteString(placeholder)
 		buf.WriteValue(value)
@@ -42,7 +33,7 @@ func Else(value interface{}) Builder {
 	})
 }
 
-// Builder interface that includes AS for asliasing CASE statements.
+// CaseBuilder interface that includes AS for aliasing CASE statements.
 type CaseBuilder interface {
 	Builder
 	As(name string) Builder
@@ -58,7 +49,9 @@ func Case(conds ...Builder) CaseBuilder {
 		buf.WriteString("CASE ")
 		l := len(conds)
 		for i, cond := range conds {
-			cond.Build(d, buf)
+			if err := cond.Build(d, buf); err != nil {
+				return err
+			}
 			if i < l-1 {
 				buf.WriteString(" ")
 			}
@@ -68,7 +61,7 @@ func Case(conds ...Builder) CaseBuilder {
 	})
 }
 
-// AS adds an alias to the CASE statement.
+// As adds an alias to the CASE statement.
 func (cb CaseBuildFunc) As(alias string) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
 		if err := cb(d, buf); err != nil {
