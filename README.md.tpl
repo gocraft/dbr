@@ -21,7 +21,7 @@ import "github.com/gocraft/dbr/v2"
 * PostgreSQL
 * SQLite3
 * MsSQL
-* Clickhouse
+* ClickHouse
 
 ## Examples
 

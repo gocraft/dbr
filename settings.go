@@ -18,7 +18,7 @@ func (qs QuerySettings) Append(setting, value string) QuerySettings {
 // Build writes each setting in the form of "SETTINGS setting_key=value \n"
 func (qs QuerySettings) Build(d Dialect, buf Buffer) error {
 	// Only clickhouse supports settings, so we don't build anything if it's a different dialect.
-	if d != dialect.Clickhouse {
+	if d != dialect.ClickHouse {
 		return nil
 	}
 	for _, setting := range qs {

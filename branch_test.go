@@ -30,7 +30,7 @@ func TestWhen(t *testing.T) {
 		},
 	} {
 		buf := NewBuffer()
-		err := test.when.Build(dialect.Clickhouse, buf)
+		err := test.when.Build(dialect.ClickHouse, buf)
 		require.NoError(t, err)
 		require.Equal(t, test.query, buf.String())
 		require.Equal(t, test.value, buf.Value())
@@ -80,7 +80,7 @@ func TestCase(t *testing.T) {
 		},
 	} {
 		buf := NewBuffer()
-		err := test.caseBuilder.Build(dialect.Clickhouse, buf)
+		err := test.caseBuilder.Build(dialect.ClickHouse, buf)
 		require.NoError(t, err)
 		require.Equal(t, test.query, buf.String())
 		require.Equal(t, test.value, buf.Value())

@@ -37,7 +37,7 @@ func TestQuerySettings(t *testing.T) {
 				require.NoError(t, err)
 
 				actual := buf.String()
-				if sess.Dialect == dialect.Clickhouse {
+				if sess.Dialect == dialect.ClickHouse {
 					require.Equal(t, test.expect, actual)
 				} else {
 					require.Equal(t, "", actual)

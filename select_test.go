@@ -35,7 +35,7 @@ func TestSelectStmt(t *testing.T) {
 	require.Equal(t, 3, len(buf.Value()))
 }
 
-func TestClickhouseSelectStmt(t *testing.T) {
+func TestClickHouseSelectStmt(t *testing.T) {
 	buf := NewBuffer()
 	query := Select("a").
 		From("table").
@@ -44,7 +44,7 @@ func TestClickhouseSelectStmt(t *testing.T) {
 		Limit(3).
 		Settings("setting_key1", "1")
 
-	err := query.Build(dialect.Clickhouse, buf)
+	err := query.Build(dialect.ClickHouse, buf)
 	require.NoError(t, err)
 	require.Equal(t, "SELECT a FROM table ANY LEFT JOIN `table2` USE INDEX(`idx_table2`) USING table.a1 = table.a2 LIMIT 5 BY a LIMIT 3\nSETTINGS setting_key1 = 1", buf.String())
 	// two functions cannot be compared
@@ -60,7 +60,7 @@ func TestClickhouseSelectStmt(t *testing.T) {
 		Settings("setting_key1", "1").
 		Settings("setting_key2", "noop")
 
-	err = outer.Build(dialect.Clickhouse, buf)
+	err = outer.Build(dialect.ClickHouse, buf)
 	require.NoError(t, err)
 	require.Equal(t, "SELECT a, b FROM ? ALL FULL JOIN `table2` USE INDEX(`idx_table2`) USING table.a1 = table.a2 LIMIT 5 BY a LIMIT 2, 3\nSETTINGS setting_key1 = 1\nSETTINGS setting_key2 = noop", buf.String())
 	// two functions cannot be compared
@@ -115,7 +115,7 @@ func TestMaps(t *testing.T) {
 	for _, sess := range testSession {
 		reset(t, sess)
 
-		if sess.Dialect == dialect.Clickhouse {
+		if sess.Dialect == dialect.ClickHouse {
 			// ClickHouse does not have autoincrement, so we explicitly set it here.
 			_, err := sess.InsertInto("dbr_people").
 				Columns("id", "name", "email").
@@ -173,7 +173,7 @@ func TestSelectRows(t *testing.T) {
 	for _, sess := range testSession {
 		reset(t, sess)
 
-		if sess.Dialect == dialect.Clickhouse {
+		if sess.Dialect == dialect.ClickHouse {
 			// ClickHouse does not have autoincrement, so we explicitly set it here.
 			_, err := sess.InsertInto("dbr_people").
 				Columns("id", "name", "email").

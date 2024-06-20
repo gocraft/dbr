@@ -73,14 +73,14 @@ func testSessionName(sess *Session) string {
 		return "SQLite3"
 	case dialect.MSSQL:
 		return "MSSQL"
-	case dialect.Clickhouse:
+	case dialect.ClickHouse:
 		return "ClickHouse"
 	}
 	return ""
 }
 
 func dialectExpectedRowsAffected(sess *Session, expectedRows int64) int64 {
-	if sess.Dialect == dialect.Clickhouse {
+	if sess.Dialect == dialect.ClickHouse {
 		// ClickHouse does not support returning rows affected, it always returns 0.
 		return 0
 	}
@@ -100,7 +100,7 @@ func reset(t *testing.T, sess *Session) {
 		autoIncrementType = "integer IDENTITY PRIMARY KEY"
 		boolType = "BIT"
 		datetimeType = "datetime"
-	case dialect.Clickhouse:
+	case dialect.ClickHouse:
 		autoIncrementType = "integer"
 		engine = "ENGINE = MergeTree ORDER BY id"
 	}
@@ -139,7 +139,7 @@ func TestBasicCRUD(t *testing.T) {
 				Email: "jonathan@uservoice.com",
 			}
 			insertColumns := []string{"name", "email"}
-			if sess.Dialect == dialect.PostgreSQL || sess.Dialect == dialect.Clickhouse {
+			if sess.Dialect == dialect.PostgreSQL || sess.Dialect == dialect.ClickHouse {
 				jonathan.Id = 1
 				insertColumns = []string{"id", "name", "email"}
 			}
@@ -260,7 +260,7 @@ func TestTimeout(t *testing.T) {
 func TestOnConflict(t *testing.T) {
 	for _, sess := range testSession {
 		t.Run(testSessionName(sess), func(t *testing.T) {
-			if sess.Dialect == dialect.SQLite3 || sess.Dialect == dialect.Clickhouse || sess.Dialect == dialect.MSSQL {
+			if sess.Dialect == dialect.SQLite3 || sess.Dialect == dialect.ClickHouse || sess.Dialect == dialect.MSSQL {
 				t.Skip()
 			}
 
