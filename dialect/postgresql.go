@@ -36,10 +36,6 @@ func (d postgreSQL) Placeholder(n int) string {
 	return fmt.Sprintf("$%d", n+1)
 }
 
-func (d postgreSQL) SupportsOn() bool {
-	return true
-}
-
 func (d postgreSQL) UpdateStmts() (string, string) {
 	return "UPDATE", "SET"
 }

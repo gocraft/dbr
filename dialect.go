@@ -17,5 +17,4 @@ type Dialect interface {
 	UpdateStmts() (string, string)
 	OnConflict(constraint string) string
 	Proposed(column string) string
-	SupportsOn() bool
 }

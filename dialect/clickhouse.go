@@ -16,10 +16,6 @@ func (d clickhouse) EncodeTime(t time.Time) string {
 	return `'` + t.UTC().Format(clickhouseTimeFormat) + `'`
 }
 
-func (d clickhouse) SupportsOn() bool {
-	return false
-}
-
 func (d clickhouse) UpdateStmts() (string, string) {
 	return "ALTER TABLE", "UPDATE"
 }

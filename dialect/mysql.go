@@ -65,10 +65,6 @@ func (d mysql) Placeholder(_ int) string {
 	return "?"
 }
 
-func (d mysql) SupportsOn() bool {
-	return true
-}
-
 func (d mysql) UpdateStmts() (string, string) {
 	return "UPDATE", "SET"
 }

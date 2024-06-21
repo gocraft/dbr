@@ -34,11 +34,7 @@ func join(t joinType, table interface{}, on interface{}, indexHints []Builder) B
 				return err
 			}
 		}
-		if d.SupportsOn() {
-			buf.WriteString(" ON ")
-		} else {
-			buf.WriteString(" USING ")
-		}
+		buf.WriteString(" ON ")
 		switch on := on.(type) {
 		case string:
 			buf.WriteString(on)
