@@ -39,21 +39,21 @@ func TestClickHouseSelectStmt(t *testing.T) {
 	buf := NewBuffer()
 	query := Select("a").
 		From("table").
-		AnyLeftJoin("table2", "table.a1 = table.a2", UseIndex("idx_table2")).
+		LeftJoin("table2", "a1", UseIndex("idx_table2")).
 		LimitBy(5, "a").
 		Limit(3).
 		Settings("setting_key1", "1")
 
 	err := query.Build(dialect.ClickHouse, buf)
 	require.NoError(t, err)
-	require.Equal(t, "SELECT a FROM table ANY LEFT JOIN `table2` USE INDEX(`idx_table2`) USING table.a1 = table.a2 LIMIT 5 BY a LIMIT 3\nSETTINGS setting_key1 = 1", buf.String())
+	require.Equal(t, "SELECT a FROM table LEFT JOIN `table2` USE INDEX(`idx_table2`) USING a1 LIMIT 5 BY a LIMIT 3\nSETTINGS setting_key1 = 1", buf.String())
 	// two functions cannot be compared
 	require.Equal(t, 0, len(buf.Value()))
 
 	buf = NewBuffer()
 	outer := Select("a", "b").
 		From(Select("a").From("table")).
-		AllFullJoin("table2", "table.a1 = table.a2", UseIndex("idx_table2")).
+		FullJoin("table2", "a1", UseIndex("idx_table2")).
 		LimitBy(5, "a").
 		Offset(2).
 		Limit(3).
@@ -62,7 +62,7 @@ func TestClickHouseSelectStmt(t *testing.T) {
 
 	err = outer.Build(dialect.ClickHouse, buf)
 	require.NoError(t, err)
-	require.Equal(t, "SELECT a, b FROM ? ALL FULL JOIN `table2` USE INDEX(`idx_table2`) USING table.a1 = table.a2 LIMIT 5 BY a LIMIT 3 OFFSET 2\nSETTINGS setting_key1 = 1\nSETTINGS setting_key2 = noop", buf.String())
+	require.Equal(t, "SELECT a, b FROM ? FULL JOIN `table2` USE INDEX(`idx_table2`) USING a1 LIMIT 5 BY a LIMIT 3 OFFSET 2\nSETTINGS setting_key1 = 1\nSETTINGS setting_key2 = noop", buf.String())
 	// two functions cannot be compared
 	require.Equal(t, 1, len(buf.Value()))
 }

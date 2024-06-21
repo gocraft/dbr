@@ -428,20 +428,6 @@ func (b *SelectStmt) LeftJoin(table, on interface{}, indexHints ...Builder) *Sel
 	return b
 }
 
-// AnyLeftJoin add any left-join.
-// on can be Builder or string.
-func (b *SelectStmt) AnyLeftJoin(table, on interface{}, indexHints ...Builder) *SelectStmt {
-	b.JoinTable = append(b.JoinTable, join(anyLeft, table, on, indexHints))
-	return b
-}
-
-// AllFullJoin add all-full.
-// on can be Builder or string.
-func (b *SelectStmt) AllFullJoin(table, on interface{}, indexHints ...Builder) *SelectStmt {
-	b.JoinTable = append(b.JoinTable, join(allFull, table, on, indexHints))
-	return b
-}
-
 // RightJoin add right-join.
 // on can be Builder or string.
 func (b *SelectStmt) RightJoin(table, on interface{}, indexHints ...Builder) *SelectStmt {
