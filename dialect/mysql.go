@@ -69,10 +69,6 @@ func (d mysql) SupportsOn() bool {
 	return true
 }
 
-func (d mysql) CombinedOffset() bool {
-	return false
-}
-
 func (d mysql) UpdateStmts() (string, string) {
 	return "UPDATE", "SET"
 }

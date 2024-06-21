@@ -39,10 +39,6 @@ func (d mssql) SupportsOn() bool {
 	return true
 }
 
-func (d mssql) CombinedOffset() bool {
-	return false
-}
-
 func (d mssql) UpdateStmts() (string, string) {
 	return "UPDATE", "SET"
 }

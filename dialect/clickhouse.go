@@ -20,10 +20,6 @@ func (d clickhouse) SupportsOn() bool {
 	return false
 }
 
-func (d clickhouse) CombinedOffset() bool {
-	return true
-}
-
 func (d clickhouse) UpdateStmts() (string, string) {
 	return "ALTER TABLE", "UPDATE"
 }

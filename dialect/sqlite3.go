@@ -43,10 +43,6 @@ func (d sqlite3) SupportsOn() bool {
 	return true
 }
 
-func (d sqlite3) CombinedOffset() bool {
-	return false
-}
-
 func (d sqlite3) UpdateStmts() (string, string) {
 	return "UPDATE", "SET"
 }

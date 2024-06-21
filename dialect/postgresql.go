@@ -40,10 +40,6 @@ func (d postgreSQL) SupportsOn() bool {
 	return true
 }
 
-func (d postgreSQL) CombinedOffset() bool {
-	return false
-}
-
 func (d postgreSQL) UpdateStmts() (string, string) {
 	return "UPDATE", "SET"
 }

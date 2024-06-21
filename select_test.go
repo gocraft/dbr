@@ -62,7 +62,7 @@ func TestClickHouseSelectStmt(t *testing.T) {
 
 	err = outer.Build(dialect.ClickHouse, buf)
 	require.NoError(t, err)
-	require.Equal(t, "SELECT a, b FROM ? ALL FULL JOIN `table2` USE INDEX(`idx_table2`) USING table.a1 = table.a2 LIMIT 5 BY a LIMIT 2, 3\nSETTINGS setting_key1 = 1\nSETTINGS setting_key2 = noop", buf.String())
+	require.Equal(t, "SELECT a, b FROM ? ALL FULL JOIN `table2` USE INDEX(`idx_table2`) USING table.a1 = table.a2 LIMIT 5 BY a LIMIT 3 OFFSET 2\nSETTINGS setting_key1 = 1\nSETTINGS setting_key2 = noop", buf.String())
 	// two functions cannot be compared
 	require.Equal(t, 1, len(buf.Value()))
 }
