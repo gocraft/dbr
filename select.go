@@ -214,17 +214,9 @@ func Select(column ...interface{}) *SelectStmt {
 	}
 }
 
-func prepareSelect(a []string) []interface{} {
-	b := make([]interface{}, len(a))
-	for i := range a {
-		b[i] = a[i]
-	}
-	return b
-}
-
 // Select creates a SelectStmt.
-func (sess *Session) Select(column ...string) *SelectStmt {
-	b := Select(prepareSelect(column)...)
+func (sess *Session) Select(column ...interface{}) *SelectStmt {
+	b := Select(column...)
 	b.Runner = sess
 	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
@@ -232,8 +224,8 @@ func (sess *Session) Select(column ...string) *SelectStmt {
 }
 
 // Select creates a SelectStmt.
-func (tx *Tx) Select(column ...string) *SelectStmt {
-	b := Select(prepareSelect(column)...)
+func (tx *Tx) Select(column ...interface{}) *SelectStmt {
+	b := Select(column...)
 	b.Runner = tx
 	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
