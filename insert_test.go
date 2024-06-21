@@ -44,11 +44,11 @@ func TestPostgresReturning(t *testing.T) {
 
 func TestOnConflict(t *testing.T) {
 	for _, sess := range testSession {
+		if sess.Dialect.OnConflict("") == "" {
+			// dialect does not support OnConflict
+			continue
+		}
 		t.Run(testSessionName(sess), func(t *testing.T) {
-			if sess.Dialect == dialect.SQLite3 || sess.Dialect == dialect.MSSQL {
-				t.Skip()
-			}
-
 			reset(t, sess)
 			for i := 0; i < 2; i++ {
 				b := sess.InsertInto("dbr_people").Columns("id", "name", "email").Values(1, "test", "test@test.com")

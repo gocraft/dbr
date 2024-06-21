@@ -36,9 +36,9 @@ func (d mssql) Placeholder(n int) string {
 }
 
 func (d mssql) OnConflict(_ string) string {
-	return "ON DUPLICATE KEY UPDATE"
+	return ""
 }
 
-func (d mssql) Proposed(column string) string {
-	return fmt.Sprintf("VALUES(%s)", d.QuoteIdent(column))
+func (d mssql) Proposed(_ string) string {
+	return ""
 }
