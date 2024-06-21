@@ -60,6 +60,20 @@ type nullTypedRecord struct {
 	BoolVal    NullBool
 }
 
+func testSessionName(sess *Session) string {
+	switch sess.Dialect {
+	case dialect.MySQL:
+		return "MySQL"
+	case dialect.PostgreSQL:
+		return "PostgreSQL"
+	case dialect.SQLite3:
+		return "SQLite3"
+	case dialect.MSSQL:
+		return "MSSQL"
+	}
+	return ""
+}
+
 func reset(t *testing.T, sess *Session) {
 	autoIncrementType := "serial PRIMARY KEY"
 	boolType := "bool"

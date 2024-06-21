@@ -34,3 +34,11 @@ func (d mssql) EncodeBytes(b []byte) string {
 func (d mssql) Placeholder(n int) string {
 	return fmt.Sprintf("@p%d", n+1)
 }
+
+func (d mssql) OnConflict(_ string) string {
+	return ""
+}
+
+func (d mssql) Proposed(_ string) string {
+	return ""
+}
