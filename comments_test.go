@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gocraft/dbr/v2/dialect"
 	"github.com/stretchr/testify/require"
 )
 
@@ -30,18 +29,8 @@ func TestComments(t *testing.T) {
 			expect:   "/* test nested comment removed */\n",
 		},
 	} {
-
 		for _, sess := range testSession {
-			name := ""
-			switch sess.Dialect {
-			case dialect.MySQL:
-				name = "MySQL"
-			case dialect.PostgreSQL:
-				name = "PostgreSQL"
-			case dialect.SQLite3:
-				name = "SQLite3"
-			}
-			t.Run(fmt.Sprintf("%s/%s", name, test.name), func(t *testing.T) {
+			t.Run(fmt.Sprintf("%s/%s", testSessionName(sess), test.name), func(t *testing.T) {
 				buf := NewBuffer()
 				err := test.comments.Build(sess.Dialect, buf)
 				require.NoError(t, err)
