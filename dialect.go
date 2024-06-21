@@ -13,4 +13,8 @@ type Dialect interface {
 	EncodeBytes(b []byte) string
 
 	Placeholder(n int) string
+
+	UpdateStmts() (string, string)
+	OnConflict(constraint string) string
+	Proposed(column string) string
 }
