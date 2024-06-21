@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.17
+      - image: cimg/go:1.21
         environment:
           - DBR_TEST_MYSQL_DSN=root:root@tcp(127.0.0.1:3306)/circle_test
           - DBR_TEST_POSTGRES_DSN=postgres://postgres:mysecretpassword@127.0.0.1:5432/postgres?sslmode=disable
@@ -20,7 +20,6 @@ jobs:
         environment:
           - ACCEPT_EULA=Y
           - SA_PASSWORD=qwe123QWE
-    working_directory: /go/src/github.com/gocraft/dbr
     steps:
       - run: |
           curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install-latest.sh | bash

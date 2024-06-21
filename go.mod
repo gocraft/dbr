@@ -1,6 +1,6 @@
 module github.com/gocraft/dbr/v2
 
-go 1.17
+go 1.21
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
@@ -17,6 +17,6 @@ require (
 	github.com/davecgh/go-spew v1.1.0 // indirect
 	github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c // indirect
-	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
+	golang.org/x/crypto v0.24.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
