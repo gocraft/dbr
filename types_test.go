@@ -29,32 +29,34 @@ func TestNullTypesScanning(t *testing.T) {
 		},
 	} {
 		for _, sess := range testSession {
-			reset(t, sess)
+			t.Run(testSessionName(sess), func(t *testing.T) {
+				reset(t, sess)
 
-			tx, err := sess.Begin()
-			require.NoError(t, err)
+				tx, err := sess.Begin()
+				require.NoError(t, err)
 
-			if sess.Dialect == dialect.MSSQL {
-				tx.UpdateBySql("SET IDENTITY_INSERT null_types ON;").Exec()
-			}
-
-			test.in.Id = 1
-			_, err = tx.InsertInto("null_types").Columns("id", "string_val", "int64_val", "float64_val", "time_val", "bool_val").Record(test.in).Exec()
-			require.NoError(t, err)
-
-			err = tx.Commit()
-			require.NoError(t, err)
-
-			var record nullTypedRecord
-			err = sess.Select("*").From("null_types").Where(Eq("id", test.in.Id)).LoadOne(&record)
-			require.NoError(t, err)
-			if sess.Dialect == dialect.PostgreSQL {
-				// TODO: https://github.com/lib/pq/issues/329
-				if !record.TimeVal.Time.IsZero() {
-					record.TimeVal.Time = record.TimeVal.Time.UTC()
+				if sess.Dialect == dialect.MSSQL {
+					tx.UpdateBySql("SET IDENTITY_INSERT null_types ON;").Exec()
 				}
-			}
-			require.Equal(t, test.in, record)
+
+				test.in.Id = 1
+				_, err = tx.InsertInto("null_types").Columns("id", "string_val", "int64_val", "float64_val", "time_val", "bool_val").Record(test.in).Exec()
+				require.NoError(t, err)
+
+				err = tx.Commit()
+				require.NoError(t, err)
+
+				var record nullTypedRecord
+				err = sess.Select("*").From("null_types").Where(Eq("id", test.in.Id)).LoadOne(&record)
+				require.NoError(t, err)
+				if sess.Dialect == dialect.PostgreSQL {
+					// TODO: https://github.com/lib/pq/issues/329
+					if !record.TimeVal.Time.IsZero() {
+						record.TimeVal.Time = record.TimeVal.Time.UTC()
+					}
+				}
+				require.Equal(t, test.in, record)
+			})
 		}
 	}
 }
