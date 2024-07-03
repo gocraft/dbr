@@ -167,7 +167,8 @@ func TestBasicCRUD(t *testing.T) {
 			require.Equal(t, int64(1), rowsAffected)
 
 			var n NullInt64
-			sess.Select("count(*)").From("dbr_people").Where("name = ?", "jonathan1").LoadOne(&n)
+			err = sess.Select("count(*)").From("dbr_people").Where("name = ?", "jonathan1").LoadOne(&n)
+			require.NoError(t, err)
 			require.Equal(t, int64(1), n.Int64)
 
 			// delete
