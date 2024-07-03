@@ -86,7 +86,7 @@ var (
 // SessionRunner can do anything that a Session can except start a transaction.
 // Both Session and Tx implements this interface.
 type SessionRunner interface {
-	Select(column ...string) *SelectBuilder
+	Select(column ...interface{}) *SelectBuilder
 	SelectBySql(query string, value ...interface{}) *SelectBuilder
 
 	InsertInto(table string) *InsertBuilder
