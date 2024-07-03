@@ -42,6 +42,28 @@ func TestPostgresReturning(t *testing.T) {
 	require.Equal(t, 0, sess.EventReceiver.(*testTraceReceiver).errored)
 }
 
+func TestOnConflict(t *testing.T) {
+	for _, sess := range testSession {
+		if sess.Dialect.OnConflict("") == "" {
+			// dialect does not support OnConflict
+			continue
+		}
+		t.Run(testSessionName(sess), func(t *testing.T) {
+			reset(t, sess)
+			for i := 0; i < 2; i++ {
+				b := sess.InsertInto("dbr_people").Columns("id", "name", "email").Values(1, "test", "test@test.com")
+				b.OnConflict("dbr_people_pkey").Action("email", Expr("CONCAT(?, 2)", Proposed("email")))
+				_, err := b.Exec()
+				require.NoError(t, err)
+			}
+			var value string
+			_, err := sess.SelectBySql("SELECT email FROM dbr_people WHERE id=?", "1").Load(&value)
+			require.NoError(t, err)
+			require.Equal(t, "test@test.com2", value)
+		})
+	}
+}
+
 func BenchmarkInsertValuesSQL(b *testing.B) {
 	buf := NewBuffer()
 	for i := 0; i < b.N; i++ {
