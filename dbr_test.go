@@ -114,124 +114,121 @@ func reset(t *testing.T, sess *Session) {
 
 func TestBasicCRUD(t *testing.T) {
 	for _, sess := range testSession {
-		reset(t, sess)
+		t.Run(testSessionName(sess), func(t *testing.T) {
+			reset(t, sess)
 
-		jonathan := dbrPerson{
-			Name:  "jonathan",
-			Email: "jonathan@uservoice.com",
-		}
-		insertColumns := []string{"name", "email"}
-		if sess.Dialect == dialect.PostgreSQL {
-			jonathan.Id = 1
-			insertColumns = []string{"id", "name", "email"}
-		}
-		if sess.Dialect == dialect.MSSQL {
-			jonathan.Id = 1
-		}
+			jonathan := dbrPerson{
+				Name:  "jonathan",
+				Email: "jonathan@uservoice.com",
+			}
+			insertColumns := []string{"name", "email"}
+			if sess.Dialect == dialect.PostgreSQL {
+				jonathan.Id = 1
+				insertColumns = []string{"id", "name", "email"}
+			}
+			if sess.Dialect == dialect.MSSQL {
+				jonathan.Id = 1
+			}
 
-		// insert
-		result, err := sess.InsertInto("dbr_people").Columns(insertColumns...).Record(&jonathan).Exec()
-		require.NoError(t, err)
+			// insert
+			result, err := sess.InsertInto("dbr_people").Columns(insertColumns...).Record(&jonathan).Exec()
+			require.NoError(t, err)
 
-		rowsAffected, err := result.RowsAffected()
-		require.NoError(t, err)
-		require.Equal(t, int64(1), rowsAffected)
+			rowsAffected, err := result.RowsAffected()
+			require.NoError(t, err)
+			require.Equal(t, int64(1), rowsAffected)
 
-		require.True(t, jonathan.Id > 0)
-		// select
-		var people []dbrPerson
-		count, err := sess.Select("*").From("dbr_people").Where(Eq("id", jonathan.Id)).Load(&people)
-		require.NoError(t, err)
-		require.Equal(t, 1, count)
-		require.Equal(t, jonathan.Id, people[0].Id)
-		require.Equal(t, jonathan.Name, people[0].Name)
-		require.Equal(t, jonathan.Email, people[0].Email)
+			require.True(t, jonathan.Id > 0)
+			// select
+			var people []dbrPerson
+			count, err := sess.Select("*").From("dbr_people").Where(Eq("id", jonathan.Id)).Load(&people)
+			require.NoError(t, err)
+			require.Equal(t, 1, count)
+			require.Equal(t, jonathan.Id, people[0].Id)
+			require.Equal(t, jonathan.Name, people[0].Name)
+			require.Equal(t, jonathan.Email, people[0].Email)
 
-		// select id
-		ids, err := sess.Select("id").From("dbr_people").ReturnInt64s()
-		require.NoError(t, err)
-		require.Equal(t, 1, len(ids))
+			// select id
+			ids, err := sess.Select("id").From("dbr_people").ReturnInt64s()
+			require.NoError(t, err)
+			require.Equal(t, 1, len(ids))
 
-		// select id limit
-		ids, err = sess.Select("id").From("dbr_people").Limit(1).ReturnInt64s()
-		require.NoError(t, err)
-		require.Equal(t, 1, len(ids))
+			// select id limit
+			ids, err = sess.Select("id").From("dbr_people").Limit(1).ReturnInt64s()
+			require.NoError(t, err)
+			require.Equal(t, 1, len(ids))
 
-		// update
-		result, err = sess.Update("dbr_people").Where(Eq("id", jonathan.Id)).Set("name", "jonathan1").Exec()
-		require.NoError(t, err)
+			// update
+			result, err = sess.Update("dbr_people").Where(Eq("id", jonathan.Id)).Set("name", "jonathan1").Exec()
+			require.NoError(t, err)
 
-		rowsAffected, err = result.RowsAffected()
-		require.NoError(t, err)
-		require.Equal(t, int64(1), rowsAffected)
+			rowsAffected, err = result.RowsAffected()
+			require.NoError(t, err)
+			require.Equal(t, int64(1), rowsAffected)
 
-		var n NullInt64
-		err = sess.Select("count(*)").From("dbr_people").Where("name = ?", "jonathan1").LoadOne(&n)
-		require.NoError(t, err)
-		require.Equal(t, int64(1), n.Int64)
+			var n NullInt64
+			err = sess.Select("count(*)").From("dbr_people").Where("name = ?", "jonathan1").LoadOne(&n)
+			require.NoError(t, err)
+			require.Equal(t, int64(1), n.Int64)
 
-		// delete
-		result, err = sess.DeleteFrom("dbr_people").Where(Eq("id", jonathan.Id)).Exec()
-		require.NoError(t, err)
+			// delete
+			result, err = sess.DeleteFrom("dbr_people").Where(Eq("id", jonathan.Id)).Exec()
+			require.NoError(t, err)
 
-		rowsAffected, err = result.RowsAffected()
-		require.NoError(t, err)
-		require.Equal(t, int64(1), rowsAffected)
+			rowsAffected, err = result.RowsAffected()
+			require.NoError(t, err)
+			require.Equal(t, int64(1), rowsAffected)
 
-		// select id
-		ids, err = sess.Select("id").From("dbr_people").ReturnInt64s()
-		require.NoError(t, err)
-		require.Equal(t, 0, len(ids))
+			// select id
+			ids, err = sess.Select("id").From("dbr_people").ReturnInt64s()
+			require.NoError(t, err)
+			require.Equal(t, 0, len(ids))
+		})
 	}
 }
 
 func TestTimeout(t *testing.T) {
-	mysqlSession := createSession("mysql", mysqlDSN)
-	postgresSession := createSession("postgres", postgresDSN)
-	sqlite3Session := createSession("sqlite3", sqlite3DSN)
-
-	// all test sessions should be here
-	testSession := []*Session{mysqlSession, postgresSession, sqlite3Session}
-
 	for _, sess := range testSession {
-		reset(t, sess)
+		t.Run(testSessionName(sess), func(t *testing.T) {
+			reset(t, sess)
 
-		// session op timeout
-		sess.Timeout = time.Nanosecond
-		var people []dbrPerson
-		_, err := sess.Select("*").From("dbr_people").Load(&people)
-		require.Equal(t, context.DeadlineExceeded, err)
-		require.Equal(t, 1, sess.EventReceiver.(*testTraceReceiver).errored)
+			// session op timeout
+			sess.Timeout = time.Nanosecond
+			var people []dbrPerson
+			_, err := sess.Select("*").From("dbr_people").Load(&people)
+			require.Equal(t, context.DeadlineExceeded, err)
+			require.Equal(t, 1, sess.EventReceiver.(*testTraceReceiver).errored)
 
-		_, err = sess.InsertInto("dbr_people").Columns("name", "email").Values("test", "test@test.com").Exec()
-		require.Equal(t, context.DeadlineExceeded, err)
-		require.Equal(t, 2, sess.EventReceiver.(*testTraceReceiver).errored)
+			_, err = sess.InsertInto("dbr_people").Columns("name", "email").Values("test", "test@test.com").Exec()
+			require.Equal(t, context.DeadlineExceeded, err)
+			require.Equal(t, 2, sess.EventReceiver.(*testTraceReceiver).errored)
 
-		_, err = sess.Update("dbr_people").Set("name", "test1").Exec()
-		require.Equal(t, context.DeadlineExceeded, err)
-		require.Equal(t, 3, sess.EventReceiver.(*testTraceReceiver).errored)
+			_, err = sess.Update("dbr_people").Set("name", "test1").Exec()
+			require.Equal(t, context.DeadlineExceeded, err)
+			require.Equal(t, 3, sess.EventReceiver.(*testTraceReceiver).errored)
 
-		_, err = sess.DeleteFrom("dbr_people").Exec()
-		require.Equal(t, context.DeadlineExceeded, err)
-		require.Equal(t, 4, sess.EventReceiver.(*testTraceReceiver).errored)
+			_, err = sess.DeleteFrom("dbr_people").Exec()
+			require.Equal(t, context.DeadlineExceeded, err)
+			require.Equal(t, 4, sess.EventReceiver.(*testTraceReceiver).errored)
 
-		// tx op timeout
-		sess.Timeout = 0
-		tx, err := sess.Begin()
-		require.NoError(t, err)
-		defer tx.RollbackUnlessCommitted()
-		tx.Timeout = time.Nanosecond
+			// tx op timeout
+			sess.Timeout = 0
+			tx, err := sess.Begin()
+			require.NoError(t, err)
+			defer tx.RollbackUnlessCommitted()
+			tx.Timeout = time.Nanosecond
 
-		_, err = tx.Select("*").From("dbr_people").Load(&people)
-		require.Equal(t, context.DeadlineExceeded, err)
+			_, err = tx.Select("*").From("dbr_people").Load(&people)
+			require.Equal(t, context.DeadlineExceeded, err)
 
-		_, err = tx.InsertInto("dbr_people").Columns("name", "email").Values("test", "test@test.com").Exec()
-		require.Equal(t, context.DeadlineExceeded, err)
+			_, err = tx.InsertInto("dbr_people").Columns("name", "email").Values("test", "test@test.com").Exec()
+			require.Equal(t, context.DeadlineExceeded, err)
 
-		_, err = tx.Update("dbr_people").Set("name", "test1").Exec()
-		require.Equal(t, context.DeadlineExceeded, err)
+			_, err = tx.Update("dbr_people").Set("name", "test1").Exec()
+			require.Equal(t, context.DeadlineExceeded, err)
 
-		_, err = tx.DeleteFrom("dbr_people").Exec()
-		require.Equal(t, context.DeadlineExceeded, err)
+			_, err = tx.DeleteFrom("dbr_people").Exec()
+			require.Equal(t, context.DeadlineExceeded, err)
+		})
 	}
 }

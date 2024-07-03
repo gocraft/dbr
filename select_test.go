@@ -50,135 +50,143 @@ func (ss *stringSliceWithSQLScanner) Scan(src interface{}) error {
 
 func TestSliceWithSQLScannerSelect(t *testing.T) {
 	for _, sess := range testSession {
-		reset(t, sess)
+		t.Run(testSessionName(sess), func(t *testing.T) {
+			reset(t, sess)
 
-		_, err := sess.InsertInto("dbr_people").
-			Columns("name", "email").
-			Values("test1", "test1@test.com").
-			Values("test2", "test2@test.com").
-			Values("test3", "test3@test.com").
-			Exec()
-		require.NoError(t, err)
+			_, err := sess.InsertInto("dbr_people").
+				Columns("name", "email").
+				Values("test1", "test1@test.com").
+				Values("test2", "test2@test.com").
+				Values("test3", "test3@test.com").
+				Exec()
+			require.NoError(t, err)
 
-		//plain string slice (original behavior)
-		var stringSlice []string
-		cnt, err := sess.Select("name").From("dbr_people").Load(&stringSlice)
+			//plain string slice (original behavior)
+			var stringSlice []string
+			cnt, err := sess.Select("name").From("dbr_people").Load(&stringSlice)
 
-		require.NoError(t, err)
-		require.Equal(t, 3, cnt)
-		require.Len(t, stringSlice, 3)
+			require.NoError(t, err)
+			require.Equal(t, 3, cnt)
+			require.Len(t, stringSlice, 3)
 
-		//string slice with sql.Scanner implemented, should act as a single record
-		var sliceScanner stringSliceWithSQLScanner
-		cnt, err = sess.Select("name").From("dbr_people").Load(&sliceScanner)
+			//string slice with sql.Scanner implemented, should act as a single record
+			var sliceScanner stringSliceWithSQLScanner
+			cnt, err = sess.Select("name").From("dbr_people").Load(&sliceScanner)
 
-		require.NoError(t, err)
-		require.Equal(t, 1, cnt)
-		require.Len(t, sliceScanner, 1)
+			require.NoError(t, err)
+			require.Equal(t, 1, cnt)
+			require.Len(t, sliceScanner, 1)
+		})
 	}
 }
 
 func TestMaps(t *testing.T) {
 	for _, sess := range testSession {
-		reset(t, sess)
+		t.Run(testSessionName(sess), func(t *testing.T) {
+			reset(t, sess)
 
-		_, err := sess.InsertInto("dbr_people").
-			Columns("name", "email").
-			Values("test1", "test1@test.com").
-			Values("test2", "test2@test.com").
-			Values("test2", "test3@test.com").
-			Exec()
-		require.NoError(t, err)
+			_, err := sess.InsertInto("dbr_people").
+				Columns("name", "email").
+				Values("test1", "test1@test.com").
+				Values("test2", "test2@test.com").
+				Values("test2", "test3@test.com").
+				Exec()
+			require.NoError(t, err)
 
-		var m map[string]string
-		cnt, err := sess.Select("email, name").From("dbr_people").Load(&m)
-		require.NoError(t, err)
-		require.Equal(t, 3, cnt)
-		require.Len(t, m, 3)
-		require.Equal(t, "test1", m["test1@test.com"])
+			var m map[string]string
+			cnt, err := sess.Select("email, name").From("dbr_people").Load(&m)
+			require.NoError(t, err)
+			require.Equal(t, 3, cnt)
+			require.Len(t, m, 3)
+			require.Equal(t, "test1", m["test1@test.com"])
 
-		var m2 map[int64]*dbrPerson
-		cnt, err = sess.Select("id, name, email").From("dbr_people").Load(&m2)
-		require.NoError(t, err)
-		require.Equal(t, 3, cnt)
-		require.Len(t, m2, 3)
-		require.Equal(t, "test1@test.com", m2[1].Email)
-		require.Equal(t, "test1", m2[1].Name)
-		// the id value is used as the map key, so it is not hydrated in the struct
-		require.Equal(t, int64(0), m2[1].Id)
+			var m2 map[int64]*dbrPerson
+			cnt, err = sess.Select("id, name, email").From("dbr_people").Load(&m2)
+			require.NoError(t, err)
+			require.Equal(t, 3, cnt)
+			require.Len(t, m2, 3)
+			require.Equal(t, "test1@test.com", m2[1].Email)
+			require.Equal(t, "test1", m2[1].Name)
+			// the id value is used as the map key, so it is not hydrated in the struct
+			require.Equal(t, int64(0), m2[1].Id)
 
-		var m3 map[string][]string
-		cnt, err = sess.Select("name, email").From("dbr_people").OrderAsc("id").Load(&m3)
-		require.NoError(t, err)
-		require.Equal(t, 3, cnt)
-		require.Len(t, m3, 2)
-		require.Equal(t, []string{"test1@test.com"}, m3["test1"])
-		require.Equal(t, []string{"test2@test.com", "test3@test.com"}, m3["test2"])
+			var m3 map[string][]string
+			cnt, err = sess.Select("name, email").From("dbr_people").OrderAsc("id").Load(&m3)
+			require.NoError(t, err)
+			require.Equal(t, 3, cnt)
+			require.Len(t, m3, 2)
+			require.Equal(t, []string{"test1@test.com"}, m3["test1"])
+			require.Equal(t, []string{"test2@test.com", "test3@test.com"}, m3["test2"])
 
-		var set map[string]struct{}
-		cnt, err = sess.Select("name").From("dbr_people").Load(&set)
-		require.NoError(t, err)
-		require.Equal(t, 3, cnt)
-		require.Len(t, set, 2)
-		_, ok := set["test1"]
-		require.True(t, ok)
+			var set map[string]struct{}
+			cnt, err = sess.Select("name").From("dbr_people").Load(&set)
+			require.NoError(t, err)
+			require.Equal(t, 3, cnt)
+			require.Len(t, set, 2)
+			_, ok := set["test1"]
+			require.True(t, ok)
+		})
 	}
 }
 
 func TestSelectRows(t *testing.T) {
 	for _, sess := range testSession {
-		reset(t, sess)
+		t.Run(testSessionName(sess), func(t *testing.T) {
+			reset(t, sess)
 
-		_, err := sess.InsertInto("dbr_people").
-			Columns("name", "email").
-			Values("test1", "test1@test.com").
-			Values("test2", "test2@test.com").
-			Values("test3", "test3@test.com").
-			Exec()
-		require.NoError(t, err)
+			_, err := sess.InsertInto("dbr_people").
+				Columns("name", "email").
+				Values("test1", "test1@test.com").
+				Values("test2", "test2@test.com").
+				Values("test3", "test3@test.com").
+				Exec()
+			require.NoError(t, err)
 
-		rows, err := sess.Select("*").From("dbr_people").OrderAsc("id").Rows()
-		require.NoError(t, err)
-		defer rows.Close()
+			rows, err := sess.Select("*").From("dbr_people").OrderAsc("id").Rows()
+			require.NoError(t, err)
+			defer rows.Close()
 
-		want := []dbrPerson{
-			{Id: 1, Name: "test1", Email: "test1@test.com"},
-			{Id: 2, Name: "test2", Email: "test2@test.com"},
-			{Id: 3, Name: "test3", Email: "test3@test.com"},
-		}
+			want := []dbrPerson{
+				{Id: 1, Name: "test1", Email: "test1@test.com"},
+				{Id: 2, Name: "test2", Email: "test2@test.com"},
+				{Id: 3, Name: "test3", Email: "test3@test.com"},
+			}
 
-		count := 0
-		for rows.Next() {
-			var p dbrPerson
-			require.NoError(t, rows.Scan(&p.Id, &p.Name, &p.Email))
-			require.Equal(t, want[count], p)
-			count++
-		}
+			count := 0
+			for rows.Next() {
+				var p dbrPerson
+				require.NoError(t, rows.Scan(&p.Id, &p.Name, &p.Email))
+				require.Equal(t, want[count], p)
+				count++
+			}
 
-		require.Equal(t, len(want), count)
+			require.Equal(t, len(want), count)
+		})
 	}
 }
 
 func TestInterfaceLoader(t *testing.T) {
 	for _, sess := range testSession {
-		reset(t, sess)
+		t.Run(testSessionName(sess), func(t *testing.T) {
+			reset(t, sess)
 
-		_, err := sess.InsertInto("dbr_people").
-			Columns("name", "email").
-			Values("test1", "test1@test.com").
-			Values("test2", "test2@test.com").
-			Values("test2", "test3@test.com").
-			Exec()
-		require.NoError(t, err)
+			_, err := sess.InsertInto("dbr_people").
+				Columns("name", "email").
+				Values("test1", "test1@test.com").
+				Values("test2", "test2@test.com").
+				Values("test2", "test3@test.com").
+				Exec()
+			require.NoError(t, err)
 
-		var m []interface{}
-		cnt, err := sess.Select("*").From("dbr_people").Load(InterfaceLoader(&m, dbrPerson{}))
-		require.NoError(t, err)
-		require.Equal(t, 3, cnt)
-		require.Len(t, m, 3)
-		person, ok := m[0].(dbrPerson)
-		require.True(t, ok)
-		require.Equal(t, "test1", person.Name)
+			var m []interface{}
+			cnt, err := sess.Select("*").From("dbr_people").Load(InterfaceLoader(&m, dbrPerson{}))
+			require.NoError(t, err)
+			require.Equal(t, 3, cnt)
+			require.Len(t, m, 3)
+			person, ok := m[0].(dbrPerson)
+			require.True(t, ok)
+			require.Equal(t, "test1", person.Name)
+		})
 	}
 }
 
