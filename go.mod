@@ -3,7 +3,7 @@ module github.com/gocraft/dbr/v2
 go 1.21
 
 require (
-	github.com/ClickHouse/clickhouse-go/v2 v2.25.0
+	github.com/ClickHouse/clickhouse-go/v2 v2.26.0
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/denisenkom/go-mssqldb v0.11.0
 	github.com/go-sql-driver/mysql v1.6.0
