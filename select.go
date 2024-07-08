@@ -275,13 +275,15 @@ func (b *SelectStmt) Distinct() *SelectStmt {
 }
 
 // Where adds a where condition.
-// query can be Builder or string. value is used only if query type is string.
+// query can be Builder or []Builder or string. value is used only if query type is string.
 func (b *SelectStmt) Where(query interface{}, value ...interface{}) *SelectStmt {
 	switch query := query.(type) {
 	case string:
 		b.WhereCond = append(b.WhereCond, Expr(query, value...))
 	case Builder:
 		b.WhereCond = append(b.WhereCond, query)
+	case []Builder:
+		b.WhereCond = append(b.WhereCond, query...)
 	}
 	return b
 }

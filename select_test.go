@@ -34,6 +34,22 @@ func TestSelectStmt(t *testing.T) {
 	require.Equal(t, 3, len(buf.Value()))
 }
 
+func TestWhereSliceBuild(t *testing.T) {
+	buf := NewBuffer()
+	builder := Select("a", "b").
+		From("table").
+		Where(
+			[]Builder{
+				Eq("c", 1),
+				Eq("d", 2),
+			},
+		)
+	err := builder.Build(dialect.MySQL, buf)
+	require.NoError(t, err)
+	require.Equal(t, "SELECT a, b FROM table WHERE (`c` = ?) AND (`d` = ?)", buf.String())
+
+}
+
 func BenchmarkSelectSQL(b *testing.B) {
 	buf := NewBuffer()
 	for i := 0; i < b.N; i++ {
