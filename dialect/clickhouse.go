@@ -19,11 +19,3 @@ func (d clickhouse) EncodeTime(t time.Time) string {
 func (d clickhouse) UpdateStmts() (string, string) {
 	return "ALTER TABLE", "UPDATE"
 }
-
-func (d clickhouse) OnConflict(_ string) string {
-	return ""
-}
-
-func (d clickhouse) Proposed(_ string) string {
-	return ""
-}

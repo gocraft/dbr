@@ -256,25 +256,3 @@ func TestTimeout(t *testing.T) {
 		require.Equal(t, context.DeadlineExceeded, err)
 	}
 }
-
-func TestOnConflict(t *testing.T) {
-	for _, sess := range testSession {
-		t.Run(testSessionName(sess), func(t *testing.T) {
-			if sess.Dialect == dialect.SQLite3 || sess.Dialect == dialect.ClickHouse || sess.Dialect == dialect.MSSQL {
-				t.Skip()
-			}
-
-			reset(t, sess)
-			for i := 0; i < 2; i++ {
-				b := sess.InsertInto("dbr_people").Columns("id", "name", "email").Values(1, "test", "test@test.com")
-				b.OnConflict("dbr_people_pkey").Action("email", Expr("CONCAT(?, 2)", Proposed("email")))
-				_, err := b.Exec()
-				require.NoError(t, err)
-			}
-			var value string
-			_, err := sess.SelectBySql("SELECT email FROM dbr_people WHERE id=?", "1").Load(&value)
-			require.NoError(t, err)
-			require.Equal(t, "test@test.com2", value)
-		})
-	}
-}

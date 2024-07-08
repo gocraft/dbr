@@ -15,6 +15,4 @@ type Dialect interface {
 	Placeholder(n int) string
 
 	UpdateStmts() (string, string)
-	OnConflict(constraint string) string
-	Proposed(column string) string
 }

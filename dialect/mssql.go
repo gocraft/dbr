@@ -38,11 +38,3 @@ func (d mssql) Placeholder(n int) string {
 func (d mssql) UpdateStmts() (string, string) {
 	return "UPDATE", "SET"
 }
-
-func (d mssql) OnConflict(_ string) string {
-	return "ON DUPLICATE KEY UPDATE"
-}
-
-func (d mssql) Proposed(column string) string {
-	return fmt.Sprintf("VALUES(%s)", d.QuoteIdent(column))
-}

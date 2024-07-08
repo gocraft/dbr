@@ -68,11 +68,3 @@ func (d mysql) Placeholder(_ int) string {
 func (d mysql) UpdateStmts() (string, string) {
 	return "UPDATE", "SET"
 }
-
-func (d mysql) OnConflict(_ string) string {
-	return "ON DUPLICATE KEY UPDATE"
-}
-
-func (d mysql) Proposed(column string) string {
-	return fmt.Sprintf("VALUES(%s)", d.QuoteIdent(column))
-}
