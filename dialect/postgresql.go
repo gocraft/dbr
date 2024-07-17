@@ -39,3 +39,7 @@ func (d postgreSQL) Placeholder(n int) string {
 func (d postgreSQL) UpdateStmts() (string, string) {
 	return "UPDATE", "SET"
 }
+
+func (d postgreSQL) SupportsOn() bool {
+	return true
+}

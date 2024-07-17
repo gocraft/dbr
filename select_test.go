@@ -39,21 +39,21 @@ func TestClickHouseSelectStmt(t *testing.T) {
 	buf := NewBuffer()
 	query := Select("a").
 		From("table").
-		LeftJoin("table2", "table.a = table2.a").
+		LeftJoin("table2", "a").
 		LimitBy(5, "a").
 		Limit(3).
 		Settings("setting_key1", "1")
 
 	err := query.Build(dialect.ClickHouse, buf)
 	require.NoError(t, err)
-	require.Equal(t, "SELECT a FROM table LEFT JOIN `table2` ON table.a = table2.a LIMIT 5 BY a LIMIT 3\nSETTINGS setting_key1 = 1", buf.String())
+	require.Equal(t, "SELECT a FROM table LEFT JOIN `table2` USING a LIMIT 5 BY a LIMIT 3\nSETTINGS setting_key1 = 1", buf.String())
 	// two functions cannot be compared
 	require.Equal(t, 0, len(buf.Value()))
 
 	buf = NewBuffer()
 	outer := Select("a", "b").
 		From(Select("a").From("table")).
-		FullJoin("table2", "table.a = table2.a").
+		FullJoin("table2", "a").
 		LimitBy(5, "a").
 		Offset(2).
 		Limit(3).
@@ -62,7 +62,7 @@ func TestClickHouseSelectStmt(t *testing.T) {
 
 	err = outer.Build(dialect.ClickHouse, buf)
 	require.NoError(t, err)
-	require.Equal(t, "SELECT a, b FROM ? FULL JOIN `table2` ON table.a = table2.a LIMIT 5 BY a LIMIT 3 OFFSET 2\nSETTINGS setting_key1 = 1\nSETTINGS setting_key2 = noop", buf.String())
+	require.Equal(t, "SELECT a, b FROM ? FULL JOIN `table2` USING a LIMIT 5 BY a LIMIT 3 OFFSET 2\nSETTINGS setting_key1 = 1\nSETTINGS setting_key2 = noop", buf.String())
 	// two functions cannot be compared
 	require.Equal(t, 1, len(buf.Value()))
 }

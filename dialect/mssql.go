@@ -38,3 +38,7 @@ func (d mssql) Placeholder(n int) string {
 func (d mssql) UpdateStmts() (string, string) {
 	return "UPDATE", "SET"
 }
+
+func (d mssql) SupportsOn() bool {
+	return true
+}

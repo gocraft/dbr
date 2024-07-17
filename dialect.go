@@ -15,4 +15,5 @@ type Dialect interface {
 	Placeholder(n int) string
 
 	UpdateStmts() (string, string)
+	SupportsOn() bool
 }
