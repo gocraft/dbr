@@ -34,3 +34,11 @@ func (d mssql) EncodeBytes(b []byte) string {
 func (d mssql) Placeholder(n int) string {
 	return fmt.Sprintf("@p%d", n+1)
 }
+
+func (d mssql) UpdateStmts() (string, string) {
+	return "UPDATE", "SET"
+}
+
+func (d mssql) SupportsOn() bool {
+	return true
+}

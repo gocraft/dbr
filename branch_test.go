@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gocraft/dbr/v2/dialect"
 	"github.com/stretchr/testify/require"
 )
 
@@ -40,8 +39,7 @@ func TestWhen(t *testing.T) {
 				reset(t, sess)
 
 				expectedQuery := test.query
-				if sess.Dialect != dialect.MySQL {
-					// MySQL is the only one that uses a different QuoteIdent
+				if strings.HasPrefix(sess.QuoteIdent(""), `"`) {
 					expectedQuery = strings.ReplaceAll(expectedQuery, "`", `"`)
 				}
 
@@ -110,8 +108,7 @@ func TestCase(t *testing.T) {
 				reset(t, sess)
 
 				expectedQuery := test.query
-				if sess.Dialect != dialect.MySQL {
-					// MySQL is the only one that uses a different QuoteIdent
+				if strings.HasPrefix(sess.QuoteIdent(""), `"`) {
 					expectedQuery = strings.ReplaceAll(expectedQuery, "`", `"`)
 				}
 

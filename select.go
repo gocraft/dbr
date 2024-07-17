@@ -31,7 +31,11 @@ type SelectStmt struct {
 	LimitCount  int64
 	OffsetCount int64
 
+	LimitByCol   []Builder
+	LimitByCount int64
+
 	comments Comments
+	settings QuerySettings
 
 	indexHints []Builder
 }
@@ -142,6 +146,21 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		}
 	}
 
+	if b.LimitByCount > 0 {
+		buf.WriteString(" LIMIT ")
+		buf.WriteString(strconv.FormatInt(b.LimitByCount, 10))
+		buf.WriteString(" BY ")
+		for i, limit := range b.LimitByCol {
+			if i > 0 {
+				buf.WriteString(", ")
+			}
+			err := limit.Build(d, buf)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	if d == dialect.MSSQL {
 		b.addMSSQLLimits(buf)
 	} else {
@@ -163,6 +182,12 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 			if err != nil {
 				return err
 			}
+		}
+	}
+
+	if len(b.settings) > 0 {
+		if err := b.settings.Build(d, buf); err != nil {
+			return err
 		}
 	}
 
@@ -217,6 +242,13 @@ func Select(column ...interface{}) *SelectStmt {
 // Select creates a SelectStmt.
 func (sess *Session) Select(column ...interface{}) *SelectStmt {
 	b := Select(column...)
+	b.Runner = sess
+	b.EventReceiver = sess.EventReceiver
+	b.Dialect = sess.Dialect
+	return b
+}
+
+func (b *SelectStmt) Attach(sess *Session) *SelectStmt {
 	b.Runner = sess
 	b.EventReceiver = sess.EventReceiver
 	b.Dialect = sess.Dialect
@@ -322,6 +354,15 @@ func (b *SelectStmt) OrderBy(col string) *SelectStmt {
 	return b
 }
 
+func (b *SelectStmt) LimitBy(n uint64, col ...string) *SelectStmt {
+	b.LimitByCount = int64(n)
+	b.LimitByCol = []Builder{}
+	for _, limit := range col {
+		b.LimitByCol = append(b.LimitByCol, Expr(limit))
+	}
+	return b
+}
+
 func (b *SelectStmt) Limit(n uint64) *SelectStmt {
 	b.LimitCount = int64(n)
 	return b
@@ -357,6 +398,11 @@ func (b *SelectStmt) OrderDir(col string, isAsc bool) *SelectStmt {
 
 func (b *SelectStmt) Comment(comment string) *SelectStmt {
 	b.comments = b.comments.Append(comment)
+	return b
+}
+
+func (b *SelectStmt) Settings(setting, value string) *SelectStmt {
+	b.settings = b.settings.Append(setting, value)
 	return b
 }
 

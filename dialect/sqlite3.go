@@ -38,3 +38,11 @@ func (d sqlite3) EncodeBytes(b []byte) string {
 func (d sqlite3) Placeholder(_ int) string {
 	return "?"
 }
+
+func (d sqlite3) UpdateStmts() (string, string) {
+	return "UPDATE", "SET"
+}
+
+func (d sqlite3) SupportsOn() bool {
+	return true
+}

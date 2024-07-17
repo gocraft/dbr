@@ -13,4 +13,7 @@ type Dialect interface {
 	EncodeBytes(b []byte) string
 
 	Placeholder(n int) string
+
+	UpdateStmts() (string, string)
+	SupportsOn() bool
 }

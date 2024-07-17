@@ -64,3 +64,11 @@ func (d mysql) EncodeBytes(b []byte) string {
 func (d mysql) Placeholder(_ int) string {
 	return "?"
 }
+
+func (d mysql) UpdateStmts() (string, string) {
+	return "UPDATE", "SET"
+}
+
+func (d mysql) SupportsOn() bool {
+	return true
+}

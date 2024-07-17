@@ -24,7 +24,8 @@ func TestSelectStmt(t *testing.T) {
 		Suffix("FOR UPDATE").
 		Comment("SELECT TEST").
 		IndexHint(UseIndex("idx_c_d").ForGroupBy(), "USE INDEX(idx_e_f)").
-		IndexHint(IgnoreIndex("idx_a_b"))
+		IndexHint(IgnoreIndex("idx_a_b")).
+		Settings("setting_key1", "1") // Settings should be ignored for MySQL dialect.
 
 	err := builder.Build(dialect.MySQL, buf)
 	require.NoError(t, err)
@@ -32,6 +33,38 @@ func TestSelectStmt(t *testing.T) {
 		"LEFT JOIN `table2` USE INDEX(`idx_table2`) ON table.a1 = table.a2 WHERE (`c` = ?) GROUP BY d HAVING (`e` = ?) ORDER BY f ASC LIMIT 3 OFFSET 4 FOR UPDATE", buf.String())
 	// two functions cannot be compared
 	require.Equal(t, 3, len(buf.Value()))
+}
+
+func TestClickHouseSelectStmt(t *testing.T) {
+	buf := NewBuffer()
+	query := Select("a").
+		From("table").
+		LeftJoin("table2", "a").
+		LimitBy(5, "a").
+		Limit(3).
+		Settings("setting_key1", "1")
+
+	err := query.Build(dialect.ClickHouse, buf)
+	require.NoError(t, err)
+	require.Equal(t, "SELECT a FROM table LEFT JOIN `table2` USING a LIMIT 5 BY a LIMIT 3\nSETTINGS setting_key1 = 1", buf.String())
+	// two functions cannot be compared
+	require.Equal(t, 0, len(buf.Value()))
+
+	buf = NewBuffer()
+	outer := Select("a", "b").
+		From(Select("a").From("table")).
+		FullJoin("table2", "a").
+		LimitBy(5, "a").
+		Offset(2).
+		Limit(3).
+		Settings("setting_key1", "1").
+		Settings("setting_key2", "noop")
+
+	err = outer.Build(dialect.ClickHouse, buf)
+	require.NoError(t, err)
+	require.Equal(t, "SELECT a, b FROM ? FULL JOIN `table2` USING a LIMIT 5 BY a LIMIT 3 OFFSET 2\nSETTINGS setting_key1 = 1\nSETTINGS setting_key2 = noop", buf.String())
+	// two functions cannot be compared
+	require.Equal(t, 1, len(buf.Value()))
 }
 
 func BenchmarkSelectSQL(b *testing.B) {
@@ -82,13 +115,24 @@ func TestMaps(t *testing.T) {
 	for _, sess := range testSession {
 		reset(t, sess)
 
-		_, err := sess.InsertInto("dbr_people").
-			Columns("name", "email").
-			Values("test1", "test1@test.com").
-			Values("test2", "test2@test.com").
-			Values("test2", "test3@test.com").
-			Exec()
-		require.NoError(t, err)
+		if sess.Dialect == dialect.ClickHouse {
+			// ClickHouse does not have autoincrement, so we explicitly set it here.
+			_, err := sess.InsertInto("dbr_people").
+				Columns("id", "name", "email").
+				Values(1, "test1", "test1@test.com").
+				Values(2, "test2", "test2@test.com").
+				Values(3, "test2", "test3@test.com").
+				Exec()
+			require.NoError(t, err)
+		} else {
+			_, err := sess.InsertInto("dbr_people").
+				Columns("name", "email").
+				Values("test1", "test1@test.com").
+				Values("test2", "test2@test.com").
+				Values("test2", "test3@test.com").
+				Exec()
+			require.NoError(t, err)
+		}
 
 		var m map[string]string
 		cnt, err := sess.Select("email, name").From("dbr_people").Load(&m)
@@ -129,13 +173,24 @@ func TestSelectRows(t *testing.T) {
 	for _, sess := range testSession {
 		reset(t, sess)
 
-		_, err := sess.InsertInto("dbr_people").
-			Columns("name", "email").
-			Values("test1", "test1@test.com").
-			Values("test2", "test2@test.com").
-			Values("test3", "test3@test.com").
-			Exec()
-		require.NoError(t, err)
+		if sess.Dialect == dialect.ClickHouse {
+			// ClickHouse does not have autoincrement, so we explicitly set it here.
+			_, err := sess.InsertInto("dbr_people").
+				Columns("id", "name", "email").
+				Values(1, "test1", "test1@test.com").
+				Values(2, "test2", "test2@test.com").
+				Values(3, "test3", "test3@test.com").
+				Exec()
+			require.NoError(t, err)
+		} else {
+			_, err := sess.InsertInto("dbr_people").
+				Columns("name", "email").
+				Values("test1", "test1@test.com").
+				Values("test2", "test2@test.com").
+				Values("test3", "test3@test.com").
+				Exec()
+			require.NoError(t, err)
+		}
 
 		rows, err := sess.Select("*").From("dbr_people").OrderAsc("id").Rows()
 		require.NoError(t, err)

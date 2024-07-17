@@ -155,6 +155,39 @@ func TestInterpolateForDialect(t *testing.T) {
 	}
 }
 
+func TestInterpolateForDialectFromBuilder(t *testing.T) {
+	for _, test := range []struct {
+		builder Builder
+		want    string
+	}{
+		{
+			builder: Select("a").From("table"),
+			want:    "SELECT a FROM table",
+		},
+		{
+			builder: I("a1").As("a2"),
+			want:    "`a1` AS `a2`",
+		},
+		{
+			builder: Select("a").From("table").As("a1"),
+			want:    "(SELECT a FROM table) AS `a1`",
+		},
+		{
+			builder: UnionAll(
+				Select("a").From("table1"),
+				Select("b").From("table2"),
+			).As("t"),
+			// parentheses around union subqueries are not supported in sqlite
+			// but supported in both mysql and postgres.
+			want: "(SELECT a FROM table1 UNION ALL SELECT b FROM table2) AS `t`",
+		},
+	} {
+		s, err := InterpolateForDialectFromBuilder(test.builder, dialect.MySQL)
+		require.NoError(t, err)
+		require.Equal(t, test.want, s)
+	}
+}
+
 // Attempts to test common SQL injection strings. See `InjectionAttempts` for
 // more information on the source and the strings themselves.
 func TestCommonSQLInjections(t *testing.T) {
