@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"database/sql/driver"
 	"strings"
 	"testing"
 	"time"
@@ -174,6 +175,56 @@ func TestCommonSQLInjections(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, injectionAttempt, name)
 		}
+	}
+}
+
+// testValuer is a simple implementation of driver.Value, for testing purposes
+type testValuer struct{}
+
+func (tv testValuer) Value() (driver.Value, error) {
+	return "ok", nil
+}
+
+// Ensures that nil driver.Valuer values are handler correctly.
+func TestEncodePlaceholderHandlesNilValuers(t *testing.T) {
+	i := interpolator{
+		Buffer:       NewBuffer(),
+		Dialect:      dialect.MySQL,
+		IgnoreBinary: true,
+	}
+
+	for _, test := range []struct {
+		name  string
+		value func() interface{}
+	}{
+		{
+			name:  "nil value",
+			value: func() interface{} { return nil },
+		},
+		{
+			name: "nil valuer pointer",
+			value: func() interface{} {
+				var v *testValuer
+				return v
+			},
+		},
+		{
+			name:  "not nil valuer pointer",
+			value: func() interface{} { return &testValuer{} },
+		},
+		{
+			name:  "value",
+			value: func() interface{} { return 123 },
+		},
+		{
+			name:  "valuer",
+			value: func() interface{} { return testValuer{} },
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			err := i.encodePlaceholder(test.value(), true)
+			require.NoError(t, err)
+		})
 	}
 }
 

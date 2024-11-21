@@ -119,6 +119,12 @@ func (i *interpolator) encodePlaceholder(value interface{}, topLevel bool) error
 		return nil
 	}
 
+	v := reflect.ValueOf(value)
+	if value == nil || (v.Kind() == reflect.Ptr && v.IsNil()) {
+		i.WriteString("NULL")
+		return nil
+	}
+
 	if valuer, ok := value.(driver.Valuer); ok {
 		// get driver.Valuer's data
 		var err error
@@ -126,13 +132,9 @@ func (i *interpolator) encodePlaceholder(value interface{}, topLevel bool) error
 		if err != nil {
 			return err
 		}
+		v = reflect.ValueOf(value)
 	}
 
-	if value == nil {
-		i.WriteString("NULL")
-		return nil
-	}
-	v := reflect.ValueOf(value)
 	switch v.Kind() {
 	case reflect.String:
 		i.WriteString(i.EncodeString(v.String()))
