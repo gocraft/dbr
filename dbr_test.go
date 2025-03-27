@@ -10,7 +10,7 @@ import (
 	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gocraft/dbr/v2/dialect"
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
 )
@@ -36,8 +36,8 @@ func createSession(driver, dsn string) *Session {
 
 var (
 	mysqlSession          = createSession("mysql", mysqlDSN)
-	postgresSession       = createSession("postgres", postgresDSN)
-	postgresBinarySession = createSession("postgres", postgresDSN+"&binary_parameters=yes")
+	postgresSession       = createSession("pgx", postgresDSN)
+	postgresBinarySession = createSession("pgx", postgresDSN+"&binary_parameters=yes")
 	sqlite3Session        = createSession("sqlite3", sqlite3DSN)
 	mssqlSession          = createSession("mssql", mssqlDSN)
 
@@ -187,7 +187,7 @@ func TestBasicCRUD(t *testing.T) {
 
 func TestTimeout(t *testing.T) {
 	mysqlSession := createSession("mysql", mysqlDSN)
-	postgresSession := createSession("postgres", postgresDSN)
+	postgresSession := createSession("pgx", postgresDSN)
 	sqlite3Session := createSession("sqlite3", sqlite3DSN)
 
 	// all test sessions should be here
