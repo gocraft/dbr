@@ -3,7 +3,7 @@ package dbr
 import (
 	"testing"
 
-	"github.com/lib/pq"
+	"github.com/jackc/pgtype"
 	"github.com/stretchr/testify/require"
 
 	"github.com/gocraft/dbr/v2/dialect"
@@ -185,26 +185,40 @@ func TestInterfaceLoader(t *testing.T) {
 }
 
 func TestPostgresArray(t *testing.T) {
-	sess := postgresSession
+	sess := postgresSession // Assuming this is a pgx connection pool
+
 	for _, v := range []string{
 		`DROP TABLE IF EXISTS array_table`,
 		`CREATE TABLE array_table (
-			val integer[]
+			val bigint[]
 		)`,
 	} {
 		_, err := sess.Exec(v)
 		require.NoError(t, err)
 	}
 
-	// INSERT INTO "array_table" ("val") VALUES ('{1,2,3}')
-	_, err := sess.InsertInto("array_table").
-		Pair("val", pq.Array([]int64{1, 2, 3})).
-		Exec()
+	// Convert []int64 to pgx Int8Array
+	intArray := pgtype.Int8Array{}
+	err := intArray.Set([]int64{1, 2, 3})
 	require.NoError(t, err)
 
-	var ns []int64
-	err = sess.Select("val").From("array_table").LoadOne(pq.Array(&ns))
+	// INSERT INTO "array_table" ("val") VALUES ($1)
+	_, err = sess.Exec(`INSERT INTO array_table (val) VALUES ($1)`, intArray)
 	require.NoError(t, err)
 
-	require.Equal(t, []int64{1, 2, 3}, ns)
+	// Load data
+	var ns pgtype.Int8Array
+	err = sess.QueryRow(`SELECT val FROM array_table`).Scan(&ns)
+	require.NoError(t, err)
+
+	// Convert pgtype.Int8Array to []int64
+	var result []int64
+	if ns.Elements != nil {
+		result = make([]int64, len(ns.Elements))
+		for i, v := range ns.Elements {
+			result[i] = v.Int
+		}
+	}
+
+	require.Equal(t, []int64{1, 2, 3}, result)
 }

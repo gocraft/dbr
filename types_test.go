@@ -39,7 +39,9 @@ func TestNullTypesScanning(t *testing.T) {
 			}
 
 			test.in.Id = 1
-			_, err = tx.InsertInto("null_types").Columns("id", "string_val", "int64_val", "float64_val", "time_val", "bool_val").Record(test.in).Exec()
+			_, err = tx.InsertInto("null_types").
+				Columns("id", "string_val", "int64_val", "float64_val", "time_val", "bool_val").
+				Record(test.in).Exec()
 			require.NoError(t, err)
 
 			err = tx.Commit()
@@ -48,12 +50,7 @@ func TestNullTypesScanning(t *testing.T) {
 			var record nullTypedRecord
 			err = sess.Select("*").From("null_types").Where(Eq("id", test.in.Id)).LoadOne(&record)
 			require.NoError(t, err)
-			if sess.Dialect == dialect.PostgreSQL {
-				// TODO: https://github.com/lib/pq/issues/329
-				if !record.TimeVal.Time.IsZero() {
-					record.TimeVal.Time = record.TimeVal.Time.UTC()
-				}
-			}
+
 			require.Equal(t, test.in, record)
 		}
 	}
